@@ -13,6 +13,7 @@
 group:admin:matz,shugo,akira,knu
 
 group:ruby:@all
+group:mod_ruby:shugo
 group:rubicon:dave,andy
 
 
@@ -27,6 +28,7 @@ group:rubicon:dave,andy
 grant:@admin:.*
 
 grant:@ruby:ruby
+grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
 
 # Deny access if we reach here
