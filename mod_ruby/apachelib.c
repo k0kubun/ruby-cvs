@@ -83,7 +83,7 @@ VALUE ruby_create_request(request_rec *r, int sync)
 
     r->content_type = "text/html";
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
-			      request_mark, free, data);
+			      (void (*) _((void*))) request_mark, free, data);
     data->request = r;
     data->buff = rb_str_new("", 0);
     data->send_http_header = 0;
@@ -376,7 +376,11 @@ static VALUE request_content_length(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     s = ap_table_get(data->request->headers_in, "Content-Length");
+#if defined(RUBY_VERSION_CODE) && RUBY_VERSION_CODE >= 150
+    return s ? rb_cstr2inum(s, 10) : Qnil;
+#else
     return s ? rb_str2inum(s, 10) : Qnil;
+#endif
 }
 
 static VALUE request_get_content_type(VALUE self)

@@ -1,6 +1,10 @@
-Thu May 18 17:08:38 2000  Shugo Maeda <shugo@netlab.co.jp>
+Thu May 18 17:43:42 2000  Shugo Maeda <shugo@netlab.co.jp>
 
-	* version 0.1.8 released.
+	* apachelib.c (ruby_create_request): cast request_mark to
+	void (*) _((void*)).
+
+	* apachelib.c (request_content_length): use rb_cstr2inum()
+	if RUBY_VERSION_CODE >= 150.
 
 Thu May 18 17:08:33 2000  Shugo Maeda <shugo@netlab.co.jp>
 
