@@ -56,6 +56,12 @@ LIBERUBYARG = @LIBERUBYARG@
 
 TARGET = @TARGET@
 
+MAJOR = @MAJOR@
+MINOR = @MINOR@
+TEENY = @TEENY@
+VERSION = $(MAJOR).$(MINOR).$(TEENY)
+TAG = release_$(MAJOR)_$(MINOR)_$(TEENY)
+
 OBJS	= mod_ruby.@OBJEXT@ \
 	  ruby_config.@OBJEXT@ \
 	  apachelib.@OBJEXT@ \
@@ -118,6 +124,14 @@ distclean: clean
 	rm -f libruby.module
 	rm -f mod_ruby.imp
 	find . -name '*~' | xargs rm -f
+
+tag:
+	cvs tag $(TAG)
+
+dist:
+	cvs export -r $(TAG) -d mod_ruby-$(VERSION) mod_ruby
+	tar zcf ../mod_ruby-$(VERSION).tar.gz mod_ruby-$(VERSION)
+	rm -rf mod_ruby-$(VERSION)
 
 libruby.a: $(OBJS)
 	$(AR) rcu $@ $(OBJS)

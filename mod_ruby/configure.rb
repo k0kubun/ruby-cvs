@@ -366,6 +366,13 @@ AC_SUBST("LIBRUBYARG")
 AC_SUBST("LIBRUBY_A")
 AC_SUBST("RUBY_SO_NAME")
 
+version =
+  open(File.join($srcdir, "mod_ruby.h")).grep(/MOD_RUBY_STRING_VERSION/)[0]
+$MAJOR, $MINOR, $TEENY = version.scan(/mod_ruby\/(\d+).(\d+).(\d+)/)[0]
+AC_SUBST("MAJOR")
+AC_SUBST("MINOR")
+AC_SUBST("TEENY")
+
 AC_PROG_INSTALL()
 
 AC_MSG_CHECKING("whether we are using gcc")
