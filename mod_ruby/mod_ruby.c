@@ -704,9 +704,10 @@ static void per_request_init(request_rec *r)
     ruby_verbose = Qfalse;
     if (dconf->kcode)
 	rb_set_kcode(dconf->kcode);
-    if (NIL_P(rb_request))
+    if (NIL_P(rb_request)) {
 	rb_request = rb_apache_request_new(r);
-    rb_stdin = rb_stdout = rb_defout = rb_request;
+	rb_stdin = rb_stdout = rb_defout = rb_request;
+    }
 }
 
 static VALUE exec_end_proc(VALUE arg)
@@ -722,9 +723,6 @@ static void per_request_cleanup(int flush)
 	rb_apache_request_flush(rb_request);
 
     ruby_errinfo = Qnil;
-    rb_stdin = orig_stdin;
-    rb_stdout = orig_stdout;
-    rb_defout = orig_defout;
     rb_set_kcode(default_kcode);
 }
 
@@ -907,6 +905,9 @@ static void ruby_cleanup_handler(void *data)
     ruby_handler(r, dconf->ruby_cleanup_handler,
 		 rb_intern("cleanup"), 1);
     rb_request = Qnil;
+    rb_stdin = orig_stdin;
+    rb_stdout = orig_stdout;
+    rb_defout = orig_defout;
 }
 
 static int ruby_post_read_request_handler(request_rec *r)

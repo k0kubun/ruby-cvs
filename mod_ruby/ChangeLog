@@ -1,3 +1,7 @@
+Fri Jul 27 13:44:14 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (per_request_cleanup): do not restore rb_stdout.
+
 Mon Jul 23 11:16:05 2001  Aristarkh A Zagorodnikov <xm@w3d.ru>
 
 	* request.c (request_the_request): new method.

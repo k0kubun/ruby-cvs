@@ -100,10 +100,11 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
 
     new->kcode = add->kcode ? add->kcode : base->kcode;
     new->env = ap_overlay_tables(p, add->env, base->env);
-    if (add->safe_level > base->safe_level) {
+    if (add->safe_level >= base->safe_level) {
 	new->safe_level = add->safe_level;
     }
     else {
+	fprintf(stderr, "mod_ruby: can't decrease RubySafeLevel\n");
 	new->safe_level = base->safe_level;
     }
 
