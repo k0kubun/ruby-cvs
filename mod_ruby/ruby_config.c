@@ -30,6 +30,8 @@
 #include "mod_ruby.h"
 #include "ruby_config.h"
 
+static int default_safe_level = MR_DEFAULT_SAFE_LEVEL;
+
 #define push_handler(p, handler, arg) { \
     if ((handler) == NULL) \
 	(handler) = ap_make_array(p, 1, sizeof(char*)); \
@@ -75,7 +77,7 @@ void *ruby_create_dir_config(pool *p, char *dirname)
 
     conf->kcode = NULL;
     conf->env = ap_make_table(p, 5); 
-    conf->safe_level = MR_DEFAULT_SAFE_LEVEL;
+    conf->safe_level = default_safe_level;
     conf->output_mode = MR_OUTPUT_DEFAULT;
     conf->load_path = NULL;
     conf->ruby_handler = NULL;
@@ -248,7 +250,12 @@ const char *ruby_cmd_timeout(cmd_parms *cmd, void *dummy, char *arg)
 
 const char *ruby_cmd_safe_level(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
 {
-    conf->safe_level = atoi(arg);
+    if (cmd->path == NULL && !cmd->server->is_virtual) {
+	conf->safe_level = default_safe_level = atoi(arg);
+    }
+    else {
+	conf->safe_level = atoi(arg);
+    }
     return NULL;
 }
 
