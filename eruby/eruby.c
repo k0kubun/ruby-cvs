@@ -185,23 +185,31 @@ int eruby_parse_options(int argc, char **argv)
 	    return 1;
 	case '-':
 	    s++;
-	    if (strcmp("debug", s) == 0) {
+	    if (strncmp(s , "debug", 5) == 0
+		&& (s[5] == '\0' || isspace(s[5]))) {
 		ruby_debug = Qtrue;
 		s += 5;
+		goto again;
 	    }
-	    else if (strcmp("noheader", s) == 0) {
+	    else if (strncmp(s, "noheader", 8) == 0
+		     && (s[8] == '\0' || isspace(s[8]))) {
 		eruby_noheader = 1;
 		s += 8;
+		goto again;
 	    }
-	    else if (strcmp("version", s) == 0) {
+	    else if (strncmp(s, "version", 7) == 0
+		     && (s[7] == '\0' || isspace(s[7]))) {
 		show_version();
 		return 1;
 	    }
-	    else if (strcmp("verbose", s) == 0) {
+	    else if (strncmp(s, "verbose", 7) == 0
+		     && (s[7] == '\0' || isspace(s[7]))) {
 		ruby_verbose = Qtrue;
 		s += 7;
+		goto again;
 	    }
-	    else if (strcmp("help", s) == 0) {
+	    else if (strncmp(s, "help", 4) == 0
+		     && (s[4] == '\0' || isspace(s[4]))) {
 		usage(argv[0]);
 		return 1;
 	    }
@@ -210,7 +218,6 @@ int eruby_parse_options(int argc, char **argv)
 		fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
 		return 1;
 	    }
-	    break;
 	default:
 	    fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
 	    fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
