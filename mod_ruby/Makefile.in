@@ -75,15 +75,17 @@ site-install: @INSTALL_TARGET@ install-siteruby
 
 install-ruby:
 	$(INSTALL_DIR) $(rubylibdir)/apache
-	$(INSTALL_DATA) ruby/apache/ruby.rb $(rubylibdir)/apache
-	$(INSTALL_DATA) ruby/apache/eruby.rb $(rubylibdir)/apache
-	$(INSTALL_DATA) ruby/apache/rd2html.rb $(rubylibdir)/apache
+	$(INSTALL_DATA) lib/apache/ruby-run.rb $(rubylibdir)/apache
+	$(INSTALL_DATA) lib/apache/eruby-run.rb $(rubylibdir)/apache
+	$(INSTALL_DATA) lib/apache/rd2html.rb $(rubylibdir)/apache
+	$(INSTALL_DATA) lib/auto-reload.rb $(rubylibdir)
 
 install-siteruby:
 	$(INSTALL_DIR) $(sitelibdir)/apache
-	$(INSTALL_DATA) ruby/apache/ruby.rb $(sitelibdir)/apache
-	$(INSTALL_DATA) ruby/apache/eruby.rb $(sitelibdir)/apache
-	$(INSTALL_DATA) ruby/apache/rd2html.rb $(sitelibdir)/apache
+	$(INSTALL_DATA) lib/apache/ruby-run.rb $(sitelibdir)/apache
+	$(INSTALL_DATA) lib/apache/eruby-run.rb $(sitelibdir)/apache
+	$(INSTALL_DATA) lib/apache/rd2html.rb $(sitelibdir)/apache
+	$(INSTALL_DATA) lib/auto-reload.rb $(sitelibdir)
 
 install-static: all
 	$(INSTALL_DIR) -o $(APACHE_SRC_UID) -g $(APACHE_SRC_GID) \

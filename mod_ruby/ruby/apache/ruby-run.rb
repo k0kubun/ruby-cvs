@@ -1,6 +1,6 @@
 =begin
 
-= apache/rd2html.rb
+= apache/ruby-run.rb
 
 Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
 
@@ -23,53 +23,48 @@ USA.
 
 == Overview
 
-Apache::RD2HTML converts RD to HTML.
-
-== Requirements
-
-* RDtool 0.6.7 or later.
+Apache::RubyRun executes Ruby scripts.
 
 == Example of httpd.conf
 
-  RubyRequire apache/rd2html
-  Alias /ruby-lib-doc/ /usr/lib/ruby/1.6/
-  <Location /ruby-lib-doc>
-  Options Indexes
+  RubyRequire apache/ruby-run
+  <Location /ruby>
   SetHandler ruby-object
-  RubyHandler Apache::RD2HTML.instance
+  RubyHandler Apache::RubyRun.instance
   </Location>
-
-You can see the HTML version of ruby library documents at
-<URL:http://your.host.name/ruby-lib-doc/>.
-If there are no RD documents in a script, mod_rd2html returns
-"415 Unsupported Media Type".
 
 =end
 
 require "singleton"
-require "rd/rdfmt"
-require "rd/rd2html-lib"
 
 module Apache
-  class RD2HTML
+  class RubyRun
     include Singleton
 
     def handler(r)
-      begin
-	open(r.filename) do |f|
-	  tree = RD::RDTree.new(f)
-	  visitor = RD::RD2HTMLVisitor.new
-	  r.content_type = "text/html"
-	  r.send_http_header
-	  r.print(visitor.visit(tree))
-	  return Apache::OK
-	end
-      rescue Errno::ENOENT
+      if r.finfo.mode == 0
 	return Apache::NOT_FOUND
-      rescue Errno::EACCES
+      end
+      if r.finfo.directory? or !r.finfo.readable?
 	return Apache::FORBIDDEN
-      rescue NameError # no =begin ... =end ?
-	return Apache::HTTP_UNSUPPORTED_MEDIA_TYPE
+      end
+      emulate_cgi(r) do
+	load(r.filename, true)
+      end
+      return Apache::OK
+    end
+
+    private
+
+    def emulate_cgi(r)
+      r.setup_cgi_env
+      Apache.chdir_file(r.filename)
+      stdin, stdout, defout = $stdin, $stdout, $>
+      $stdin = $stdout = $> = r
+      begin
+	yield
+      ensure
+	$stdin, $stdout, $> = stdin, stdout, defout
       end
     end
   end

@@ -399,7 +399,6 @@ AC_WITH("apxs") { |withval|
     $APXS = "apxs"
   end
 }
-AC_MSG_RESULT($APXS)
 
 if $APXS
   $CFLAGS += " " + `#{$APXS} -q CFLAGS`
@@ -410,6 +409,9 @@ if $APXS
   end
   $TARGET = "mod_ruby.so"
   $INSTALL_TARGET = "install-shared"
+  AC_MSG_RESULT("yes")
+else
+  AC_MSG_RESULT("no")
 end
 
 AC_SUBST("TARGET")
@@ -438,7 +440,7 @@ EOF
 #'
 end
 
-AC_MSG_CHECKING("whether enable eruby")
+AC_MSG_CHECKING("for eruby")
 $ENABLE_ERUBY = false
 AC_ENABLE("eruby") { |enableval|
   if enableval == "yes"
@@ -448,6 +450,9 @@ AC_ENABLE("eruby") { |enableval|
   end
 }
 AC_MSG_RESULT($ENABLE_ERUBY)
+if $ENABLE_ERUBY
+  AC_MSG_WARN("--enable-eruby is obsolete; use Apache::ERubyRun instead")
+end
 
 AC_WITH("eruby-includes") { |withval|
   if $ENABLE_ERUBY

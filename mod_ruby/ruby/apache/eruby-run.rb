@@ -1,6 +1,6 @@
 =begin
 
-= apache/rd2html.rb
+= apache/eruby-run.rb
 
 Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
 
@@ -23,54 +23,66 @@ USA.
 
 == Overview
 
-Apache::RD2HTML converts RD to HTML.
-
-== Requirements
-
-* RDtool 0.6.7 or later.
+Apache::ERubyRun handles eRuby files.
 
 == Example of httpd.conf
 
-  RubyRequire apache/rd2html
-  Alias /ruby-lib-doc/ /usr/lib/ruby/1.6/
-  <Location /ruby-lib-doc>
-  Options Indexes
+  RubyRequire apache/eruby-run
+  <Location /eruby>
   SetHandler ruby-object
-  RubyHandler Apache::RD2HTML.instance
+  RubyHandler Apache::ERubyRun.instance
   </Location>
-
-You can see the HTML version of ruby library documents at
-<URL:http://your.host.name/ruby-lib-doc/>.
-If there are no RD documents in a script, mod_rd2html returns
-"415 Unsupported Media Type".
 
 =end
 
-require "singleton"
-require "rd/rdfmt"
-require "rd/rd2html-lib"
+require "eruby"
+require "apache/ruby-run"
+
+module ERuby
+  @@cgi = nil
+
+  def self.cgi
+    return @@cgi
+  end
+
+  def self.cgi=(cgi)
+    @@cgi = cgi
+  end
+end
 
 module Apache
-  class RD2HTML
-    include Singleton
-
+  class ERubyRun < Apache::RubyRun
     def handler(r)
       begin
 	open(r.filename) do |f|
-	  tree = RD::RDTree.new(f)
-	  visitor = RD::RD2HTMLVisitor.new
-	  r.content_type = "text/html"
-	  r.send_http_header
-	  r.print(visitor.visit(tree))
-	  return Apache::OK
+	  ERuby.noheader = false
+	  ERuby.charset = ERuby.default_charset
+	  ERuby.cgi = nil
+	  code = @compiler.compile_file(f)
+	  emulate_cgi(r) do
+	    eval(code, TOPLEVEL_BINDING, r.filename)
+	    unless ERuby.noheader
+	      if cgi = ERuby.cgi
+		cgi.header("charset" => ERuby.charset)
+	      else
+		r.content_type = format("text/html; charset=%s", ERuby.charset)
+		r.send_http_header
+	      end
+	    end
+	  end
 	end
+	return Apache::OK
       rescue Errno::ENOENT
 	return Apache::NOT_FOUND
       rescue Errno::EACCES
 	return Apache::FORBIDDEN
-      rescue NameError # no =begin ... =end ?
-	return Apache::HTTP_UNSUPPORTED_MEDIA_TYPE
       end
+    end
+
+    private
+
+    def initialize
+      @compiler = ERuby::Compiler.new
     end
   end
 end

@@ -1,3 +1,21 @@
+Mon Jun  4 12:07:02 2001  Shugo Maeda <shugo@modruby.net>
+
+	* lib/auto-reload: new file.
+
+	* lib/apache/ruby-run.rb: renamed from ruby/apache/ruby.rb.
+
+	* lib/apache/eruby-run.rb: renamed from ruby/apache/eruby.rb.
+
+	* lib/apache/rd2html.rb: renamed from ruby/apache/rd2html.rb.
+
+	* lib/apache/eruby-run.rb (handler): specify filename for backtrace.
+
+Sat Jun  2 21:40:53 2001  Shugo Maeda <shugo@modruby.net>
+
+	* changed license from GPL to LGPL.
+
+	* COPYING: new file.
+
 Fri Jun  1 18:08:21 2001  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb.in: exit if fail to exec apxs.

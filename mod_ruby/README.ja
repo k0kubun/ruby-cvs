@@ -5,8 +5,8 @@
 == mod_rubyとは?
 
 mod_rubyはApacheウェブサーバにRubyインタプリタを組み込み、CGIスクリ
-プトがネイティブに起動されることを許します。スクリプトはmod_rubyを利
-用しない場合よりも速く起動するでしょう。
+プトをネイティブに起動できるようにします。スクリプトはmod_rubyを利
+用しない場合よりも高速に起動します。
 
 == 要求される環境
 
@@ -21,8 +21,7 @@ mod_rubyはApacheウェブサーバにRubyインタプリタを組み込み、CGIスクリ
 
 (2) `make'とタイプし、mod_rubyをコンパイルしてください。
 
-(3) `make install'とタイプし、mod_ruby.sooを`apachelibexec'にコピー
-    してください。
+(3) `make install'とタイプし、ファイルをインストールしてください。
 
 (4) Apacheにmod_rubyをロードさせるため、`httpd.conf'を編集してください。
 
