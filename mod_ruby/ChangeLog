@@ -1,3 +1,7 @@
+Tue Aug  1 09:55:07 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* mod_ruby.c (load_eruby_script): don't override Content-Type.
+
 Thu Jul 13 12:25:34 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* Makefile.RB: expand CONFIG["LIBRUBYARG"] for ruby-1.5.
