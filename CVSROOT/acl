@@ -94,7 +94,7 @@ grant:@gnome-ruby-old:lib/gnome-ruby-old
 grant:@opengl:lib/opengl
 grant:@math3d:lib/math3d
 grant:@devices:lib/devices
-group:@hybris:lib/hybris
+grant:@hybris:lib/hybris
 
 grant:@www:www
 
