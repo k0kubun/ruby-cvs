@@ -127,8 +127,9 @@ int eruby_parse_options(int argc, char **argv, int *optind)
 	if (*s == '-') s++;
 	switch (*s) {
 	case 'M':
-	    if (set_mode(++s) == -1)
+	    if (set_mode(++s) == -1) {
 		result = 2; break;
+	    }
 	    s++;
 	    goto again;
 	case 'K':
