@@ -85,7 +85,7 @@ install: all
 	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
 
 clean:
-	rm -f $(TARGET) $(OBJS) *~
+	rm -f $(TARGET) $(OBJS) *~ lib/eruby/*~
 
 distclean: clean
 	rm -f config.h Makefile
@@ -95,6 +95,9 @@ $(TARGET): $(OBJS)
 
 eruby_logo.c: eruby_logo.png
 	./bin2c eruby_logo.png
+eruby.o: eruby.c eruby.h config.h
+eruby_logo.o: eruby_logo.c eruby_logo.h
+eruby_main.o: eruby_main.c eruby.h eruby_logo.h
 EOMF
 ensure
   mfile.close
@@ -102,11 +105,11 @@ end
 
 cfile = open("config.h", "w")
 begin
-  cfile.write <<EOMF
+  cfile.write <<EOCF
 /* Generated automatically by Makefile.RB. */
 
 #define ERUBY_DEFAULT_CHARSET "#{$DEFAULT_CHARSET}"
-EOMF
+EOCF
 ensure
   cfile.close
 end

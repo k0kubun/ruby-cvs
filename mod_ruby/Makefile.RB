@@ -136,10 +136,10 @@ distclean: clean
 $(TARGET): $(OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)
 
-mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h eruby.h
+mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h eruby.h config.h
 ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h
 apachelib.o: apachelib.c apachelib.h
-eruby.o: eruby.c eruby.h
+eruby.o: eruby.c eruby.h config.h
 EOMF
 ensure
   mfile.close
@@ -147,11 +147,11 @@ end
 
 cfile = open("config.h", "w")
 begin
-  cfile.write <<EOMF
+  cfile.write <<EOCF
 /* Generated automatically by Makefile.RB. */
 
 #define ERUBY_DEFAULT_CHARSET "#{$DEFAULT_CHARSET}"
-EOMF
+EOCF
 ensure
   cfile.close
 end
