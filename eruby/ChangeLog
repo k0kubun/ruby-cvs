@@ -1,3 +1,7 @@
+Mon May 28 11:14:56 2001  WATANABE Hirofumi <eban@os.rim.or.jp>
+
+	* Makefile.in: RUBY_SO_NAME for cygwin.
+
 Fri May 25 14:09:13 2001  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb.in: check for MKDLLIB.

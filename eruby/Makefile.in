@@ -6,6 +6,7 @@ hdrdir = @hdrdir@
 VPATH = $(srcdir)
 
 RUBY_INSTALL_NAME = @RUBY_INSTALL_NAME@
+RUBY_SO_NAME = @RUBY_SO_NAME@
 RUBY = $(RUBY_INSTALL_NAME)
 arch = @arch@
 ruby_version = @ruby_version@

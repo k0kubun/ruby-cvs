@@ -135,6 +135,59 @@ def AC_MSG_ERROR(msg)
   exit(1)
 end
 
+def AC_CONFIG_AUX_DIR_DEFAULT
+  AC_CONFIG_AUX_DIRS($srcdir, "#{$srcdir}/..",  "#{$srcdir}/../..")
+end
+
+def AC_CONFIG_AUX_DIRS(*dirs)
+  for dir in dirs
+    for prog in [ "install-rb", "install.rb" ]
+      file = File.join(dir, prog)
+      if File.file?(file); then
+	$ac_aux_dir = dir
+	$ac_install_rb = "#{file} -c"
+	return
+      end
+    end
+  end
+end
+
+def AC_PROG_INSTALL
+  AC_MSG_CHECKING("for a BSD compatible install")
+  $ac_cv_path_install = callcc { |c|
+    for dir in ENV["PATH"].split(/:/)
+      for prog in [ "ginstall", "scoinst", "install" ]
+	file = File.join(dir, prog)
+	if File.file?(file)
+	  if prog == "install" &&
+	      `#{file} 2>&1` =~ /dspmsg/
+	    # AIX install.  It has an incompatible calling convention.
+	  else
+	    c.call("#{file} -c")
+	  end
+	end
+      end
+    end
+    unless $ac_install_rb
+      AC_CONFIG_AUX_DIR_DEFAULT()
+    end
+    $ac_install_rb
+  }
+  $INSTALL = $ac_cv_path_install
+  AC_MSG_RESULT($INSTALL)
+  $INSTALL_PROGRAM ||= "$(INSTALL)"
+  $INSTALL_SCRIPT ||= "$(INSTALL)"
+  $INSTALL_DATA ||= "$(INSTALL) -m 644"
+  $INSTALL_DLLIB ||= "$(INSTALL) -m 555"
+  $INSTALL_DIR ||= "$(INSTALL) -d"
+  AC_SUBST("INSTALL")
+  AC_SUBST("INSTALL_PROGRAM")
+  AC_SUBST("INSTALL_SCRIPT")
+  AC_SUBST("INSTALL_DATA")
+  AC_SUBST("INSTALL_DLLIB")
+  AC_SUBST("INSTALL_DIR")
+end
+
 $stdout.sync = true
 
 drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
@@ -213,6 +266,7 @@ $srcdir = File.dirname($0)
 $VPATH = ""
 
 $RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
+$RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
 $arch = CONFIG["arch"]
 $ruby_version = Config::CONFIG["ruby_version"] ||
   CONFIG["MAJOR"] + "." + CONFIG["MINOR"]
@@ -263,6 +317,7 @@ AC_SUBST("hdrdir")
 AC_SUBST("VPATH")
 
 AC_SUBST("RUBY_INSTALL_NAME")
+AC_SUBST("RUBY_SO_NAME")
 AC_SUBST("arch")
 AC_SUBST("ruby_version")
 AC_SUBST("prefix")
