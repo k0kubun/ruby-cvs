@@ -10,7 +10,7 @@ Sat Oct 14 14:19:04 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* apachelib.c (request_binmode): new method.
 
-	* mod_ruby.c: (get_exception_info): bug fix.
+	* mod_ruby.c (get_exception_info): bug fix.
 
 Sat Oct 14 12:48:11 2000  Shugo Maeda <shugo@ruby-lang.org>
 
