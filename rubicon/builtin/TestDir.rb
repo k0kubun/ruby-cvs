@@ -44,10 +44,11 @@ class TestDir < Rubicon::TestCase
     assert_equal(File.join(start, "_test"), Dir.getwd)
     assert_equal(0,                         Dir.chdir(".."))
     assert_equal(start,                     Dir.getwd)
-    if $os == MsWin32
+    MsWin32.only do
       assert_equal(0,                       Dir.chdir("C:/Program Files"));
       assert_equal("C:/Program Files",      Dir.getwd)
-    else
+    end
+    MsWin32.dont do
       assert_equal(0,                       Dir.chdir("/tmp"))
       assert_equal("/tmp",                  Dir.getwd)
     end
@@ -82,9 +83,10 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_getwd
-    if $os == MsWin32
+    MsWin32.only do
       assert_equal(`cd`.chomp.gsub(/\\/, '/'), Dir.getwd)
-    else
+    end
+    MsWin32.dont do
       assert_equal(`pwd`.chomp, Dir.getwd)
     end
   end
@@ -145,9 +147,10 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_pwd
-    if $os == MsWin32
+    MsWin32.only do
       assert_equal(`cd`.chomp.gsub(/\\/, '/'), Dir.pwd)
-    else
+    end
+    MsWin32.dont do
       assert_equal(`pwd`.chomp, Dir.pwd)
     end
   end

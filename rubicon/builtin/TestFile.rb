@@ -2,7 +2,7 @@ $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 require 'stat'
 
-if $os != MsWin32
+MsWin32.dont do
   require 'socket'
 end
 
@@ -195,7 +195,7 @@ class TestFile < Rubicon::TestCase
       assert_equal(0, File.link("_file1", "_file3"))
       
       assert(File.exists?("_file3"))
-      unless $os <= Windows
+      Windows.dont do
 	assert_equal(2, File.stat("_file1").nlink)
 	assert_equal(2, File.stat("_file3").nlink)
 	assert(File.stat("_file1").ino == File.stat("_file3").ino)
