@@ -36,8 +36,8 @@
 #include "mod_ruby.h"
 #include "ruby_config.h"
 
-#define MR_DEFAULT_TIMEOUT 270
-#define MR_DEFAULT_SAFE_LEVEL 1
+#define MOD_RUBY_DEFAULT_TIMEOUT 270
+#define MOD_RUBY_DEFAULT_SAFE_LEVEL 1
 
 void *ruby_create_server_config(pool *p, server_rec *s)
 {
@@ -47,8 +47,7 @@ void *ruby_create_server_config(pool *p, server_rec *s)
     conf->load_path = ap_make_array(p, 1, sizeof(char*));
     conf->required_files = ap_make_array(p, 1, sizeof(char*));
     conf->env = ap_make_table(p, 1);
-    conf->timeout = MR_DEFAULT_TIMEOUT;
-    conf->safe = MR_DEFAULT_SAFE_LEVEL;
+    conf->timeout = MOD_RUBY_DEFAULT_TIMEOUT;
     return conf;
 }
 
@@ -59,6 +58,7 @@ void *ruby_create_dir_config (pool *p, char *dirname)
 
     conf->kcode = NULL;
     conf->env = ap_make_table(p, 5); 
+    conf->safe_level = MOD_RUBY_DEFAULT_SAFE_LEVEL;
     conf->handler_objects = ap_make_array(p, 1, sizeof(char*));
     return conf;
 }
@@ -72,6 +72,12 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
 
     new->kcode = add->kcode ? add->kcode : base->kcode;
     new->env = ap_overlay_tables(p, add->env, base->env);
+    if (add->safe_level > base->safe_level) {
+	new->safe_level = add->safe_level;
+    }
+    else {
+	new->safe_level = base->safe_level;
+    }
     new->handler_objects = ap_append_arrays(p,
 					    add->handler_objects,
 					    base->handler_objects);
@@ -159,13 +165,9 @@ const char *ruby_cmd_timeout(cmd_parms *cmd, void *dummy, char *arg)
     return NULL;
 }
 
-const char *ruby_cmd_safe_level(cmd_parms *cmd, void *dummy, char *arg)
+const char *ruby_cmd_safe_level(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
 {
-    ruby_server_config *conf =
-	(ruby_server_config *) ap_get_module_config(cmd->server->module_config,
-						    &ruby_module);
-
-    conf->safe = atoi(arg);
+    conf->safe_level = atoi(arg);
     return NULL;
 }
 

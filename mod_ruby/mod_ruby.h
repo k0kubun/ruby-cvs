@@ -26,7 +26,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.3.0"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.8.0"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
@@ -34,12 +34,12 @@ typedef struct {
     array_header *required_files;
     table *env;
     int timeout;
-    int safe;
 } ruby_server_config;
 
 typedef struct {
     char *kcode;
     table *env;
+    int safe_level;
     array_header *handler_objects;
 } ruby_dir_config;
 

@@ -1,3 +1,17 @@
+Thu Apr 12 17:53:24 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (run_safely): call rb_thread_stop_timer() for
+	FreeBSD.
+
+	* mod_ruby (script_handler): use run_safely(). do not call
+	rb_gc().
+
+	* apachelib.c (ruby_create_request): delay creation of
+	Apache::Connection, Apache::Table....
+
+	* ruby_config.c (ruby_cmd_safe_level): RubySafeLevel is now
+	per-directory.
+
 Tue Apr 10 18:10:59 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (run_safely_0): call ruby_log_error() on error.

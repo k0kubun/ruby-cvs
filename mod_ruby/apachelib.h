@@ -26,20 +26,13 @@
 #ifndef APACHELIB_H
 #define APACHELIB_H
 
-typedef struct request_data {
-    request_rec *request;
-    VALUE inbuf;
-    VALUE outbuf;
-    VALUE headers_in;
-    VALUE headers_out;
-    int send_http_header;
-    long pos;
-} request_data;
-
 extern VALUE rb_mApache;
-extern VALUE rb_mApacheWritable;
+extern VALUE rb_cApacheConnection;
+extern VALUE rb_cApacheTable;
+extern VALUE rb_cApacheInTable;
 extern VALUE rb_cApacheRequest;
 extern VALUE rb_eApacheTimeoutError;
+
 VALUE ruby_create_request(request_rec *r, VALUE input);
 int ruby_request_outbuf_length(VALUE self);
 VALUE rb_request_send_http_header(VALUE self);

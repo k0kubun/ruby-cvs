@@ -42,12 +42,21 @@ extern VALUE rb_defout;
 extern VALUE rb_stdin;
 
 VALUE rb_mApache;
+VALUE rb_cApacheConnection;
 VALUE rb_cApacheTable;
 VALUE rb_cApacheInTable;
 VALUE rb_cApacheRequest;
 VALUE rb_eApacheTimeoutError;
 
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
+
+#define define_string_attr_reader(fname, type, member) \
+static VALUE fname(VALUE self) \
+{ \
+    type *data; \
+    Data_Get_Struct(self, type, data); \
+    return data->member ? rb_str_new2(data->member) : Qnil; \
+}
 
 static VALUE apache_server_version(VALUE self)
 {
@@ -76,14 +85,21 @@ static VALUE apache_unescape_url(VALUE self, VALUE url)
     return rb_str_new2(buff);
 }
 
-static void free_table(table *tbl)
+static VALUE ruby_create_connection(conn_rec *conn)
 {
-    /* do nothing */
+    return Data_Wrap_Struct(rb_cApacheConnection, NULL, NULL, conn);
 }
+
+define_string_attr_reader(connection_remote_ip, conn_rec, remote_ip);
+define_string_attr_reader(connection_remote_host, conn_rec, remote_host);
+define_string_attr_reader(connection_remote_logname, conn_rec, remote_logname);
+define_string_attr_reader(connection_user, conn_rec, user);
+define_string_attr_reader(connection_local_ip, conn_rec, local_ip);
+define_string_attr_reader(connection_local_host, conn_rec, local_host);
 
 static VALUE ruby_create_table(VALUE klass, table *tbl)
 {
-    return Data_Wrap_Struct(klass, 0, free_table, tbl);
+    return Data_Wrap_Struct(klass, NULL, NULL, tbl);
 }
 
 static VALUE table_clear(VALUE self)
@@ -103,10 +119,10 @@ static VALUE table_get(VALUE self, VALUE name)
     key = STR2CSTR(name);
     Data_Get_Struct(self, table, tbl);
     res = ap_table_get(tbl, key);
-    if (res == NULL)
-	return Qnil;
-    else
+    if (res)
 	return rb_str_new2(res);
+    else
+	return Qnil;
 }
 
 static VALUE table_set(VALUE self, VALUE name, VALUE val)
@@ -240,10 +256,10 @@ static VALUE in_table_get(VALUE self, VALUE name)
 	return Qnil;
     Data_Get_Struct(self, table, tbl);
     res = ap_table_get(tbl, key);
-    if (res == NULL)
-	return Qnil;
-    else
+    if (res)
 	return rb_str_new2(res);
+    else
+	return Qnil;
 }
 
 static VALUE in_table_each(VALUE self)
@@ -312,10 +328,34 @@ static VALUE in_table_each_value(VALUE self)
     return Qnil;
 }
 
+typedef struct request_data {
+    request_rec *request;
+    VALUE inbuf;
+    VALUE outbuf;
+    VALUE connection;
+    VALUE headers_in;
+    VALUE headers_out;
+    int send_http_header;
+    long pos;
+} request_data;
+
+#define request_string_attr_reader(fname, member) \
+	define_string_attr_reader(fname, request_data, request->member)
+#define request_string_attr_writer(fname, member) \
+static VALUE fname(VALUE self, VALUE str) \
+{ \
+    request_data *data; \
+    Data_Get_Struct(self, request_data, data); \
+    data->request->member = \
+	ap_pstrdup(data->request->pool, STR2CSTR(str)); \
+    return str; \
+}
+
 static void request_mark(request_data *data)
 {
     rb_gc_mark(data->inbuf);
     rb_gc_mark(data->outbuf);
+    rb_gc_mark(data->connection);
     rb_gc_mark(data->headers_in);
     rb_gc_mark(data->headers_out);
 }
@@ -331,8 +371,9 @@ VALUE ruby_create_request(request_rec *r, VALUE input)
     data->request = r;
     data->inbuf = input;
     data->outbuf = rb_tainted_str_new("", 0);
-    data->headers_in = ruby_create_table(rb_cApacheInTable, r->headers_in);
-    data->headers_out = ruby_create_table(rb_cApacheTable, r->headers_out);
+    data->connection = Qnil;
+    data->headers_in = Qnil;
+    data->headers_out = Qnil;
     data->send_http_header = 0;
     data->pos = 0;
 
@@ -512,48 +553,30 @@ void rb_request_flush(VALUE self)
     }
 }
 
-static VALUE request_hostname(VALUE self)
+
+static VALUE request_connection(VALUE self)
 {
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    return rb_str_new2(data->request->hostname);
+    if (NIL_P(data->connection)) {
+	data->connection = ruby_create_connection(data->request->connection);
+    }
+    return data->connection;
 }
 
-static VALUE request_unparsed_uri(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return rb_str_new2(data->request->unparsed_uri);
-}
-
-static VALUE request_uri(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return rb_str_new2(data->request->uri);
-}
-
-static VALUE request_filename(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return rb_str_new2(data->request->filename);
-}
-
-static VALUE request_path_info(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    if (data->request->path_info)
-	return rb_str_new2(data->request->path_info);
-    else
-	return Qnil;
-}
+request_string_attr_reader(request_hostname, hostname);
+request_string_attr_reader(request_unparsed_uri, unparsed_uri);
+request_string_attr_reader(request_uri, uri);
+request_string_attr_reader(request_filename, filename);
+request_string_attr_reader(request_set_filename, filename);
+request_string_attr_reader(request_path_info, path_info);
+request_string_attr_reader(request_status_line, status_line);
+request_string_attr_writer(request_set_status_line, status_line);
+request_string_attr_reader(request_request_method, method);
+request_string_attr_reader(request_args, args);
+request_string_attr_reader(request_get_content_type, content_type);
+request_string_attr_reader(request_get_content_encoding, content_encoding);
 
 static VALUE request_request_time(VALUE self)
 {
@@ -580,52 +603,12 @@ static VALUE request_set_status(VALUE self, VALUE status)
     return status;
 }
 
-static VALUE request_status_line(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    if (data->request->status_line)
-	return rb_str_new2(data->request->status_line);
-    else
-	return Qnil;
-}
-
-static VALUE request_set_status_line(VALUE self, VALUE str)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    data->request->status_line =
-	ap_pstrdup(data->request->pool, STR2CSTR(str));
-    return str;
-}
-
-static VALUE request_request_method(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return rb_str_new2(data->request->method);
-}
-
 static VALUE request_header_only(VALUE self)
 {
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
     return data->request->header_only ? Qtrue : Qfalse;
-}
-
-static VALUE request_args(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    if (data->request->args)
-	return rb_str_new2(data->request->args);
-    else
-	return Qnil;
 }
 
 static VALUE request_content_length(VALUE self)
@@ -639,17 +622,6 @@ static VALUE request_content_length(VALUE self)
     return s ? rb_cstr2inum(s, 10) : Qnil;
 }
 
-static VALUE request_get_content_type(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    if (data->request->content_type)
-	return rb_str_new2(data->request->content_type);
-    else
-	return Qnil;
-}
-
 static VALUE request_set_content_type(VALUE self, VALUE str)
 {
     request_data *data;
@@ -659,17 +631,6 @@ static VALUE request_set_content_type(VALUE self, VALUE str)
     data->request->content_type =
 	ap_pstrdup(data->request->pool, STR2CSTR(str));
     return str;
-}
-
-static VALUE request_get_content_encoding(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    if (data->request->content_encoding)
-	return rb_str_new2(data->request->content_encoding);
-    else
-	return Qnil;
 }
 
 static VALUE request_set_content_encoding(VALUE self, VALUE str)
@@ -729,6 +690,10 @@ static VALUE request_headers_in(VALUE self)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->headers_in)) {
+	data->headers_in = ruby_create_table(rb_cApacheInTable,
+					     data->request->headers_in);
+    }
     return data->headers_in;
 }
 
@@ -737,6 +702,10 @@ static VALUE request_headers_out(VALUE self)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->headers_out)) {
+	data->headers_out = ruby_create_table(rb_cApacheTable,
+					     data->request->headers_out);
+    }
     return data->headers_out;
 }
 
@@ -1126,6 +1095,20 @@ void ruby_init_apachelib()
     rb_define_module_function(rb_mApache, "request", apache_request, 0);
     rb_define_module_function(rb_mApache, "unescape_url", apache_unescape_url, 1);
 
+    rb_cApacheConnection = rb_define_class_under(rb_mApache, "Connection", rb_cObject);
+    rb_undef_method(CLASS_OF(rb_cApacheConnection), "new");
+    rb_define_method(rb_cApacheConnection, "remote_ip",
+		     connection_remote_ip, 0);
+    rb_define_method(rb_cApacheConnection, "remote_host",
+		     connection_remote_host, 0);
+    rb_define_method(rb_cApacheConnection, "remote_logname",
+		     connection_remote_logname, 0);
+    rb_define_method(rb_cApacheConnection, "user", connection_user, 0);
+    rb_define_method(rb_cApacheConnection, "local_ip",
+		     connection_local_ip, 0);
+    rb_define_method(rb_cApacheConnection, "local_host",
+		     connection_local_host, 0);
+
     rb_cApacheTable = rb_define_class_under(rb_mApache, "Table", rb_cObject);
     rb_include_module(rb_cApacheTable, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheTable), "new");
@@ -1165,10 +1148,12 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "<<", request_addstr, 1);
     rb_define_method(rb_cApacheRequest, "send_http_header",
 		     rb_request_send_http_header, 0);
+    rb_define_method(rb_cApacheRequest, "connection", request_connection, 0);
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
     rb_define_method(rb_cApacheRequest, "unparsed_uri", request_unparsed_uri, 0);
     rb_define_method(rb_cApacheRequest, "uri", request_uri, 0);
     rb_define_method(rb_cApacheRequest, "filename", request_filename, 0);
+    rb_define_method(rb_cApacheRequest, "filename=", request_set_filename, 1);
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);
     rb_define_method(rb_cApacheRequest, "request_time", request_request_time, 0);
     rb_define_method(rb_cApacheRequest, "status", request_status, 0);
