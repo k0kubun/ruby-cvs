@@ -42,14 +42,13 @@ typedef const char*           RegCharEncoding;
 extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
 #endif /* else RUBY && M17N */
 
+extern RegCharEncoding RegDefaultCharEncoding;
+
 #if defined(RUBY_PLATFORM) && !defined(M17N_H)
 #undef ismbchar
 #define ismbchar(c)    (mbclen((c)) != 1)
 #define mbclen(c)      RegDefaultCharEncoding[(unsigned char )(c)]
-
-extern RegCharEncoding RegDefaultCharEncoding;
 #endif
-
 
 /* argument values for regex_new(), regex_recompile() */
 #define REG_TRANSTABLE_USE_DEFAULT   ((RegTransTableType )0)
@@ -70,7 +69,10 @@ extern RegCharEncoding RegDefaultCharEncoding;
 #define REG_OPTION_IGNORECASE       RE_OPTION_IGNORECASE
 #define REG_OPTION_EXTEND           RE_OPTION_EXTENDED
 #define REG_OPTION_FIND_LONGEST     RE_OPTION_LONGEST
-#define REG_OPTION_FIND_NOT_EMPTY   (REG_OPTION_FIND_LONGEST << 1)
+#define REG_OPTION_FIND_NOT_EMPTY   (REG_OPTION_FIND_LONGEST   << 1)
+/* options (search time) */
+#define REG_OPTION_NOTBOL           (REG_OPTION_FIND_NOT_EMPTY << 1)
+#define REG_OPTION_NOTEOL           (REG_OPTION_NOTBOL         << 1)
 
 #define REG_OPTION_ON(options,regopt)      ((options) |= (regopt))
 #define REG_OPTION_OFF(options,regopt)     ((options) &= ~(regopt))
@@ -218,32 +220,44 @@ extern void  regex_free(regex_t* reg);
 extern int   regex_recompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
 		RegOptionType option, RegCharEncoding code, UChar* transtable);
 extern int   regex_search(regex_t* reg, UChar* str, UChar* end,
-			  UChar* start, UChar* range, RegRegion* region);
+			  UChar* start, UChar* range, RegRegion* region,
+			  RegOptionType option);
 extern int   regex_match(regex_t* reg, UChar* str, UChar* end, UChar* at,
-			 RegRegion* region);
+			 RegRegion* region, RegOptionType option);
 extern RegRegion* regex_region_new(void);
 extern void  regex_region_free(RegRegion* region, int free_self);
 extern void  regex_region_copy(RegRegion* r1, RegRegion* r2);
 extern void  regex_region_clear(RegRegion* region);
 extern int   regex_region_resize(RegRegion* region, int n);
+extern UChar* regex_get_prev_char_head(RegCharEncoding code,
+				       UChar* start, UChar* s);
+extern UChar* regex_get_left_adjust_char_head(RegCharEncoding code,
+					      UChar* start, UChar* s);
+extern UChar* regex_get_right_adjust_char_head(RegCharEncoding code,
+					       UChar* start, UChar* s);
+extern void  regex_set_default_trans_table(UChar* table);
 extern int   regex_end(void);
 
 #else
 
-extern int   regex_init();
-extern char* regex_error_code_to_str();
-extern int   regex_new();
-extern int   regex_clone();
-extern void  regex_free();
-extern int   regex_recompile();
-extern int   regex_search();
-extern int   regex_match();
+extern int    regex_init();
+extern char*  regex_error_code_to_str();
+extern int    regex_new();
+extern int    regex_clone();
+extern void   regex_free();
+extern int    regex_recompile();
+extern int    regex_search();
+extern int    regex_match();
 extern RegRegion* regex_region_new();
-extern void  regex_region_free();
-extern void  regex_region_copy();
-extern void  regex_region_clear();
-extern int   regex_region_resize();
-extern int   regex_end();
+extern void   regex_region_free();
+extern void   regex_region_copy();
+extern void   regex_region_clear();
+extern int    regex_region_resize();
+extern UChar* regex_get_prev_char_head();
+extern UChar* regex_get_left_adjust_char_head();
+extern UChar* regex_get_right_adjust_char_head();
+extern void   regex_set_default_trans_table();
+extern int    regex_end();
 #endif
 
 /* GNU regex compatible API */
