@@ -76,6 +76,20 @@ class TestKernel < Rubicon::TestCase
     assert(s1.str    == s2.str)
     assert(s1.str.id == s2.str.id)
     assert(s1.id     != s2.id)
+
+    foo = Object.new
+    def foo.test
+      "test"
+    end
+    bar = foo.clone
+    def bar.test2
+      "test2"
+    end
+
+    assert_equal("test2", bar.test2)
+    assert_equal("test",  bar.test)
+    assert_equal("test",  foo.test)
+    assert_exception(NameError) { foo.test2 }
   end
 
   class DisplayTest
@@ -639,7 +653,7 @@ class TestKernel < Rubicon::TestCase
   def test_s_caller
     c = caller_test
     assert_match(c[0], %r{TestKernel.rb:#{__LINE__-1}:in `test_s_caller'})
-  end
+  end #`
 
   def catch_test
     throw :c, 456;
@@ -735,27 +749,34 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_exec
-    p = IO.popen("-")
-    if p.nil?
-      exec "echo TestKer*l.rb"
-    else
-      begin
-        assert_equal("TestKernel.rb\n", p.gets)
-      ensure
-        p.close
+    open("xyzzy.dat", "w") { |f| f.puts "stuff" }
+    begin
+      p = IO.popen("-")
+      if p.nil?
+        exec("echo xy*y.dat")
+        exit
+      else
+        begin
+          assert_equal("xyzzy.dat\n", p.gets)
+        ensure
+          p.close
+        end
       end
-    end
-
-    # With separate parameters, don't do expansion
-    p = IO.popen("-")
-    if p.nil?
-      exec "echo", "TestKer*l.rb"
-    else
-      begin
-        assert_equal("TestKer*l.rb\n", p.gets)
-      ensure
-        p.close
+      
+      # With separate parameters, don't do expansion
+      p = IO.popen("-")
+      if p.nil?
+        exec("echo", "zy*y.dat")
+        exit
+      else
+        begin
+          assert_equal("zy*y.dat\n", p.gets)
+        ensure
+          p.close
+        end
       end
+    ensure
+      File.unlink "xyzzy.dat" if p
     end
   end
 
@@ -1518,7 +1539,6 @@ class TestKernel < Rubicon::TestCase
 
     bt = %w(one two three)
     begin
-
       raise NotImplementedError, "Wombat", bt
       assert_fail("No exception")
     rescue NotImplementedError => detail
@@ -1527,6 +1547,27 @@ class TestKernel < Rubicon::TestCase
     rescue Exception
       raise
     end
+
+    if defined? Process.kill
+      x = 0
+      trap "SIGINT", proc {|sig| x = 2}
+      Process.kill "SIGINT", $$
+      sleep 0.1
+      assert_equal(2, x)
+      
+      trap "SIGINT", proc {raise "Interrupt"}
+      
+      x = false
+      begin
+        Process.kill "SIGINT", $$
+        sleep 0.1
+      rescue
+        x = $!
+      end
+      assert(x)
+      assert(/Interrupt/ =~ x)
+    end
+    
   end
 
   def rand_test(limit, result_type, bucket_scale, bucket_max, average)
@@ -1941,29 +1982,34 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_system
-    p = IO.popen("-")
-    if p.nil?
-      system("echo TestKer*l.rb")
-      exit
-    else
-      begin
-        assert_equal("TestKernel.rb\n", p.gets)
-      ensure
-        p.close
+    open("xyzzy.dat", "w") { |f| f.puts "stuff" }
+    begin
+      p = IO.popen("-")
+      if p.nil?
+        system("echo xy*y.dat")
+        exit
+      else
+        begin
+          assert_equal("xyzzy.dat\n", p.gets)
+        ensure
+          p.close
+        end
       end
-    end
-
-    # With separate parameters, don't do expansion
-    p = IO.popen("-")
-    if p.nil?
-      system("echo", "TestKer*l.rb")
-      exit
-    else
-      begin
-        assert_equal("TestKer*l.rb\n", p.gets)
-      ensure
-        p.close
+      
+      # With separate parameters, don't do expansion
+      p = IO.popen("-")
+      if p.nil?
+        system("echo", "zy*y.dat")
+        exit
+      else
+        begin
+          assert_equal("zy*y.dat\n", p.gets)
+        ensure
+          p.close
+        end
       end
+    ensure
+      File.unlink "xyzzy.dat" if p
     end
   end
 

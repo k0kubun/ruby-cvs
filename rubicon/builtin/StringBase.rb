@@ -87,6 +87,10 @@ class StringBase < Rubicon::TestCase
     s[S("FOO")] = S("xyz")
     assert_equal(S("BarBar"), s)
     $= = false
+
+    s = S("a string")
+    s[0..s.size] = S("another string")
+    assert_equal(S("another string"), s)
   end
 
   def test_CMP # '<=>'

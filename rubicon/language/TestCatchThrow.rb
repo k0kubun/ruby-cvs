@@ -1,18 +1,21 @@
-#!/usr/bin/env ruby
-# $Id$
-#
-# This file is part of Rubicon, a set of regression tests for the Ruby
-# language and its built-in classes and modules.
-#
-# Initial development by Dave Thomas and Andy Hunt.
-#
-# Copyright (c) 2000 The Pragmatic Programmers, LLC (www.pragmaticprogrammer.com)
-# Distributed according to the terms specified in the Ruby distribution README file.
-#
-
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 class TestCatchThrow < Rubicon::TestCase
+
+  def testBasic
+    assert(catch(:foo) {
+             loop do
+               loop do
+                 throw :foo, true
+                 break
+               end
+               break
+               fail "should not reach here"
+             end
+             false
+           })
+  end
 
 end
 

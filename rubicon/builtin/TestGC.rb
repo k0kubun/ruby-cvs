@@ -5,7 +5,16 @@ require 'rubicon'
 class TestGC < Rubicon::TestCase
 
   def test_garbage_collect
-    skipping("need test")
+    # This is the test from the standard test.rb
+    begin
+      1.upto(10000) do
+        tmp = [0,1,2,3,4,5,6,7,8,9]
+      end
+      tmp = nil
+      assert(true)
+    rescue
+      fail("GC")
+    end
   end
 
   def test_s_disable

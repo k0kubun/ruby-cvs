@@ -1,16 +1,9 @@
-#!/usr/bin/env ruby
-# $Id$
-#
-# This file is part of Rubicon, a set of regression tests for the Ruby
-# language and its built-in classes and modules.
-#
-# Initial development by Dave Thomas and Andy Hunt.
-#
-# Copyright (c) 2000 The Pragmatic Programmers, LLC (www.pragmaticprogrammer.com)
-# Distributed according to the terms specified in the Ruby distribution README file.
-#
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
-require '../rubicon'
+#
+# The Hash tests are also in ../builtins/TestHash
+#
 
 class TestHashes < Rubicon::TestCase
 

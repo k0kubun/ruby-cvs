@@ -165,6 +165,8 @@ class TestFloat < Rubicon::TestCase
     assert_flequal(-2.5, 13.5%(-4.0))
     assert_flequal(2.5,  (-13.5)%4.0)
     assert_flequal(-1.5, (-13.5)%(-4.0))
+
+    assert_flequal(0.4,  13.4 % 1)
   end
 
   def test_MUL # '*'
@@ -206,6 +208,8 @@ class TestFloat < Rubicon::TestCase
     assert_flequal(2.0,  (2.0).ceil)
     assert_flequal(-1.0, (-1.2).ceil)
     assert_flequal(-2.0, (-2.0).ceil)
+    assert_flequal(3,      2.6.ceil)
+    assert_flequal(-2,    -2.6.ceil)
   end
 
   def test_divmod
@@ -228,7 +232,8 @@ class TestFloat < Rubicon::TestCase
     assert_flequal(1.0,  (1.2).floor)
     assert_flequal(2.0,  (2.0).floor)
     assert_flequal(-2.0, (-1.2).floor)
-    assert_flequal(-2.0, (-2.0).floor)
+    assert_flequal(2,    2.6.floor)
+    assert_flequal(-3,  -2.6.floor)
   end
 
   def test_remainder
@@ -252,6 +257,7 @@ class TestFloat < Rubicon::TestCase
     assert_equal(2,   1.5.round)
     assert_equal(-1, -1.49.round)
     assert_equal(-2, -1.5.round)
+    assert_equal(3,   2.6.round)
   end
 
   def test_to_f
@@ -277,6 +283,12 @@ class TestFloat < Rubicon::TestCase
     assert_equal("-1.23456",  -1.23456.to_s)
     assert_equal("1.23e+45",   1.23e45.to_s)
     assert_equal("1.23e-45",   1.23e-45.to_s)
+  end
+  
+  def test_truncate
+    assert_flequal(2, 2.6.truncate)
+    assert_flequal(-2, -2.6.truncate)
+    assert_flequal(-2, -2.4.truncate)
   end
 
   def test_zero?

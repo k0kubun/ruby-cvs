@@ -12,19 +12,19 @@ class FileInfoTest < Rubicon::TestCase
       File.delete file if File.exist?(file)
     }
 
-    sys("../util/test_touch -a -t 122512341999 #@file1")
+    touch("-a -t 122512341999 #@file1")
     @aTime1 = Time.local(1999, 12, 25, 12, 34, 00)
 
-    sys("../util/test_touch -m -t 010112341997 #@file1")
+    touch("-m -t 010112341997 #@file1")
     @mTime1 = Time.local(1997,  1,  1, 12, 34, 00)
 
     # File two is before file 1 in access time, and
     # after in modification time
 
-    sys("../util/test_touch -a -t 010212342000 #@file2")
+    touch("-a -t 010212342000 #@file2")
     @aTime2 = Time.local(2000, 1, 2, 12, 34, 00)
 
-    sys("../util/test_touch -m -t 020312341995 #@file2")
+    touch("-m -t 020312341995 #@file2")
     @mTime2 = Time.local(1995,  2,  3, 12, 34, 00)
   end
 

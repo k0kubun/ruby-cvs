@@ -11,9 +11,33 @@ class TestBignum < Rubicon::TestCase
     @big2 = 2**80 + 2**40 + 2**20 + 2**10 + 1
   end
 
+  def fact(n)
+    return 1 if n == 0
+    f = 1
+    while n>0
+      f *= n
+      n -= 1
+    end
+     f
+  end
+
   def test_00_sanity
     assert_equal(10000000001000000000100000000010000000001, @big1)
     assert_equal(1208925819615728687383553, @big2)
+
+    x = fact(40)
+    assert_equal(x, x)
+    assert_equal(x, fact(40))
+    assert(x < x+2)
+    assert(x > x-2)
+    assert_equal(x, 815915283247897734345611269596115894272000000000)
+    assert(x != 815915283247897734345611269596115894272000000001)
+    assert_equal(x+1, 815915283247897734345611269596115894272000000001)
+    assert_equal(x/fact(20), 335367096786357081410764800000)
+    x = -x
+    assert_equal(x, -815915283247897734345611269596115894272000000000)
+    assert_equal(2-(2**32), -(2**32-2))
+    assert_equal(2**32 - 5, (2**32-3)-2)
   end
 
   def test_UMINUS
@@ -59,6 +83,13 @@ class TestBignum < Rubicon::TestCase
 
     assert_equal(big3, bm / -1024)
     assert_equal(1024, bm / -big3)
+
+    for i in 4000..4096
+      n1 = 1 << i
+      assert_equal((n1**2-1) / (n1+1), n1-1)
+    end
+
+    assert_equal(100000000000000000000, 10**40/10**20)
   end
 
   def test_LSHIFT # '<<'
@@ -74,6 +105,15 @@ class TestBignum < Rubicon::TestCase
       assert_equal((num << 1)>>1, num)
     end
 
+    for i in 1000..1014
+      assert_equal(2**i, 1<<i)
+    end
+    
+    n1 = 1<<1000
+    for i in 1000..1014
+      assert_equal(n1, 1 << i)
+      n1 *= 2
+    end
   end
 
   def test_MINUS # '-'
@@ -122,6 +162,8 @@ class TestBignum < Rubicon::TestCase
     assert_equal(c, b + a)
     assert_equal(d, a + (-b))
     assert_equal(d, (-b) + a)
+
+    assert_equal(10000000000000000000100000000000000000000, 10**40+10**20)
   end
 
   def test_POW # '**'
@@ -152,6 +194,13 @@ class TestBignum < Rubicon::TestCase
     checkBits([79, 39, 19,  9],     @big2 >> 1)
     checkBits([70, 30, 10, 0],      @big2 >> 10)
     checkBits([81, 41, 21, 11, 1],  @big2 >> -1)
+
+    n2 = n1 = 1 << 1000
+    for i in 1..10
+      n1 = n1 / 2
+      n2 = n2 >> 1
+      assert_equal(n1, n2)
+    end
   end
 
   def test_EQUAL # '=='
@@ -207,12 +256,23 @@ class TestBignum < Rubicon::TestCase
            100000001 =>      [99999999010000009900999900990100,    99009901],
            10000000000001 => [1000000000099900000009990010,      9990009991] }
 
-    div.each { |n, r| 
+    div.each do |n, r| 
       res = @big1.divmod(n)
       assert_equal(@big1, n*res[0] + res[1])
       assert(res[1] < n)
       assert_equal(r, res, n.to_s)
-    }
+    end
+
+    b = 10**80
+    a = b * 9 + 7
+    assert_equal(7, a.modulo(b))
+    assert_equal(-b + 7, a.modulo(-b))
+    assert_equal(b + -7, (-a).modulo(b))
+    assert_equal(-7, (-a).modulo(-b))
+    assert_equal(7, a.remainder(b))
+    assert_equal(7, a.remainder(-b))
+    assert_equal(-7, (-a).remainder(b))
+    assert_equal(-7, (-a).remainder(-b))
   end
 
   def test_hash

@@ -1,18 +1,15 @@
-#!/usr/bin/env ruby
-# $Id$
-#
-# This file is part of Rubicon, a set of regression tests for the Ruby
-# language and its built-in classes and modules.
-#
-# Initial development by Dave Thomas and Andy Hunt.
-#
-# Copyright (c) 2000 The Pragmatic Programmers, LLC (www.pragmaticprogrammer.com)
-# Distributed according to the terms specified in the Ruby distribution README file.
-#
-
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 class TestBooleanExpressions < Rubicon::TestCase
+
+  def testBasicConditions
+    x = '0'
+    x == x && assert(true)
+    x != x && fail
+    x == x || fail
+    x != x || assert(true)
+  end
 
 end
 

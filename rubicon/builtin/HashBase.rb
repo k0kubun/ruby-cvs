@@ -90,6 +90,8 @@ class HashBase < Rubicon::TestCase
     h[1] = 1
     h[nil] = 99
     h['nil'] = nil
+    z = [1,2]
+    h[z] = 256
     assert_equal(1,       h[1])
     assert_equal('two',   h[2])
     assert_equal('three', h[3])
@@ -98,6 +100,7 @@ class HashBase < Rubicon::TestCase
     assert_equal(99,      h[nil])
     assert_equal(nil,     h['nil'])
     assert_equal(nil,     h['koala'])
+    assert_equal(256,     h[z])
   end
 
   def test_EQUAL # '=='

@@ -7,7 +7,7 @@ module RubiconStat
 
   
   def stat(file)
-    tmp = `../util/checkstat #{file}`.chomp
+    tmp = `#{CHECKSTAT} #{file}`.chomp
     raise "unable to stat(#{file}:)" if $? != 0
     tmp.split
   end

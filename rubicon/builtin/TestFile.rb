@@ -3,17 +3,18 @@ require 'rubicon'
 require 'stat'
 require 'socket'
 
+
 class TestFile < Rubicon::TestCase
 
   def setup
     setupTestDir
 
-    @file = "_test/_touched"
+    @file = File.join("_test", "_touched")
 
-    sys("../util/test_touch -a -t 122512341999 #@file")
+    touch("-a -t 122512341999 #@file")
     @aTime = Time.local(1999, 12, 25, 12, 34, 00)
 
-    sys("../util/test_touch -m -t 010112341997 #@file")
+    touch("-m -t 010112341997 #@file")
     @mTime = Time.local(1997,  1,  1, 12, 34, 00)
   end
 

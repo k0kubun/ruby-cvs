@@ -1,18 +1,84 @@
-#!/usr/bin/env ruby
-# $Id$
-#
-# This file is part of Rubicon, a set of regression tests for the Ruby
-# language and its built-in classes and modules.
-#
-# Initial development by Dave Thomas and Andy Hunt.
-#
-# Copyright (c) 2000 The Pragmatic Programmers, LLC (www.pragmaticprogrammer.com)
-# Distributed according to the terms specified in the Ruby distribution README file.
-#
-
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 class TestExceptions < Rubicon::TestCase
+
+  def testBasic
+    begin
+      raise "this must be handled"
+      fail "Should have raised exception"
+    rescue
+      assert(true)
+    end
+  end
+
+  def testBasicWithRetry
+    again = true
+    begin
+      raise "this must be handled no.2"
+    rescue
+      if again
+        again = false
+        retry
+        fail "should have retried"
+      end
+    end
+    assert(!again)
+  end
+
+  def testExceptionInRescueClause
+    string = "this must be handled no.3"
+    begin
+      begin
+        raise "exception in rescue clause"
+      rescue 
+        raise string
+      end
+      fail "should have raised exception"
+    rescue
+      assert_equal(string, $!.message)
+    end
+  end
+
+  
+  def testExceptionInEnsureClause
+    begin
+      begin
+        raise "this must be handled no.4"
+      ensure 
+        raise "exception in ensure clause"
+      end
+      fail "exception should have been raised"
+    rescue
+      assert(true)
+    end
+  end
+
+  def testEnsureInNestedException
+    bad = true
+    begin
+      begin
+        raise "this must be handled no.5"
+      ensure
+        bad = false
+      end
+    rescue
+    end
+    assert(!bad)
+  end
+
+
+  def testEnsureTriggeredByBreak
+    bad = true
+    while true
+      begin
+        break
+      ensure
+        bad = false
+      end
+    end
+    assert(!bad)
+  end
 
 end
 

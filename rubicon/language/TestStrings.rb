@@ -1,18 +1,34 @@
-#!/usr/bin/env ruby
-# $Id$
-#
-# This file is part of Rubicon, a set of regression tests for the Ruby
-# language and its built-in classes and modules.
-#
-# Initial development by Dave Thomas and Andy Hunt.
-#
-# Copyright (c) 2000 The Pragmatic Programmers, LLC (www.pragmaticprogrammer.com)
-# Distributed according to the terms specified in the Ruby distribution README file.
-#
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
-require '../rubicon'
+# Tests of functions in the String class are mostly in ../builtins/TestString.rb
 
 class TestStrings < Rubicon::TestCase
+
+  def testCompileTimeStringConcatenation
+    assert_equal("abcd", "ab" "cd")
+    assert_equal("abcd", 'ab' "cd")
+    assert_equal("abcd", 'ab' 'cd')
+    assert_equal("abcd", "ab" 'cd')
+    assert_equal("22aacd44", "#{22}aa" "cd#{44}")
+    assert_equal("22aacd445566", "#{22}aa" "cd#{44}" "55" "#{66}")
+  end
+
+  # ------------------------------------------------------------
+
+  def testInterpolationOfGlobal
+    $foo = "abc"
+    assert_equal("abc = abc", "#$foo = abc")
+    assert_equal("abc = abc", "#{$foo} = abc")
+    
+    foo = "abc"
+    assert_equal("abc = abc", "#{foo} = abc")
+  end
+
+  # ------------------------------------------------------------
+
+  # ------------------------------------------------------------
+
 
 end
 

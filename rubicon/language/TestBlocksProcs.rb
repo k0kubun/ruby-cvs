@@ -1,19 +1,39 @@
-#!/usr/bin/env ruby
-# $Id$
-#
-# This file is part of Rubicon, a set of regression tests for the Ruby
-# language and its built-in classes and modules.
-#
-# Initial development by Dave Thomas and Andy Hunt.
-#
-# Copyright (c) 2000 The Pragmatic Programmers, LLC (www.pragmaticprogrammer.com)
-# Distributed according to the terms specified in the Ruby distribution README file.
-#
-
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 class TestBlocksProcs < Rubicon::TestCase
 
+  def testBasicProc
+    proc = proc {|i| i}
+    assert_equal(2, proc.call(2))
+    assert_equal(3, proc.call(3))
+    
+    proc = proc {|i| i*2}
+    assert_equal(4, proc.call(2))
+    assert_equal(6, proc.call(3))
+  end
+
+  def testProcScoping
+    my_proc1 = nil
+    my_proc2 = nil
+    x = 0
+    proc { 
+      iii=5	
+      my_proc1 = proc{|i|
+        iii = i
+      }
+      my_proc2 = proc {
+        x = iii			# nested variables shared by procs
+      }
+      # scope of nested variables
+      assert(defined?(iii))
+    }.call
+    assert(!defined?(iii))		# out of scope
+
+    my_proc1.call(5)
+    my_proc2.call
+    assert_equal(5, x)
+  end
 end
 
 # Run these tests if invoked directly

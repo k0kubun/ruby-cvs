@@ -3,8 +3,34 @@
 # statsistics and report them at the end.
 #
 
-RUBICON_VERSION = "V0.1.4"
+RUBICON_VERSION = "V0.2"
 
+#
+# This is tacky, but... We need to be able tofind the executable
+# files in the util subdirectory. However, we can be initiated by
+# running a file in either the tpo-level rubicon directory or in
+# one of its test subdirectories (such as language). We therefore
+# need tpo hunt around for the util directory
+
+run_dir = File.dirname($0)
+
+for relative_path in [ ".", ".." ]
+  util = File.join(run_dir, relative_path, "util")
+
+  if File.exist?(util) and File.directory?(util)
+    UTIL = util
+    break
+  end
+end
+
+raise "Cannot find 'util' directory" unless defined?(UTIL)
+
+CHECKSTAT = File.join(UTIL, "checkstat")
+TEST_TOUCH = File.join(UTIL, "test_touch")
+
+for file in [CHECKSTAT, TEST_TOUCH]
+  raise "Cannot find #{file}" unless File.exist?(file)
+end
 
 #
 # Classification routines. We use these so that the code can
@@ -187,6 +213,22 @@ module Rubicon
     end
 
     #
+    # Use our 'test_touch' utility to touch a file
+    #
+    def touch(arg)
+#      puts("#{TEST_TOUCH} #{arg}")
+      sys("#{TEST_TOUCH} #{arg}")
+    end
+
+    #
+    # And out checkstat utility to get the status
+    #
+    def checkstat(arg)
+#      puts("#{CHECKSTAT} #{arg}")
+      `#{CHECKSTAT} #{arg}`
+    end
+
+    #
     # Check two arrays for set equality
     #
     def assert_set_equal(expected, actual)
@@ -300,7 +342,7 @@ module Rubicon
       title[-RUBICON_VERSION.length, RUBICON_VERSION.length] = RUBICON_VERSION
       op.puts title
       op.puts LINE
-      op.puts "            Name   OK?   Tests  Asserts      Failures   Errors"
+      op.puts "                 Name   OK?   Tests  Asserts      Failures   Errors"
       op.puts Line
 
       total_classes = 0
@@ -310,7 +352,7 @@ module Rubicon
       total_errors  = 0
       total_bad     = 0
 
-      format = "%16s   %4s   %4d  %7d  %9s  %7s\n"
+      format = "%21s   %4s   %4d  %7d  %9s  %7s\n"
 
       names = @results.keys.sort
       for name in names

@@ -18,11 +18,18 @@ UTILSTUFF =	util/checkstat util/test_touch
 
 RUBY	  ?=	ruby
 
+.phony:		default test Builtin Language
+
 default:	test
 
 
-test:		$(UTILSTUFF)
+test:		$(UTILSTUFF) Builtin Language
+
+Builtin:	$(UTILSTUFF)
 		cd builtin && $(RUBY) AllBuiltinTests.rb
+
+Language:
+		cd language && $(RUBY) AllLanguageTests.rb
 
 # Release must have VERSION variable set
 #

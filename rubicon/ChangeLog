@@ -1,4 +1,13 @@
+2001-06-10  Dave Thomas  <Dave@Thomases.com>
+
+	* language/*: added all the tests from the standard test.rb
+	file. Most of these go into various files in the language
+	subdirectory, but some are class specific. The latter go into the
+	appropriate files in builtins
+
 2001-03-28  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestTime.rb: Time.zone now returns 'UTC' rather than 'GMT'
 
 	* builtin/TestStruct__Tms.rb,TestTime,TestProcess: the .times
  	method moved to Process in 1.7

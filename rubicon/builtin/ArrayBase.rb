@@ -225,6 +225,14 @@ class ArrayBase < Rubicon::TestCase
     a = @cls[*(0..99).to_a]
     assert_equal(nil, a[10..19] = nil)
     assert_equal(@cls[*(0..9).to_a] + @cls[*(20..99).to_a], a)
+
+    a = @cls[1, 2, 3]
+    a[1, 0] = a
+    assert_equal([1, 1, 2, 3, 2, 3], a)
+
+    a = @cls[1, 2, 3]
+    a[-1, 0] = a
+    assert_equal([1, 2, 1, 2, 3, 3], a)
   end
 
   def test_assoc
@@ -340,6 +348,10 @@ class ArrayBase < Rubicon::TestCase
     assert_equal(@cls[1, 2, 3, 4],     @cls[1, 2, 3, 4].concat(@cls[]))
     assert_equal(@cls[],               @cls[].concat(@cls[]))
     assert_equal(@cls[@cls[1, 2], @cls[3, 4]], @cls[@cls[1, 2]].concat(@cls[@cls[3, 4]]))
+    
+    a = @cls[1, 2, 3]
+    a.concat(a)
+    assert_equal([1, 2, 3, 1, 2, 3], a)
   end
 
   def test_delete
@@ -665,6 +677,20 @@ class ArrayBase < Rubicon::TestCase
     assert_equal(",:&5L;&\\*:&5L;&\\*\n",  @cls["hello\nhello\n"].pack("u"))
 
     assert_equal("\xc2\xa9B\xe2\x89\xa0", @cls[0xa9, 0x42, 0x2260].pack("U*"))
+
+
+    format = "c2x5CCxsdils_l_a6";
+    # Need the expression in here to force ary[5] to be numeric.  This avoids
+    # test2 failing because ary2 goes str->numeric->str and ary does not.
+    ary = [1, -100, 127, 128, 32767, 987.654321098/100.0,
+      12345, 123456, -32767, -123456, "abcdef"]
+    x    = ary.pack(format)
+    ary2 = x.unpack(format)
+
+    assert_equal(ary.length, ary2.length)
+    assert_equal(ary.join(':'), ary2.join(':'))
+    assert(x =~ /def/)
+
 
 
     skipping "Not tested:

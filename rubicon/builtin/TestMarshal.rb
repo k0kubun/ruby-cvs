@@ -88,6 +88,12 @@ class TestMarshal < Rubicon::TestCase
     assert_equal(b3, Marshal.load(Marshal.dump(b3)))
   end
 
+  def test_s_dump_load5
+    x = [1, 2, 3, [4, 5, "foo"], {1=>"bar"}, 2.5, 9**30]
+    y = Marshal.dump(x)
+    assert_equal(x, Marshal.load(y))
+  end
+
   def test_s_restore
     b = B.new(10, "wombat")
     assert_equal(10,       b.b1.a1)

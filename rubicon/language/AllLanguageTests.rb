@@ -1,7 +1,7 @@
 $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 
-tests = Rubicon::BulkTestRunner.new("Built-ins")
+tests = Rubicon::BulkTestRunner.new("Language")
 
 if ARGV.size.zero?
   Dir["Test*.rb"].each { |file| tests.addFile(file) }
