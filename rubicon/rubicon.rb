@@ -1,11 +1,12 @@
 require "tempfile"
+require "rbconfig.rb"
 
 #
 # Simple wrapper for RubyUnit, primarily designed to capture
 # statsistics and report them at the end.
 #
 
-RUBICON_VERSION = "V0.2"
+RUBICON_VERSION = "V0.3"
 
 # -------------------------------------------------------------
 #
@@ -55,7 +56,6 @@ $os = case RUBY_PLATFORM
 # Find the name of the interpreter.
 # 
 
-require "rbconfig.rb"
 $interpreter = File.join(Config::CONFIG["bindir"], 
 			 Config::CONFIG["RUBY_INSTALL_NAME"])
 
@@ -372,144 +372,79 @@ module Rubicon
   module_function :handleTests
 
 
-  # Accumulate a running set of results, and report them at the end
-  
-  class ResultGatherer
+  # Record a particule failure, which is a location
+  # and an error message. We simply ape the runit
+  # TestFailure class.
 
-    LINE_LENGTH = 72
-    LINE = '=' * LINE_LENGTH
-    Line = ' ' * 12 + '-' * (LINE_LENGTH - 12)
-
-    def initialize(name)
-      @name    = name
-      @results = {}
-    end
-
-    def add(klass, resultSet)
-      @results[klass.name] = resultSet
-    end
+  class Failure
+    attr_accessor :at
+    attr_accessor :err
     
-    def reportOn(op)
-      op.puts
-      op.puts LINE
-      title = "Test Results".center(LINE_LENGTH)
-      title[0, @name.length] = @name
-      title[-RUBICON_VERSION.length, RUBICON_VERSION.length] = RUBICON_VERSION
-      op.puts title
-      op.puts LINE
-      op.puts "                 Name   OK?   Tests  Asserts      Failures   Errors"
-      op.puts Line
-
-      total_classes = 0
-      total_tests   = 0
-      total_asserts = 0
-      total_fails   = 0
-      total_errors  = 0
-      total_bad     = 0
-
-      format = "%21s   %4s   %4d  %7d  %9s  %7s\n"
-
-      names = @results.keys.sort
-      for name in names
-        res    = @results[name]
-        fails  = res.failure_size.nonzero? || ''
-        errors = res.error_size.nonzero? || ''
-
-        total_classes += 1
-        total_tests   += res.run_tests
-        total_asserts += res.run_asserts
-        total_fails   += res.failure_size
-        total_errors  += res.error_size
-        total_bad     += 1 unless res.succeed?
-
-        op.printf format,
-          name.sub(/^Test/, ''),
-          res.succeed? ? "    " : "FAIL",
-          res.run_tests, res.run_asserts, 
-          fails.to_s, errors
+    def Failure.from_real_failures(f)
+      f.collect do |a_failure|
+        my_f = Failure.new
+        my_f.at = a_failure.at
+        my_f.err = a_failure.err
+        my_f
       end
-
-      op.puts LINE
-      if total_classes > 1
-        op.printf format, 
-          sprintf("All %d files", total_classes),
-          total_bad > 0 ? "FAIL" : "    ",
-          total_tests, total_asserts,
-          total_fails, total_errors
-        op.puts LINE
-      end
-
-      if total_fails > 0
-        op.puts
-        op.puts "Failure Report".center(LINE_LENGTH)
-        op.puts LINE
-        left = total_fails
-
-        for name in names
-          res = @results[name]
-          if res.failure_size > 0
-            op.puts
-            op.puts name + ":"
-            op.puts "-" * name.length.succ
-
-            res.failures.each do |f|
-              f.at.each do |at|
-                break if at =~ /rubicon/
-                op.print "    ", at, "\n"
-              end
-              err = f.err.to_s
-
-              if err =~ /expected:(.*)but was:(.*)/m
-                exp = $1.dump
-                was = $2.dump
-                op.print "    ....Expected: #{exp}\n"
-                op.print "    ....But was:  #{was}\n"
-              else
-                op.print "    ....#{err}\n"
-              end
-            end
-
-            left -= res.failure_size
-            op.puts
-            op.puts Line if left > 0
-          end
-        end
-        op.puts LINE
-      end
-
-      if total_errors > 0
-        op.puts
-        op.puts "Error Report".center(LINE_LENGTH)
-        op.puts LINE
-        left = total_errors
-
-        for name in names
-          res = @results[name]
-          if res.error_size > 0
-            op.puts
-            op.puts name + ":"
-            op.puts "-" * name.length.succ
-
-            res.errors.each do |f|
-              f.at.each do |at|
-                break if at =~ /rubicon/
-                op.print "    ", at, "\n"
-              end
-              err = f.err.to_s
-              op.print "    ....#{err}\n"
-            end
-
-            left -= res.error_size
-            op.puts
-            op.puts Line if left > 0
-          end
-        end
-        op.puts LINE
-      end
-
     end
   end
 
+  # Objects of this class get generated from the TestResult
+  # passed back by RUnit. We don't use it's class for two reasons:
+  # 1. We decouple better this way
+  # 2. We can't serialize the RUnit class, as it contains IO objects
+  #
+
+  
+  class Results
+    attr_reader :failure_size
+    attr_reader :error_size
+    attr_reader :run_tests
+    attr_reader :run_asserts
+    attr_reader :failures
+    attr_reader :errors
+
+    def initialize_from(test_result)
+      @failure_size = test_result.failure_size
+      @error_size   = test_result.error_size
+      @run_tests    = test_result.run_tests
+      @run_asserts  = test_result.run_asserts
+      @succeed      = test_result.succeed?
+      @failures     = Failure.from_real_failures(test_result.failures)
+      @errors       = Failure.from_real_failures(test_result.errors)
+      self
+    end
+
+    def succeed?
+      @succeed
+    end
+  end
+
+  # And here is where we gather the results of all the tests. This is
+  # also the object exported to XML
+
+  class ResultGatherer
+
+    attr_reader   :results
+    attr_accessor :name
+    attr_reader   :config
+    attr_reader   :date
+    attr_reader   :rubicon_version
+
+    def initialize(name = '')
+      @name    = ''
+      @results = {}
+      @config  = Config::CONFIG
+      @date    = Time.now
+      @rubicon_version = RUBICON_VERSION
+    end
+    
+    def add(klass, result_set)
+      @results[klass.name] = Results.new.initialize_from(result_set)
+    end
+    
+  end
 
   # Run a set of tests in a file. This would be a TestSuite, but we
   # want to run each file separately, and to summarize the results
@@ -517,10 +452,23 @@ module Rubicon
 
   class BulkTestRunner
 
-    def initialize(groupName)
-      @groupName = groupName
+    def initialize(args, group_name)
+      @groupName = group_name
       @files     = []
-      @results   = ResultGatherer.new(groupName)
+      @results   = ResultGatherer.new
+      @results.name   = group_name
+      @op_class_file  = "ascii"
+
+      # Look for a -op <class> argument, which controls
+      # where our output goes
+
+      if args.size > 1 and args[0] == "-op"
+        args.shift
+        @op_class_file = args.shift
+      end
+
+      @op_class_file = "result_" + @op_class_file
+      require @op_class_file
     end
 
     def addFile(fileName)
@@ -540,7 +488,8 @@ module Rubicon
         @results.add(klass, runner.run(klass.suite))
       end
 
-      @results.reportOn $stderr
+      reporter = ResultDisplay.new(@results)
+      reporter.reportOn $stdout
     end
 
   end

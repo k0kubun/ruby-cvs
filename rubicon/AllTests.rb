@@ -14,7 +14,7 @@ end
 require 'rubicon'
 
 # Create a test runner
-tests = Rubicon::BulkTestRunner.new("All Tests")
+tests = Rubicon::BulkTestRunner.new(ARGV, "All Tests")
 
 # and tell is what files to test
 if ARGV.size.zero?

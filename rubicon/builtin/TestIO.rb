@@ -201,8 +201,8 @@ class TestIO < Rubicon::TestCase
     end
   end
 	
-  MsWin32.dont do
-    def test_s_popen_spawn
+  def test_s_popen_spawn
+    MsWin32.dont do
       # Spawn an interpreter - WRITE
       parent = $$
       pipe = IO.popen("-", "w")
@@ -485,12 +485,12 @@ class TestIO < Rubicon::TestCase
     assert_equal(2, $stderr.fileno)
   end
 
-  MsWin32.dont do
-    def test_flush
+  def test_flush
+    MsWin32.dont do
       read, write = IO.pipe
       write.sync = false
       write.print "hello"
-    assert_nil(select([read], nil,  [read], .1))
+      assert_nil(select([read], nil,  [read], .1))
       write.flush
       assert_equal([[read],[],[]], select([read], nil,  [read], .1))
       read.close
