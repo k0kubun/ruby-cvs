@@ -40,7 +40,8 @@ module Rubicon
     # Skip a test if not super user
     #
     def super_user
-      skipping("not super user")
+      caller[0] =~ /`(.*)'/
+      skipping("not super user", $1)
     end
 
     #

@@ -310,15 +310,15 @@ class TestFile < Rubicon::TestCase
 
   # Stat is pretty much tested elsewhere, so we're minimal here
   def test_s_stat
-    assert_instance_of?(File::Stat, File.stat("."))
+    assert_instance_of(File.stat("."), File::Stat)
   end
 
 
   def test_s_symlink
     Dir.chdir("_test")
     File.symlink("_file1", "_file3") # may fail
-    assert(File.symlink("_file3"))
-    assert(!File.symlink("_file1"))
+    assert(File.symlink?("_file3"))
+    assert(!File.symlink?("_file1"))
   end
 
   def test_s_truncate
@@ -338,9 +338,10 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_umask
+    orig = myUmask
     assert_equal(myUmask, File.umask)
     assert_equal(myUmask, File.umask(0404))
-    assert_equal(0404, File.umask)
+    assert_equal(0404, File.umask(orig))
   end
 
   def test_s_unlink
@@ -370,39 +371,93 @@ class TestFile < Rubicon::TestCase
   # Instance methods
 
   def test_atime
-    assert_fail("untested")
+    File.open(@file) { |f| assert_equal(@aTime, f.atime) }
   end
 
   def test_chmod
-    assert_fail("untested")
+    Dir.chdir("_test")
+    File.open("_file1") { |f|
+      assert_equal(0,    f.chmod(0))
+      assert_equal(0,    f.stat.mode & 0777)
+      assert_equal(0,    f.chmod(0400))
+      assert_equal(0400, f.stat.mode & 0777)
+      assert_equal(0,    f.chmod(0644))
+      assert_equal(0644, f.stat.mode & 0777)
+    }
   end
 
   def test_chown
-    assert_fail("untested")
+    super_user
   end
 
   def test_ctime
-    assert_fail("untested")
+    File.open(@file) { |f| assert_equal(@cTime, f.ctime) }
   end
 
   def test_flock
-    assert_fail("untested")
+    Dir.chdir("_test")
+
+    # parent forks, then waits for a SIGUSR1 from child. Child locks file
+    # and signals parent, then sleeps
+    # When parent gets signal, confirms file si locked, kills child,
+    # and confirms its unlocked
+
+    pid = fork
+    if pid
+      File.open("_file1") { |f|
+        trap("USR1") {
+          assert_equal(false, f.flock(File::LOCK_EX | File::LOCK_NB))
+          Process.kill "KILL", pid
+          Process.waitpid(pid, 0)
+          assert_equal(0, f.flock(File::LOCK_EX | File::LOCK_NB))
+          return
+        }
+        sleep 10
+        assert_fail("Never got signalled")
+      }
+    else
+      File.open("_file1") { |f|
+        assert_equal(0, f.flock(File::LOCK_EX))
+        Process.kill "USR1", Process.ppid
+        sleep 10
+        assert_fail "Parent never killed us"
+      }
+    end
   end
 
   def test_lstat
-    assert_fail("untested")
+    Dir.chdir("_test")
+    File.symlink("_file1", "_file3") # may fail
+
+    f1 = File.open("_file1")
+    f3 = File.open("_file3")
+
+    assert_equal(0, f3.stat.size)
+    assert(0 < f3.lstat.size)
+
+    assert_equal(0, f1.stat.size)
+    assert_equal(0, f1.lstat.size)
   end
 
   def test_mtime
-    assert_fail("untested")
+    File.open(@file) { |f| assert_equal(@mTime, f.mtime) }
   end
 
   def test_path
-    assert_fail("untested")
+    File.open(@file) { |f| assert_equal(@file, f.path) }
   end
 
   def test_truncate
-    assert_fail("untested")
+    file = "_test/_file1"
+    File.open(file, "w") { |f|
+      f.syswrite "123456789" 
+      f.truncate(5)
+    }
+    assert_equal(5, File.size(file))
+    File.open(file, "r") { |f|
+      assert_equal("12345", f.read(99))
+      assert(f.eof?)
+    }
   end
 
 
