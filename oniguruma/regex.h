@@ -9,7 +9,7 @@
 #define _REGEX_H_
 
 #define _ONIGURUMA_
-#define  ONIGURUMA_VERSION          100    /* 1.00 */
+#define  ONIGURUMA_VERSION          110    /* 1.1 */
 
 /* config parameters */
 #ifndef RE_NREGS
@@ -23,13 +23,13 @@
 #if defined(RUBY_PLATFORM) && defined(M17N_H)
 #define REG_RUBY_M17N
 
-typedef m17n_encoding*        RegCharCodeType;
-#define REGCODE_UNDEF         ((RegCharCodeType )NULL)
+typedef m17n_encoding*        RegCharEncoding;
+#define REGCODE_UNDEF         ((RegCharEncoding )NULL)
 #define REGCODE_DEFAULT       REGCODE_UNDEF
 
 #else
 
-typedef const char*           RegCharCodeType;
+typedef const char*           RegCharEncoding;
 #define MBCTYPE_ASCII         0
 #define MBCTYPE_EUC           2
 #define MBCTYPE_SJIS          3
@@ -39,9 +39,10 @@ typedef const char*           RegCharCodeType;
 #define REGCODE_UTF8          REG_MBLEN_TABLE[MBCTYPE_UTF8]
 #define REGCODE_EUCJP         REG_MBLEN_TABLE[MBCTYPE_EUC]
 #define REGCODE_SJIS          REG_MBLEN_TABLE[MBCTYPE_SJIS]
-#define REGCODE_UNDEF         ((RegCharCodeType )0)
+#define REGCODE_UNDEF         ((RegCharEncoding )0)
 #define REGCODE_DEFAULT       REGCODE_ASCII
 
+extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
 #endif /* else RUBY && M17N */
 
 #if defined(RUBY_PLATFORM) && !defined(M17N_H)
@@ -49,8 +50,7 @@ typedef const char*           RegCharCodeType;
 #define ismbchar(c)    (mbclen((c)) != 1)
 #define mbclen(c)      RegDefaultCharCode[(unsigned char )(c)]
 
-extern RegCharCodeType RegDefaultCharCode;
-extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
+extern RegCharEncoding RegDefaultCharCode;
 #endif
 
 
@@ -77,7 +77,7 @@ extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
 #define IS_REG_OPTION_ON(options,option)   ((options) & (option))
 
 /* error codes */
-/* return normal */
+/* normal return */
 #define REG_NORMAL                                             0
 #define REG_MISMATCH                                          -1
 /* internal error */
@@ -102,14 +102,16 @@ extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
 #define REGERR_CONTROL_CODE_SYNTAX                          -109
 #define REGERR_CHAR_CLASS_VALUE_AT_END_OF_RANGE             -110
 #define REGERR_CHAR_CLASS_VALUE_AT_START_OF_RANGE           -111
-#define REGERR_TARGET_OF_REPEAT_QUALIFIER_NOT_FOUND         -112
-#define REGERR_NESTED_REPEAT_OPERATOR                       -113
-#define REGERR_UNMATCHED_RIGHT_PARENTHESIS                  -114
-#define REGERR_END_PATTERN_WITH_UNMATCHED_PARENTHESIS       -115
+#define REGERR_TARGET_OF_REPEAT_QUALIFIER_NOT_SPECIFIED     -112
+#define REGERR_TARGET_OF_REPEAT_QUALIFIER_IS_EMPTY          -113
+#define REGERR_NESTED_REPEAT_OPERATOR                       -114
+#define REGERR_UNMATCHED_RIGHT_PARENTHESIS                  -115
+#define REGERR_END_PATTERN_WITH_UNMATCHED_PARENTHESIS       -116
 #define REGERR_END_PATTERN_AT_GROUP_OPTION                  -117
 #define REGERR_UNDEFINED_GROUP_OPTION                       -118
 #define REGERR_END_PATTERN_AT_GROUP_COMMENT                 -119
-#define REGERR_INVALID_POSIX_CHAR_CLASS                     -120
+#define REGERR_INVALID_POSIX_BRACKET_TYPE                   -120
+#define REGERR_INVALID_LOOK_BEHIND_PATTERN                  -121
 /* values error */
 #define REGERR_TOO_BIG_NUMBER                               -200
 #define REGERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE              -201
@@ -155,14 +157,14 @@ typedef struct re_pattern_buffer {
   unsigned int mem_stats;   /* mem:n -> n-bit flag (n:1-31)
                               (backref-ed or must be cleared in backtrack) */
 
-  RegCharCodeType   code;
+  RegCharEncoding   code;
   RegOptionType     options;
   RegTransTableType transtable;  /* char-case trans table */
 
   /* optimize info (string search and char-map and anchor) */
   int            optimize;          /* optimize flag */
   int            threshold_len;     /* search str-length for apply optimize */
-  int            anchor;            /* BEGIN_BUF, NEGIN_POS, (SEMI_)END_BUF */
+  int            anchor;            /* BEGIN_BUF, BEGIN_POS, (SEMI_)END_BUF */
   RegDistance    anchor_dmin;       /* (SEMI_)END_BUF anchor distance */
   RegDistance    anchor_dmax;       /* (SEMI_)END_BUF anchor distance */
   int            sub_anchor;        /* start-anchor for exact or map */
@@ -205,11 +207,11 @@ typedef struct re_pattern_buffer {
 extern int   RegexInit(void);
 extern char* RegexErrorCodeToStr(int err_code);
 extern int   RegexNew(regex_t** reg, UChar* pattern, UChar* pattern_end,
-		RegOptionType option, RegCharCodeType code, UChar* transtable);
+		RegOptionType option, RegCharEncoding code, UChar* transtable);
 extern int   RegexClone(regex_t* to, regex_t* from);
 extern void  RegexFree(regex_t* reg);
 extern int   RegexReCompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
-		RegOptionType option, RegCharCodeType code, UChar* transtable);
+		RegOptionType option, RegCharEncoding code, UChar* transtable);
 extern int   RegexSearch(regex_t* reg, UChar* str, UChar* end,
 			 UChar* start, UChar* range, RegRegion* region);
 extern RegRegion* RegexRegionNew(void);
