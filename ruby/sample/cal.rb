@@ -39,7 +39,7 @@ def cal(m, y, sg)
   for d in 1..31
     break if jd = Date.exist?(y, m, d, sg)
   end
-  fst = cur = Date.new(jd, sg)
+  fst = cur = Date.new1(jd, sg)
   ti = Date::MONTHNAMES[m]
   ti << ' ' << y.to_s unless $yr
   mo = ti.center((($w + 1) * 7) - 1) << "\n"
