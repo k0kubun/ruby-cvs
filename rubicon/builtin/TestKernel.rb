@@ -381,61 +381,321 @@ class TestKernel < Rubicon::TestCase
     val = 123
     assert_equal(123, eval("val", binding))
     assert_equal(321, eval("val", bindproc(321)))
+    skipping("Check of eval with file name")
     begin
       eval "1
             burble", binding, "gumby", 321
     rescue Exception => detail
-      puts "Error:"
-      puts detail
     end
   end
 
   def test_s_exec
-    assert_fail("untested")
+    p = IO.popen("-")
+    if p.nil?
+      exec "echo TestKer*.rb"
+    else
+      begin
+        assert_equal("TestKernel.rb\n", p.gets)
+      ensure
+        p.close
+      end
+    end
+
+    # With separate parameters, don't do expansion
+    p = IO.popen("-")
+    if p.nil?
+      exec "echo", "TestKer*.rb"
+    else
+      begin
+        assert_equal("TestKer*.rb\n", p.gets)
+      ensure
+        p.close
+      end
+    end
   end
 
   def test_s_exit
-    assert_fail("untested")
+    begin
+      exit
+      assert_fail("No exception raised")
+    rescue SystemExit
+      assert(true)
+    rescue Exception
+      assert_fail("Bad exception: #$!")
+    end
+
+    f = fork
+    if f.nil?
+      exit
+    end
+    Process.wait
+    assert_equal(0, $?)
+
+    f = fork
+    if f.nil?
+      exit 123
+    end
+    Process.wait
+    assert_equal(123 << 8, $?)
   end
 
   def test_s_exit!
-    assert_fail("untested")
+    f = fork
+
+    if f.nil?
+      begin
+        exit! 99
+        exit 1
+      rescue SystemExit
+        exit 2
+      rescue Exception
+        exit 3
+      end
+      exit 4
+    end
+    Process.wait
+    assert_equal(99<<8, $?)
+
+    f = fork
+    if f.nil?
+      exit!
+    end
+    Process.wait
+    assert_equal(0xff << 8, $?)
+
+    f = fork
+    if f.nil?
+      exit! 123
+    end
+    Process.wait
+    assert_equal(123 << 8, $?)
   end
 
   def test_s_fail
-    assert_fail("untested")
+    assert_exception(StandardError) { fail }
+    assert_exception(StandardError) { fail "Wombat" }
+    assert_exception(NotImplementError) { fail NotImplementError }
+
+    begin
+      fail "Wombat"
+      assert_fail("No exception")
+    rescue StandardError => detail
+      assert_equal("Wombat", detail.message)
+    rescue Exception
+      assert_fail("Wrong exception")
+    end
+
+    begin
+      fail NotImplementError, "Wombat"
+      assert_fail("No exception")
+    rescue NotImplementError => detail
+      assert_equal("Wombat", detail.message)
+    rescue Exception
+      raise
+    end
+
+    bt = %w(one two three)
+    begin
+
+      fail NotImplementError, "Wombat", bt
+      assert_fail("No exception")
+    rescue NotImplementError => detail
+      assert_equal("Wombat", detail.message)
+      puts
+      assert_equal(bt, detail.backtrace)
+    rescue Exception
+      raise
+    end
+
   end
 
   def test_s_fork
-    assert_fail("untested")
+    f = fork
+    if f.nil?
+      File.open("_pid", "w") {|f| f.puts $$}
+      exit 99
+    end
+    begin
+      Process.wait
+      assert_equal(99<<8, $?)
+      File.open("_pid") do |file|
+        assert_equal(file.gets.to_i, f)
+      end
+    ensure
+      File.delete("_pid")
+    end
+
+    f = fork do
+      File.open("_pid", "w") {|f| f.puts $$}
+    end
+    begin
+      Process.wait
+      assert_equal(0<<8, $?)
+      File.open("_pid") do |file|
+        assert_equal(file.gets.to_i, f)
+      end
+    ensure
+      File.delete("_pid")
+    end
   end
 
   def test_s_format
-    assert_fail("untested")
+    assert_equals("00123", format("%05d", 123))
+    assert_equals("123  |00000001", format("%-5s|%08x", 123, 1))
+    x = format("%3s %-4s%%foo %.0s%5d %#x%c%3.1f %b %x %X %#b %#x %#X",
+      "hi",
+      123,
+      "never seen",
+      456,
+      0,
+      ?A,
+      3.0999,
+      11,
+      171,
+      171,
+      11,
+      171,
+      171)
+
+    assert_equal(' hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB', x)
   end
 
-  def test_s_getc
-    assert_fail("untested")
+  def setupFiles
+    setupTestDir
+    File.open("_test/_file1", "w") do |f|
+      f.puts "0: Line 1"
+      f.puts "1: Line 2"
+    end
+    File.open("_test/_file2", "w") do |f|
+      f.puts "2: Line 1"
+      f.puts "3: Line 2"
+    end
+    ARGV.replace ["_test/_file1", "_test/_file2" ]
   end
 
-  def test_s_gets
-    assert_fail("untested")
+  def teardownFiles
+    teardownTestDir
+  end
+
+  def test_s_gets1
+    setupFiles
+    begin
+      count = 0
+      while gets
+        num = $_[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(4, count)
+    ensure
+      teardownFiles
+    end
+  end
+
+  def test_s_gets2      
+    setupFiles
+    begin
+      count = 0
+      while gets(nil)
+        split(/\n/).each do |line|
+          num = line[0..1].to_i
+          assert_equal(count, num)
+          count += 1
+        end
+      end
+      assert_equal(4, count)
+    ensure
+      teardownFiles
+    end
+  end
+
+  def test_s_gets3
+    setupFiles
+    begin
+      count = 0
+      while gets(' ')
+        count += 1
+      end
+      assert_equal(10, count)
+    ensure
+      teardownFiles
+    end
   end
 
   def test_s_global_variables
-    assert_fail("untested")
+    g1 = global_variables
+    assert_instance_of(Array, g1)
+    assert_instance_of(String, g1[0])
+    assert(!g1.include?("$fred"))
+    eval "$fred = 1"
+    g2 = global_variables
+    assert(g2.include?("$fred"))
+    assert_equal(["$fred"], g2 - g1)
   end
 
   def test_s_gsub
-    assert_fail("untested")
+    $_ = "hello"
+    assert_equal("h*ll*", gsub(/[aeiou]/, '*'))
+    assert_equal("h*ll*", $_)
+
+    $_ = "hello"
+    assert_equal("h<e>ll<o>", gsub(/([aeiou])/, '<\1>'))
+    assert_equal("h<e>ll<o>", $_)
+
+    $_ = "hello"
+    assert_equal("104 101 108 108 111 ", gsub('.') {
+                   |s| s[0].to_s+' '})
+    assert_equal("104 101 108 108 111 ", $_)
+
+    $_ = "hello"
+    assert_equal("HELL-o", gsub(/(hell)(.)/) {
+                   |s| $1.upcase + '-' + $2
+                   })
+    assert_equal("HELL-o", $_)
+
+    $_ = "hello"
+    $_.taint
+    assert_equal(true, (gsub('.','X').tainted?))
+    assert_equal(true, $_.tainted?)
   end
 
   def test_s_gsub!
-    assert_fail("untested")
+    $_ = "hello"
+    assert_equal("h*ll*", gsub!(/[aeiou]/, '*'))
+    assert_equal("h*ll*", $_)
+
+    $_ = "hello"
+    assert_equal("h<e>ll<o>", gsub!(/([aeiou])/, '<\1>'))
+    assert_equal("h<e>ll<o>", $_)
+
+    $_ = "hello"
+    assert_equal("104 101 108 108 111 ", gsub!('.') {
+                   |s| s[0].to_s+' '})
+    assert_equal("104 101 108 108 111 ", $_)
+
+    $_ = "hello"
+    assert_equal("HELL-o", gsub!(/(hell)(.)/) {
+                   |s| $1.upcase + '-' + $2
+                   })
+    assert_equal("HELL-o", $_)
+
+    $_ = "hello"
+    assert_equal(nil, gsub!(/x/, 'y'))
+    assert_equal("hello", $_)
+
+    $_ = "hello"
+    $_.taint
+    assert_equal(true, (gsub!('.','X').tainted?))
+    assert_equal(true, $_.tainted?)
   end
 
+  def iterator_test(&b)
+    return iterator?
+  end
+    
   def test_s_iterator?
-    assert_fail("untested")
+    assert(iterator_test { 1 })
+    assert(!iterator_test)
   end
 
   def test_s_lambda
@@ -487,7 +747,40 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_raise
-    assert_fail("untested")
+    assert_exception(StandardError) { raise }
+    assert_exception(StandardError) { raise "Wombat" }
+    assert_exception(NotImplementError) { raise NotImplementError }
+
+    begin
+      raise "Wombat"
+      assert_fail("No exception")
+    rescue StandardError => detail
+      assert_equal("Wombat", detail.message)
+    rescue Exception
+      assert_fail("Wrong exception")
+    end
+
+    begin
+      raise NotImplementError, "Wombat"
+      assert_fail("No exception")
+    rescue NotImplementError => detail
+      assert_equal("Wombat", detail.message)
+    rescue Exception
+      raise
+    end
+
+    bt = %w(one two three)
+    begin
+
+      raise NotImplementError, "Wombat", bt
+      assert_fail("No exception")
+    rescue NotImplementError => detail
+      assert_equal("Wombat", detail.message)
+      puts
+      assert_equal(bt, detail.backtrace)
+    rescue Exception
+      raise
+    end
   end
 
   def test_s_rand
