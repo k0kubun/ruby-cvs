@@ -17,8 +17,8 @@
 # $Id$
 #
 
-if ARGV.size < 6
-  puts "Usage: #{$0} CVSROOT USER tagname operation modulepath file1 rev1 [file2 rev2 ...]"
+if ARGV.size < 5
+  puts "Usage: #{$0} CVSROOT USER tagname operation modulepath [file1 rev1 file2 rev2 ...]"
   exit 1	# No way!
 end
 
