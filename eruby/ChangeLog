@@ -1,3 +1,7 @@
+Fri Apr 19 17:29:54 2002  Shugo Maeda  <shugo@modruby.net>
+
+	* version 0.9.8 released.
+
 Mon Jan  7 18:06:08 2002  Shugo Maeda  <shugo@modruby.net>
 
 	* eruby_lib.c (eruby_parse_options): handle -M option correctly.

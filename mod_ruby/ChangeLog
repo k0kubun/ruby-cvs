@@ -1,3 +1,7 @@
+Fri Apr 19 17:34:28 2002  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.8 released.
+
 Thu Apr  4 15:16:34 2002  Sean Chittenden <sean@chittenden.org>
 
 	* lib/apache/eruby-run.rb: do not send header on sync mode.
