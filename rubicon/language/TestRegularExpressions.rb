@@ -56,7 +56,7 @@ class TestRegularExpressions < Rubicon::TestCase
     lineno =  0
     IO.foreach(file_name) do |line|
       lineno += 1
-      line.chomp!
+      line.sub!(/\r?\n\z/, '')
       next if /^#/ =~ line || /^$/ =~ line
       pat, subject, result, repl, expect = line.split /\t/, 6
       begin
@@ -75,7 +75,9 @@ class TestRegularExpressions < Rubicon::TestCase
           assert(reg, "Expected a match: #{lineno}: '#{line}'")
           if repl != '-'
             eu = eval('"' + repl + '"')
-            assert_equal(expect, eu, "#{lineno}: '#{line}'")
+            assert(expect == eu, "Expected '#{expect.inspect}, " +
+		   "got '#{eu.inspect}'\n" +
+		   "#{lineno}: '#{line.inspect}'")
           end
 	when 'n'
 	  assert(!reg, "Did not expect a match: #{lineno} '#{line}'")
@@ -87,8 +89,8 @@ class TestRegularExpressions < Rubicon::TestCase
                      "Regular expression did not compile: #{lineno} '#{line}'")
 	fail_msg = $!.to_s
         assert_equal(expect, fail_msg)
-      rescue
-	assert_fail("#$!: #{lineno}: '#{line}'")
+#      rescue
+#	assert_fail("#$!: #{lineno}: '#{line}'")
       end
     end
   end

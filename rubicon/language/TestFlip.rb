@@ -50,7 +50,7 @@ class TestFlip < Rubicon::TestCase
     assert_equal("", sub.call(4))
   end
 
-  if $rubyVersion >= "1.7"
+  if $rubyVersion >= "1.7.2"
     def test_flip2_thread
       sub = []
       2.times do |i|

@@ -6,7 +6,7 @@ class TestIO < Rubicon::TestCase
 
   SAMPLE = "08: This is a line\n"
 
-  LINE_LENGTH = $os <= Windows ? SAMPLE.length + 1 : SAMPLE.length
+  LINE_LENGTH = $os <= MsWin32 ? SAMPLE.length + 1 : SAMPLE.length
 
   def setup
     setupTestDir
@@ -125,7 +125,7 @@ class TestIO < Rubicon::TestCase
 
   def test_s_popen
 
-    if $os <= Windows
+    if $os <= MsWin32
       cmd = "type"
       fname = @file.tr '/', '\\'
     else
@@ -136,8 +136,7 @@ class TestIO < Rubicon::TestCase
 
     # READ
 
-    p = IO.popen("#{cmd} #{fname}")
-    begin
+    IO.popen("#{cmd} #{fname}") do |p|
       count = 0
       p.each do |line|
         num = line[0..1].to_i
@@ -145,8 +144,6 @@ class TestIO < Rubicon::TestCase
         count += 1
       end
       assert_equal(10, count)
-    ensure
-      p.close
     end
 
     # READ with block
@@ -160,7 +157,6 @@ class TestIO < Rubicon::TestCase
       assert_equal(10, count)
     end
     assert_nil(res)
-    p.close
 
     MsWin32.only do
       assert(false, "popen is leaving subprocesses, so can't run test")
@@ -613,7 +609,14 @@ class TestIO < Rubicon::TestCase
 
   def test_pid
     assert_nil($stdin.pid)
-    pipe = IO.popen("exec #$interpreter -e 'p $$'", "r")
+    pipe = nil
+    Solaris.only do
+      pipe = IO.popen("exec #$interpreter -e 'p $$'", "r")
+    end
+    Solaris.dont do
+      pipe = IO.popen("#$interpreter -e 'p $$'", "r")
+    end
+
     pid = pipe.gets
     assert_equal(pid.to_i, pipe.pid)
     pipe.close

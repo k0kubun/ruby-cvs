@@ -31,7 +31,7 @@ class TestLoopStuff < Rubicon::TestCase
   end
 
 
-  if $rubyVersion < "1.7"
+  if $rubyVersion <= "1.6.4"
     def testBreakWithInterval
       File.open("while_tmp") do |tmp|
         while tmp.gets()

@@ -14,7 +14,7 @@ class TestFloats < Rubicon::TestCase
       [-2.1E10,         "-2.1e+10"],
     ]
     for number, string in tests
-      assert_equal(number.to_s, string, "case #{number} to \"#{string}\"")
+      assert_equal(string, number.to_s, "case #{number} to \"#{string}\"")
     end
   end
 

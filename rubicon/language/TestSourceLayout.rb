@@ -113,10 +113,14 @@ SAMPLE3
     File.open("_prog.rb", "w") { |f| f.puts str }
 
     begin
-      result = `ruby _prog.rb 2>/dev/null`
+      result = nil
+      IO.popen("#$interpreter _prog.rb 2>_err_tmp") do |p|
+	result = p.read
+      end
       code   = $?
     ensure
       File.delete("_prog.rb")
+      File.delete("_err_tmp")
     end
     [ code, result ]
   end
@@ -124,7 +128,7 @@ SAMPLE3
   def test_equals_begin
     assert_equal([0, "100\n"], rubyRun(SAMPLE1))
     assert_equal([0, "100\n"], rubyRun(SAMPLE2))
-    assert_equal([512, ""],    rubyRun(SAMPLE3))
+    assert(rubyRun(SAMPLE3)[0] != 0)
   end
 
   # ------------------------------------------------------------
@@ -180,8 +184,8 @@ SAMPLE8
 
   def test___END__
     assert_equal([ 0, "wombat\n"], rubyRun(SAMPLE6))
-    assert_equal([ 256, ""], rubyRun(SAMPLE7))
-    assert_equal([ 256, ""], rubyRun(SAMPLE8))
+    assert_equal(256, rubyRun(SAMPLE7)[0])
+    assert_equal(256, rubyRun(SAMPLE8)[0])
   end
 
 end

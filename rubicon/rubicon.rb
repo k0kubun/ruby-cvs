@@ -39,6 +39,7 @@ class Unix    < OS;      end
 class Linux   < Unix;    end
 class BSD     < Unix;    end
 class FreeBSD < BSD;     end
+class Solaris < Unix;    end
 
 class Windows < OS;      end
 class Cygwin  < Windows; end
@@ -50,6 +51,7 @@ class MinGW   < WindowsNative; end
 $os = case RUBY_PLATFORM
       when /linux/   then  Linux
       when /bsd/     then BSD
+      when /solaris/ then Solaris
       when /cygwin/  then Cygwin
       when /mswin32/ then MsWin32
       when /mingw32/ then MinGW

@@ -2013,6 +2013,9 @@ class TestKernel < Rubicon::TestCase
       tf.close(true)
       File.unlink "xyzzy.dat" if p
     end
+
+    system("____this_is_a_bad command____")
+    assert($? != 0)
   end
 
 #  def test_s_test

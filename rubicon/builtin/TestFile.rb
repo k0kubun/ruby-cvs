@@ -356,7 +356,7 @@ class TestFile < Rubicon::TestCase
     assert_exception(Errno::ENOENT) { File.size("gumby") }
     assert_equal(0, File.size(file))
     File.open(file, "w") { |f| f.puts "123456789" }
-    if $os <= Windows
+    if $os == MsWin32
       assert_equal(11, File.size(file))
     else
       assert_equal(10, File.size(file))
@@ -390,7 +390,7 @@ class TestFile < Rubicon::TestCase
   def test_s_truncate
     file = "_test/_file1"
     File.open(file, "w") { |f| f.puts "123456789" }
-    if $os <= Windows
+    if $os <= MsWin32
       assert_equal(11, File.size(file))
     else
       assert_equal(10, File.size(file))
