@@ -18,3 +18,8 @@
 #
 # If the name "ALL" appears as a regular expression it is always used
 # in addition to the first matching regex or "DEFAULT".
+#
+# $Id$
+#
+
+DEFAULT $CVSROOT/CVSROOT/taginfo_ruby.rb $CVSROOT $USER

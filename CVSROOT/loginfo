@@ -21,7 +21,8 @@
 #   v = new version number (post-checkin)
 #
 # $Id$
+#
 
-^CVSROOT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s cvs-admin@ruby-lang.org ruby-lang.org localhost ruby-cvs
+^CVSROOT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s cvs-admin@ruby-lang.org ruby-lang.org localhost ruby-cvs X-Ruby-
 
-DEFAULT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s ruby-cvs@ruby-lang.org ruby-lang.org localhost ruby-cvs
+DEFAULT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s ruby-cvs@ruby-lang.org ruby-lang.org localhost ruby-cvs X-Ruby-
