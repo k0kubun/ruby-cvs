@@ -18,7 +18,7 @@
 ;;;      "Mode for editing ruby source files")
 ;;;    (setq auto-mode-alist
 ;;;          (append '(("\\.rb$" . ruby-mode)) auto-mode-alist))
-;;;    (setq interpreter-mode-alist (append '(("^#!.*ruby" . ruby-mode))
+;;;    (setq interpreter-mode-alist (append '(("ruby" . ruby-mode))
 ;;;    				     interpreter-mode-alist))
 ;;;    
 ;;; (2) set to road inf-ruby and set inf-ruby key definition in ruby-mode.
@@ -35,6 +35,9 @@
 ;;; HISTORY
 ;;; senda -  8 Apr 1998: Created.
 ;;;	 $Log$
+;;;	 Revision 1.2  1999/08/13 05:45:18  matz
+;;;	 1.4.0
+;;;	
 ;;;	 Revision 1.1.1.1.2.1  1999/07/15 07:59:59  matz
 ;;;	 990715
 ;;;	
