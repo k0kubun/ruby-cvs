@@ -79,6 +79,7 @@ static VALUE table_set(VALUE self, VALUE name, VALUE val)
     return val;
 }
 
+/*
 static VALUE table_setn(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
@@ -87,6 +88,7 @@ static VALUE table_setn(VALUE self, VALUE name, VALUE val)
     ap_table_setn(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
+*/
 
 static VALUE table_merge(VALUE self, VALUE name, VALUE val)
 {
@@ -97,6 +99,7 @@ static VALUE table_merge(VALUE self, VALUE name, VALUE val)
     return val;
 }
 
+/*
 static VALUE table_mergen(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
@@ -105,6 +108,7 @@ static VALUE table_mergen(VALUE self, VALUE name, VALUE val)
     ap_table_mergen(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
+*/
 
 static VALUE table_unset(VALUE self, VALUE name)
 {
@@ -124,6 +128,7 @@ static VALUE table_add(VALUE self, VALUE name, VALUE val)
     return val;
 }
 
+/*
 static VALUE table_addn(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
@@ -132,6 +137,7 @@ static VALUE table_addn(VALUE self, VALUE name, VALUE val)
     ap_table_addn(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
+*/
 
 static VALUE table_each(VALUE self)
 {
@@ -284,12 +290,12 @@ void rb_init_apache_table()
     rb_define_method(rb_cApacheTable, "[]", table_get, 1);
     rb_define_method(rb_cApacheTable, "set", table_set, 2);
     rb_define_method(rb_cApacheTable, "[]=", table_set, 2);
-    rb_define_method(rb_cApacheTable, "setn", table_setn, 2);
+    /* rb_define_method(rb_cApacheTable, "setn", table_setn, 2); */
     rb_define_method(rb_cApacheTable, "merge", table_merge, 2);
-    rb_define_method(rb_cApacheTable, "mergen", table_mergen, 2);
+    /* rb_define_method(rb_cApacheTable, "mergen", table_mergen, 2); */
     rb_define_method(rb_cApacheTable, "unset", table_unset, 1);
     rb_define_method(rb_cApacheTable, "add", table_add, 2);
-    rb_define_method(rb_cApacheTable, "addn", table_addn, 2);
+    /* rb_define_method(rb_cApacheTable, "addn", table_addn, 2); */
     rb_define_method(rb_cApacheTable, "each", table_each, 0);
     rb_define_method(rb_cApacheTable, "each_key", table_each_key, 0);
     rb_define_method(rb_cApacheTable, "each_value", table_each_value, 0);
