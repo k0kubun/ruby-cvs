@@ -3,48 +3,36 @@ require '../rubicon'
 
 class TestStruct__Tms < Rubicon::TestCase
 
-  def test_cstime
-    assert_fail("untested")
+  def test_00init
+    # Make a child process.
+    `ruby -e 'a = 0; 10000.times {|i| a += Math.sin(1/(i+1)) }'`
   end
 
-  def test_cstime=
-    assert_fail("untested")
+  def test_cstime
+    assert(Time.times.cstime != 0)
   end
 
   def test_cutime
-    assert_fail("untested")
-  end
-
-  def test_cutime=
-    assert_fail("untested")
+    assert(Time.times.cutime != 0)
   end
 
   def test_stime
-    assert_fail("untested")
-  end
-
-  def test_stime=
-    assert_fail("untested")
+    assert(Time.times.stime != 0)
   end
 
   def test_utime
-    assert_fail("untested")
-  end
-
-  def test_utime=
-    assert_fail("untested")
+    assert(Time.times.utime != 0)
   end
 
   def test_s_aref
-    assert_fail("untested")
+    assert(Time.times['utime'] != 0)
+    assert(Time.times['stime'] != 0)
+    assert(Time.times['cutime'] != 0)
+    assert(Time.times['cstime'] != 0)
   end
 
   def test_s_members
-    assert_fail("untested")
-  end
-
-  def test_s_new
-    assert_fail("untested")
+    assert_equals(4,Time.times.members.length)
   end
 
 end

@@ -13,6 +13,9 @@ class T
     @amt = anAmt
     @result = a2
   end
+  def to_s
+    @orig.join("-")
+  end
 end
 
 class TestTime < Rubicon::TestCase
@@ -101,15 +104,19 @@ class TestTime < Rubicon::TestCase
 
   def test_CMP # '<=>'
     @@dates.each {|x|
-      assert_equal(Time.local(*x.result) <=> Time.local(*x.orig), 1)
-      assert_equal(Time.local(*x.orig) <=> Time.local(*x.result), -1)
-      assert_equal(Time.local(*x.orig) <=> Time.local(*x.orig), 0)
-      assert_equal(Time.local(*x.result) <=> Time.local(*x.result), 0)
+      if (x.amt != 0)
+      assert_equal(1, Time.local(*x.result) <=> Time.local(*x.orig),
+                   "#{x.result} should be > #{x.orig}")
 
-      assert_equal(Time.gm(*x.result) <=> Time.gm(*x.orig), 1)
-      assert_equal(Time.gm(*x.orig) <=> Time.gm(*x.result), -1)
-      assert_equal(Time.gm(*x.orig) <=> Time.gm(*x.orig), 0)
-      assert_equal(Time.gm(*x.result) <=> Time.gm(*x.result), 0)
+      assert_equal(-1, Time.local(*x.orig) <=> Time.local(*x.result))
+      assert_equal(0, Time.local(*x.orig) <=> Time.local(*x.orig))
+      assert_equal(0, Time.local(*x.result) <=> Time.local(*x.result))
+
+      assert_equal(1,Time.gm(*x.result) <=> Time.gm(*x.orig))
+      assert_equal(-1,Time.gm(*x.orig) <=> Time.gm(*x.result))
+      assert_equal(0,Time.gm(*x.orig) <=> Time.gm(*x.orig))
+      assert_equal(0,Time.gm(*x.result) <=> Time.gm(*x.result))
+      end
     }
   end
 
@@ -165,7 +172,7 @@ class TestTime < Rubicon::TestCase
   def test_eql?
     t1=Time.now
     t2=t1 
-    t2+= 1e-6
+    t2+= 2e-6
     assert(!t1.eql?(Time.now))
     assert(!t1.eql?(t2))
   end

@@ -1,7 +1,6 @@
 require '../rubicon'
 
 
-
 class TestSymbol < Rubicon::TestCase
 
 # v---------- test --------------v
@@ -31,20 +30,22 @@ class TestSymbol < Rubicon::TestCase
     assert_equals("wilma",:wilma.id2name)
   end
 
-  def test_inspect
-    assert_fail("untested")
-  end
-
   def test_to_i
-    assert_fail("untested")
+    assert_equals($f1.to_i,$f2.to_i)
+    assert_equals($f2.to_i,$f3.to_i)
+    assert(:wilma.to_i != :Fred.to_i)
+    assert(:Barney.to_i != :wilma.to_i)
   end
 
   def test_to_s
-    assert_fail("untested")
+    assert_equals("Fred",:Fred.id2name)
+    assert_equals("Barney",:Barney.id2name)
+    assert_equals("wilma",:wilma.id2name)
   end
 
   def test_type
-    assert_fail("untested")
+    assert_equals(Symbol, :Fred.type)
+    assert_equals(Symbol, :fubar.type)
   end
 
 end
