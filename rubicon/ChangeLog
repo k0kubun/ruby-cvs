@@ -1,3 +1,14 @@
+2001-02-06  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/ArrayBase.rb: Split out testing of Array-like classes
+	from Array itself. This allows Matju to test his ArrayMixin
+	classes using rubicon.
+
+2001-02-04  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestKernel.rb: Remove begin/end from .id tests: the
+	bug's been fixed.
+
 2001-02-03  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestProc.rb: #arity values changes at 1.6.2
