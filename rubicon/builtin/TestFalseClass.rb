@@ -7,12 +7,6 @@ class TestFalseClass < Rubicon::TestCase
     assert_equal(false, FALSE)
   end
 
-  def truth_table(method, *result)
-    for a in [ false, true ]
-        assert_equal(method.call(a), result.shift)
-    end
-  end
-
   def test_AND # '&'
     truth_table(false.method("&"), false, false)
   end

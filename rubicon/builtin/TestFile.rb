@@ -3,44 +3,27 @@ require '../rubicon'
 
 class TestFile < Rubicon::TestCase
 
-  def test_atime
-    assert_fail("untested")
+  def setup
+    setupTestDir
+
+    @file = "_test/_file1"
+
+    sys("touch -a -t 122512341999 #@file")
+    @aTime = Time.local(1999, 12, 25, 12, 34, 00)
+
+#    sys("touch -c -t 070412341998 #@file")
+#    @cTime = Time.local(1998,  7,  4, 12, 34, 00)
+
+    sys("touch -m -t 010112341997 #@file")
+    @mTime = Time.local(1997,  1,  1, 12, 34, 00)
   end
 
-  def test_chmod
-    assert_fail("untested")
-  end
-
-  def test_chown
-    assert_fail("untested")
-  end
-
-  def test_ctime
-    assert_fail("untested")
-  end
-
-  def test_flock
-    assert_fail("untested")
-  end
-
-  def test_lstat
-    assert_fail("untested")
-  end
-
-  def test_mtime
-    assert_fail("untested")
-  end
-
-  def test_path
-    assert_fail("untested")
-  end
-
-  def test_truncate
-    assert_fail("untested")
+  def teardown
+    teardownTestDir
   end
 
   def test_s_atime
-    assert_fail("untested")
+    assert_equal(@aTime, File.atime(@file))
   end
 
   def test_s_basename
@@ -88,7 +71,7 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_mtime
-    assert_fail("untested")
+    assert_equal(@mTime, File.mtime(@file))
   end
 
   def test_s_open
@@ -134,6 +117,43 @@ class TestFile < Rubicon::TestCase
   def test_s_utime
     assert_fail("untested")
   end
+
+  def test_atime
+    assert_fail("untested")
+  end
+
+  def test_chmod
+    assert_fail("untested")
+  end
+
+  def test_chown
+    assert_fail("untested")
+  end
+
+  def test_ctime
+    assert_fail("untested")
+  end
+
+  def test_flock
+    assert_fail("untested")
+  end
+
+  def test_lstat
+    assert_fail("untested")
+  end
+
+  def test_mtime
+    assert_fail("untested")
+  end
+
+  def test_path
+    assert_fail("untested")
+  end
+
+  def test_truncate
+    assert_fail("untested")
+  end
+
 
 end
 

@@ -3,28 +3,12 @@ require '../rubicon'
 
 class TestDir < Rubicon::TestCase
 
-  def sys(cmd)
-    assert(system(cmd), cmd)
-    assert_equal(0, $?, "cmd: #{$?}")
-  end
-    
   def setup
-    @start = Dir.getwd
-    system("mkdir _test")
-    if $? != 0
-      $stderr.puts "Cannot run directory test: " + 
-                   "will destroy existing directory _test"
-      exit(99)
-    end
-    sys("touch _test/_file1")
-    sys("touch _test/_file2")
-    @files = %w(. .. _file1 _file2)
+    setupTestDir
   end
 
   def teardown
-    Dir.chdir(@start)
-    system("rm -f _test/*")
-    system("rmdir _test 2>/dev/null")
+    teardownTestDir
   end
 
   def test_s_aref

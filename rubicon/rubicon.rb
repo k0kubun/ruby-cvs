@@ -16,8 +16,47 @@ module Rubicon
         assert_equal(expected, num[n], "bit %d" % n)
       }
     end
+
+    def truth_table(method, *result)
+      for a in [ false, true ]
+        res = result.shift
+        assert_equal(method.call(a), res)
+        assert_equal(method.call(a ? self : nil), res)
+      end
+    end
+
+
+    #
+    # Issue a system and abort on error
+    #
+    def sys(cmd)
+      assert(system(cmd), cmd)
+      assert_equal(0, $?, "cmd: #{$?}")
+    end
+    
+
+    def setupTestDir
+      @start = Dir.getwd
+      system("mkdir _test")
+      if $? != 0
+        $stderr.puts "Cannot run directory test: " + 
+          "will destroy existing directory _test"
+        exit(99)
+      end
+      sys("touch _test/_file1")
+      sys("touch _test/_file2")
+      @files = %w(. .. _file1 _file2)
+    end
+    
+    def teardownTestDir
+      Dir.chdir(@start)
+      system("rm -f _test/*")
+      system("rmdir _test 2>/dev/null")
+    end
+
   end
 
+    
   def handleTests(testClass)
     testrunner = RUNIT::CUI::TestRunner.new
     RUNIT::CUI::TestRunner.quiet_mode = true
