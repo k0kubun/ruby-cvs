@@ -16,9 +16,10 @@
 #include "eruby.h"
 #include "eruby_logo.h"
 
-EXTERN VALUE ruby_errinfo;
-EXTERN VALUE rb_stdout;
-EXTERN VALUE rb_defout;
+extern VALUE ruby_errinfo;
+extern VALUE rb_stdout;
+extern VALUE rb_defout;
+extern VALUE rb_load_path;
 
 /* copied from eval.c */
 #define TAG_RETURN	0x1
@@ -634,10 +635,8 @@ int main(int argc, char **argv)
 	    give_img_logo(eruby_mode);
 	    return 0;
 	}
-	if (eruby_filename == NULL) {
-	    if ((eruby_filename = getenv("PATH_TRANSLATED")) == NULL)
-		eruby_filename = "";
-	}
+	if ((eruby_filename = getenv("PATH_TRANSLATED")) == NULL)
+	    eruby_filename = "";
     }
     else {
 	if (eruby_filename == NULL)
