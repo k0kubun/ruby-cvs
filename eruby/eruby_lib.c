@@ -19,6 +19,8 @@
 #include "eruby.h"
 #include "config.h"
 
+EXTERN VALUE rb_stdin;
+
 static VALUE mERuby;
 static VALUE cERubyCompiler;
 static VALUE eERubyCompileError;
@@ -593,7 +595,6 @@ static VALUE eruby_compile_file(compile_arg_t *arg)
 
 VALUE eruby_load(char *filename, int wrap, int *state)
 {
-    extern VALUE rb_stdin;
     VALUE compiler;
     VALUE code;
     VALUE f;

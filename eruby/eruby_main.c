@@ -4,24 +4,24 @@
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  */
 
-#include "ruby.h"
-#include "re.h"
-#include "regex.h"
-#include "version.h"
-
 #include <ctype.h>
 #include <time.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 
+#include "ruby.h"
+#include "re.h"
+#include "regex.h"
+#include "version.h"
+
 #include "eruby.h"
 #include "eruby_logo.h"
 
-extern VALUE ruby_errinfo;
-extern VALUE rb_stdout;
-extern VALUE rb_defout;
-extern VALUE rb_load_path;
+EXTERN VALUE ruby_errinfo;
+EXTERN VALUE rb_stdout;
+EXTERN VALUE rb_defout;
+EXTERN VALUE rb_load_path;
 
 /* copied from eval.c */
 #define TAG_RETURN	0x1
