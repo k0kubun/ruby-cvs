@@ -361,6 +361,14 @@ AC_SUBST("LIBRUBYARG")
 AC_SUBST("LIBRUBY_A")
 AC_SUBST("RUBY_SO_NAME")
 
+$MAJOR, $MINOR, $TEENY =
+  open(File.join($srcdir, "eruby.h")).grep(/ERUBY_VERSION/)[0].scan(/(\d+).(\d+).(\d+)/)[0]
+$MAJOR_MINOR = format("%02d", ($MAJOR.to_i * 10 + $MINOR.to_i))
+AC_SUBST("MAJOR")
+AC_SUBST("MINOR")
+AC_SUBST("TEENY")
+AC_SUBST("MAJOR_MINOR")
+
 AC_MSG_CHECKING("whether we are using gcc")
 if $CC == "gcc" || `#{$CC} -v 2>&1` =~ /gcc/
   $using_gcc = true
@@ -375,14 +383,6 @@ AC_MSG_RESULT(RUBY_VERSION)
 if RUBY_VERSION < "1.6"
   AC_MSG_ERROR("eruby requires Ruby 1.6.x or later.")
 end
-
-$MAJOR, $MINOR, $TEENY =
-  open(File.join($srcdir, "eruby.h")).grep(/ERUBY_VERSION/)[0].scan(/(\d+).(\d+).(\d+)/)[0]
-$MAJOR_MINOR = format("%02d", ($MAJOR.to_i * 10 + $MINOR.to_i))
-AC_SUBST("MAJOR")
-AC_SUBST("MINOR")
-AC_SUBST("TEENY")
-AC_SUBST("MAJOR_MINOR")
 
 AC_MSG_CHECKING("for default charset")
 $DEFAULT_CHARSET = "iso-8859-1"

@@ -670,8 +670,6 @@ VALUE eruby_load(char *filename, int wrap, int *state)
 	    return Qnil;
 	}
     }
-    eruby_noheader = 0;
-    eruby_charset = eruby_default_charset;
     compiler = eruby_compiler_new();
     eruby_compiler_set_sourcefile(compiler, rb_str_new2(filename));
     carg.compiler = compiler;

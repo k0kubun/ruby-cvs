@@ -1,3 +1,8 @@
+Tue Jul 10 12:01:43 2001  Shugo Maeda <shugo@modruby.net>
+
+	* eruby_lib.c (eruby_load): don't set eruby_charset and
+	eruby_noheader.
+
 Wed Jun 20 15:48:56 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.5 released.
