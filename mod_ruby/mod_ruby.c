@@ -688,6 +688,12 @@ static void per_request_cleanup()
     rb_set_kcode(default_kcode);
 }
 
+static VALUE exec_end_proc(VALUE arg)
+{
+    rb_exec_end_proc();
+    return Qnil;
+}
+
 static VALUE ruby_object_handler_0(void *arg)
 {
     request_rec *r = (request_rec *) arg;
@@ -742,6 +748,7 @@ static int ruby_object_handler(request_rec *r)
 	log_error(r, state);
 	retval = SERVER_ERROR;
     }
+    rb_protect(exec_end_proc, Qnil, NULL);
     ap_kill_timeout(r);
     per_request_cleanup();
     (void) ap_release_mutex(mod_ruby_mutex);

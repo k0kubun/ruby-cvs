@@ -744,10 +744,13 @@ static VALUE request_escape_html(VALUE self, VALUE str)
 {
     request_data *data;
     char *tmp;
+    VALUE result;
 
     Data_Get_Struct(self, request_data, data);
     tmp = ap_escape_html(data->request->pool, STR2CSTR(str));
-    return rb_str_new2(tmp);
+    result = rb_str_new2(tmp);
+    OBJ_INFECT(result, str);
+    return result;
 }
 
 static VALUE request_signature(VALUE self)
