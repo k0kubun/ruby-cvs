@@ -59,6 +59,9 @@ group:opengl:yoshi
 group:math3d:yoshi
 group:devices:matju
 group:hybris:matju
+group:csv:nahi
+group:devel-logger:nahi
+group:soap4r:nahi
 
 group:www:@all
 
@@ -106,6 +109,9 @@ grant:@opengl:lib/opengl
 grant:@math3d:lib/math3d
 grant:@devices:lib/devices
 grant:@hybris:lib/hybris
+grant:@csv:lib/csv
+grant:@devel-logger:lib/devel-logger
+grant:@soap4r:lib/soap4r
 
 grant:@www:www
 
