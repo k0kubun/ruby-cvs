@@ -77,6 +77,16 @@ class TestMarshal < Rubicon::TestCase
     assert_set_equal([newb, newb.b1, newb.b2], res)
   end
 
+  # there was a bug Marshaling Bignums, so
+
+  def test_s_dump_load4
+    b1 = 123456789012345678901234567890
+    b2 = -123**99
+    
+    assert_equal(b1, Marshal.load(Marshal.dump(b1)))
+    assert_equal(b2, Marshal.load(Marshal.dump(b2)))
+  end
+
   def test_s_restore
     b = B.new(10, "wombat")
     assert_equal(10,       b.b1.a1)

@@ -1,19 +1,3 @@
-#!/usr/bin/env ruby
-=begin
-
-	MetaRuby 0.4
-	file: Test cases for Hash
-
-	This package is Copyright (c) 2001 by Mathieu Bouchard
-	This file is Copyright (c) 2000,2001 by Dave Thomas
-	Licensed under the same license as Ruby.
-
-	Adapted by Mathieu Bouchard
-
-	Could be merged back with Rubicon eventually
-
-=end
-
 require "rubicon"
 
 
