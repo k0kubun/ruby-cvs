@@ -1,3 +1,7 @@
+Fri Apr 20 17:04:35 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.1 released.
+
 Fri Apr 20 16:15:12 2001  Shugo Maeda <shugo@modruby.net>
 
 	* eruby_main.c: use EXTERN instead of extern.
