@@ -70,12 +70,14 @@ extern RegCharEncoding RegDefaultCharEncoding;
 #define REG_OPTION_IGNORECASE       RE_OPTION_IGNORECASE
 #define REG_OPTION_EXTEND           RE_OPTION_EXTENDED
 #define REG_OPTION_FIND_LONGEST     RE_OPTION_LONGEST
+#define REG_OPTION_FIND_NOT_EMPTY   (REG_OPTION_FIND_LONGEST << 1)
 
 #define REG_OPTION_ON(options,regopt)      ((options) |= (regopt))
 #define REG_OPTION_OFF(options,regopt)     ((options) &= ~(regopt))
 #define IS_REG_OPTION_ON(options,option)   ((options) & (option))
 
 /* error codes */
+#define REG_IS_PATTERN_ERROR(ecode)   ((ecode) <= -100 && (ecode) > -300)
 /* normal return */
 #define REG_NORMAL                                             0
 #define REG_MISMATCH                                          -1
@@ -101,24 +103,26 @@ extern RegCharEncoding RegDefaultCharEncoding;
 #define REGERR_CONTROL_CODE_SYNTAX                          -109
 #define REGERR_CHAR_CLASS_VALUE_AT_END_OF_RANGE             -110
 #define REGERR_CHAR_CLASS_VALUE_AT_START_OF_RANGE           -111
-#define REGERR_TARGET_OF_REPEAT_QUALIFIER_NOT_SPECIFIED     -112
-#define REGERR_TARGET_OF_REPEAT_QUALIFIER_IS_EMPTY          -113
-#define REGERR_NESTED_REPEAT_OPERATOR                       -114
-#define REGERR_UNMATCHED_RIGHT_PARENTHESIS                  -115
-#define REGERR_END_PATTERN_WITH_UNMATCHED_PARENTHESIS       -116
-#define REGERR_END_PATTERN_AT_GROUP_OPTION                  -117
-#define REGERR_UNDEFINED_GROUP_OPTION                       -118
-#define REGERR_END_PATTERN_AT_GROUP_COMMENT                 -119
-#define REGERR_INVALID_POSIX_BRACKET_TYPE                   -120
-#define REGERR_INVALID_LOOK_BEHIND_PATTERN                  -121
+#define REGERR_UNMATCHED_RANGE_SPECIFIER_IN_CHAR_CLASS      -112
+#define REGERR_TARGET_OF_REPEAT_OPERATOR_NOT_SPECIFIED      -113
+#define REGERR_TARGET_OF_REPEAT_OPERATOR_INVALID            -114
+#define REGERR_NESTED_REPEAT_OPERATOR                       -115
+#define REGERR_UNMATCHED_RIGHT_PARENTHESIS                  -116
+#define REGERR_END_PATTERN_WITH_UNMATCHED_PARENTHESIS       -117
+#define REGERR_END_PATTERN_AT_GROUP_OPTION                  -118
+#define REGERR_UNDEFINED_GROUP_OPTION                       -119
+#define REGERR_END_PATTERN_AT_GROUP_COMMENT                 -120
+#define REGERR_INVALID_POSIX_BRACKET_TYPE                   -121
+#define REGERR_INVALID_LOOK_BEHIND_PATTERN                  -122
 /* values error */
 #define REGERR_TOO_BIG_NUMBER                               -200
 #define REGERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE              -201
 #define REGERR_UPPER_SMALLER_THAN_LOWER_IN_REPEAT_RANGE     -202
 #define REGERR_RIGHT_SMALLER_THAN_LEFT_IN_CLASS_RANGE       -203
-#define REGERR_TOO_MANY_MULTI_BYTE_RANGES                   -204
-#define REGERR_TOO_SHORT_MULTI_BYTE_STRING                  -205
-#define REGERR_TOO_BIG_BACKREF_NUMBER                       -206
+#define REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE          -204
+#define REGERR_TOO_MANY_MULTI_BYTE_RANGES                   -205
+#define REGERR_TOO_SHORT_MULTI_BYTE_STRING                  -206
+#define REGERR_TOO_BIG_BACKREF_NUMBER                       -207
 
 /* match result region type */
 struct re_registers {
@@ -242,7 +246,12 @@ extern int   regex_end();
 /* GNU regex compatible API */
 #ifdef __STDC__
 
+#ifdef REG_RUBY_M17N
+extern void  re_mbcinit(RegCharEncoding);
+#else
 extern void  re_mbcinit(int);
+#endif
+
 extern char* re_compile_pattern(const char*, int, struct re_pattern_buffer*);
 extern char* re_recompile_pattern(const char*, int, struct re_pattern_buffer*);
 extern void  re_free_pattern(struct re_pattern_buffer*);
