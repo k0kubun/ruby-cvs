@@ -1,3 +1,11 @@
+2002-05-30  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestRange.rb (TestRange::test_length): 1.7 no longer
+	  provides Range#length.
+
+	* builtin/TestRange.rb (TestRange::test_size): check should be
+	  done for "size", not "length".
+
 2002-05-21  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* builtin/TestModule.rb (TestModule::test_CMP): <=> comparison

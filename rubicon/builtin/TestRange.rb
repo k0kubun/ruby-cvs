@@ -92,17 +92,21 @@ class TestRange < Rubicon::TestCase
   end
 
   def test_length
-    assert_equal(10, (1..10).length)
-    assert_equal(10, (1...11).length)
-    assert_equal(1000, (1..1000).length)
-    assert_equal(26, ("A".."Z").length)
+    Version.less_than("1.7") do
+      assert_equal(10, (1..10).length)
+      assert_equal(10, (1...11).length)
+      assert_equal(1000, (1..1000).length)
+      assert_equal(26, ("A".."Z").length)
+    end
   end
 
   def test_size
-    assert_equal(10, (1..10).length)
-    assert_equal(10, (1...11).length)
-    assert_equal(1000, (1..1000).length)
-    assert_equal(26, ("A".."Z").length)
+    Version.less_than("1.7") do
+      assert_equal(10, (1..10).size)
+      assert_equal(10, (1...11).size)
+      assert_equal(1000, (1..1000).size)
+      assert_equal(26, ("A".."Z").size)
+    end
   end
 
   def test_to_s
