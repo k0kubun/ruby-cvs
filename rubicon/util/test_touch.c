@@ -47,12 +47,15 @@ static time_t parsetime(const char *str)
   tm.tm_year -= 1900;
   tm.tm_mon--;
   tm.tm_isdst = -1;
-
+  /*  printf("%d %d %d %d %d\n",
+	 tm.tm_year, tm.tm_mon, tm.tm_mday, tm.tm_hour, tm.tm_min);
+  */
   time = mktime(&tm);
 
   if (time == (time_t)-1)
     usage("Can't convert time");
 
+  /*printf("%ld\n", time);*/
   return time;
 }
 

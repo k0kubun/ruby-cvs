@@ -77,15 +77,21 @@ $rubyVersion = VersionNumber.new(VERSION)
 #
 #   if $os == Linux          # operating system is Linux
 
-class OS;             end
-class Unix    < OS;   end
-class Linux   < Unix; end
-class BSD     < Unix; end
-class FreeBSD < BSD;  end
+class OS;                end
+class Unix    < OS;      end
+class Linux   < Unix;    end
+class BSD     < Unix;    end
+class FreeBSD < BSD;     end
 
-$os = OS
-$os = Linux if RUBY_PLATFORM =~ /linux/
-$os = BSD   if RUBY_PLATFORM =~ /bsd/
+class Windows < OS;      end
+class Cygwin  < Windows; end
+
+$os = case RUBY_PLATFORM
+      when /linux/  then  Linux
+      when /bsd/    then BSD
+      when /cygwin/ then Cygwin
+      else OS
+      end
 
 #
 # This is the main Rubicon module, implemented as a module to
@@ -242,8 +248,7 @@ module Rubicon
     def runChild(&block)
       pid = fork 
       if pid.nil?
-          block.call
-          exit 0
+          block.call          exit 0
       end
       Process.waitpid(pid, 0)
       return ($? >> 8) & 0xff
@@ -284,13 +289,15 @@ module Rubicon
       if (File.exists?("_test"))
         Dir.chdir("_test")
         Dir.foreach(".") { |f|
+	  File.chmod(0644, f) rescue true
           begin
             File.delete(f)
           rescue
-            Dir.delete(f)
+            Dir.delete(f) rescue puts $!
           end unless f[0] == ?.
         }
         Dir.chdir("..")
+	File.chmod(0644, "_test")
         Dir.rmdir("_test")
       end
     end

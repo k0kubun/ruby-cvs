@@ -177,6 +177,7 @@ class TestTime < Rubicon::TestCase
     t1=Time.now
     t2=t1 
     t2+= 2e-6
+    sleep(.1)
     assert(!t1.eql?(Time.now))
     assert(!t1.eql?(t2))
   end
@@ -200,6 +201,7 @@ class TestTime < Rubicon::TestCase
   def test_hash
     t = Time.now
     t2 = Time.at(t)
+    sleep(.1)
     t3 = Time.now
     assert(t.hash == t2.hash)
     assert(t.hash != t3.hash)

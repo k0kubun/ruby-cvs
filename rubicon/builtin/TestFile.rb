@@ -36,16 +36,21 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_chmod
+    base = $os == Cygwin ? 0444 : 0
     assert_exception(Errno::ENOENT) { File.chmod(0, "_gumby") }
     assert_equal(0, File.chmod(0))
     Dir.chdir("_test")
-    assert_equal(1,    File.chmod(0, "_file1"))
-    assert_equal(2,    File.chmod(0, "_file1", "_file2"))
-    assert_equal(0,    File.stat("_file1").mode & 0777)
-    assert_equal(1,    File.chmod(0400, "_file1"))
-    assert_equal(0400, File.stat("_file1").mode & 0777)
-    assert_equal(1,    File.chmod(0644, "_file1"))
-    assert_equal(0644, File.stat("_file1").mode & 0777)
+    begin
+      assert_equal(1,         File.chmod(0, "_file1"))
+      assert_equal(2,         File.chmod(0, "_file1", "_file2"))
+      assert_equal(base,      File.stat("_file1").mode & 0777)
+      assert_equal(1,         File.chmod(0400, "_file1"))
+      assert_equal(base|0400, File.stat("_file1").mode & 0777)
+      assert_equal(1,         File.chmod(0644, "_file1"))
+      assert_equal(base|0644, File.stat("_file1").mode & 0777)
+    ensure
+      Dir.chdir("..")
+    end
   end
 
   def test_s_chown
@@ -126,7 +131,6 @@ class TestFile < Rubicon::TestCase
   def test_s_ftype
     Dir.chdir("_test")
     File.symlink("_file1", "_file3") # may fail
-    system("mkfifo _fifo") # may fail
     sock = UNIXServer.open("_sock")
 
     begin
@@ -136,11 +140,12 @@ class TestFile < Rubicon::TestCase
         "/dev/tty" => "characterSpecial",
         "_sock"    => "socket",
         "_file3"   => "link",
-        "_fifo"    => "fifo" 
       }
 
       if $os == Linux
         tests["/dev/fd0"] = "blockSpecial"
+	system("mkfifo _fifo") # may fail
+	tests["_fifo"] = "fifo"
       end
 
       tests.each { |file, type|
@@ -169,13 +174,18 @@ class TestFile < Rubicon::TestCase
 
   def test_s_link
     Dir.chdir("_test")
-    
-    assert_equal(0, File.link("_file1", "_file3"))
-    
-    assert(File.exists?("_file3"))
-    assert_equal(2, File.stat("_file1").nlink)
-    assert_equal(2, File.stat("_file3").nlink)
-    assert(File.stat("_file1").ino == File.stat("_file3").ino)
+    begin
+      assert_equal(0, File.link("_file1", "_file3"))
+      
+      assert(File.exists?("_file3"))
+      unless $os <= Windows
+	assert_equal(2, File.stat("_file1").nlink)
+	assert_equal(2, File.stat("_file3").nlink)
+	assert(File.stat("_file1").ino == File.stat("_file3").ino)
+      end
+    ensure
+      Dir.chdir("..")
+    end
   end
 
   def test_s_lstat
@@ -318,7 +328,11 @@ class TestFile < Rubicon::TestCase
     assert_exception(Errno::ENOENT) { File.size("gumby") }
     assert_equal(0, File.size(file))
     File.open(file, "w") { |f| f.puts "123456789" }
-    assert_equal(10, File.size(file))
+    if $os <= Windows
+      assert_equal(11, File.size(file))
+    else
+      assert_equal(10, File.size(file))
+    end
   end
 
   def test_s_split
@@ -346,7 +360,11 @@ class TestFile < Rubicon::TestCase
   def test_s_truncate
     file = "_test/_file1"
     File.open(file, "w") { |f| f.puts "123456789" }
-    assert_equal(10, File.size(file))
+    if $os <= Windows
+      assert_equal(11, File.size(file))
+    else
+      assert_equal(10, File.size(file))
+    end
     File.truncate(file, 5)
     assert_equal(5, File.size(file))
     File.open(file, "r") { |f|
@@ -375,19 +393,22 @@ class TestFile < Rubicon::TestCase
 
   def test_s_utime
     Dir.chdir("_test")
-
-    [ [ 0,                      0 ],
-      [ Time.at(0),             Time.at(12345) ],
-      [ Time.at(Time.now.to_i), Time.at(54321) ],
-      [ Time.at(121314),        Time.now.to_i ]
-    ].each { |aTime, mTime|
-      File.utime(aTime, mTime, "_file1", "_file2")
-
-      for file in [ "_file1", "_file2" ]
-        assert_equal(aTime, File.stat(file).atime) # does automatic conversion
-        assert_equal(mTime, File.stat(file).mtime)
-      end
-    }
+    begin
+      [ [ 0,                      0 ],
+	[ Time.at(0),             Time.at(12345) ],
+	[ Time.at(Time.now.to_i), Time.at(54321) ],
+	[ Time.at(121314),        Time.now.to_i ]
+      ].each { |aTime, mTime|
+	File.utime(aTime, mTime, "_file1", "_file2")
+	
+	for file in [ "_file1", "_file2" ]
+	  assert_equal(aTime, File.stat(file).atime) # does automatic conversion
+	  assert_equal(mTime, File.stat(file).mtime)
+	end
+      }
+    ensure
+      Dir.chdir("..")
+    end
   end
 
   # Instance methods
@@ -396,15 +417,20 @@ class TestFile < Rubicon::TestCase
     File.open(@file) { |f| assert_equal(@aTime, f.atime) }
   end
 
+  # Apparently you can't remove read permission on a file
+  # under cygwin (at least on W2K)
+
   def test_chmod
+    base = $os == Cygwin ? 0444 : 0
+
     Dir.chdir("_test")
     File.open("_file1") { |f|
       assert_equal(0,    f.chmod(0))
-      assert_equal(0,    f.stat.mode & 0777)
+      assert_equal(base,    f.stat.mode & 0777)
       assert_equal(0,    f.chmod(0400))
-      assert_equal(0400, f.stat.mode & 0777)
+      assert_equal(base | 0400, f.stat.mode & 0777)
       assert_equal(0,    f.chmod(0644))
-      assert_equal(0644, f.stat.mode & 0777)
+      assert_equal(base | 0644, f.stat.mode & 0777)
     }
   end
 
@@ -453,16 +479,22 @@ class TestFile < Rubicon::TestCase
 
   def test_lstat
     Dir.chdir("_test")
-    File.symlink("_file1", "_file3") # may fail
-
-    f1 = File.open("_file1")
-    f3 = File.open("_file3")
-
-    assert_equal(0, f3.stat.size)
-    assert(0 < f3.lstat.size)
-
-    assert_equal(0, f1.stat.size)
-    assert_equal(0, f1.lstat.size)
+    begin
+      File.symlink("_file1", "_file3") # may fail
+      
+      f1 = File.open("_file1")
+      f3 = File.open("_file3")
+      
+      assert_equal(0, f3.stat.size)
+      assert(0 < f3.lstat.size)
+      
+      assert_equal(0, f1.stat.size)
+      assert_equal(0, f1.lstat.size)
+      f1.close
+      f3.close
+    ensure
+      Dir.chdir("..")
+    end
   end
 
   def test_mtime

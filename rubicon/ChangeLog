@@ -1,3 +1,20 @@
+2001-07-27    <dave@pragmaticprogrammer.com>
+	Start getting stuff to work under Windows. First we get Cygwin working,
+	and then we attack the MSVC version.
+	
+	* builtin\TestFile.rb: Can't test fifo's under Windows.
+	File sizes of files containing newlines are different under DOS.
+
+	* builtin\TestDir.rb: Need to close the directory at the end of
+	tests in order to allow Windows to delete it.
+
+	* builtin\TestTime.rb: Under Windows the clock resolution means
+	that we need to insert a sleep to have two consecutive Time.now's
+	be different.
+
+	* builtin\TestKernel.rb: Cygwin apparently doesn't honor a signal disposition 
+	of 'IGNORE', so skip the test under test_s_trap
+
 2001-07-25  Hugh Sasse
 
 	* FileTest.rb: Add File.join tests in light of ruby-talk:18512

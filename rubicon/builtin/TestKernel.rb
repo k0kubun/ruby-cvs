@@ -2041,19 +2041,23 @@ class TestKernel < Rubicon::TestCase
 
   def test_s_trap
 
-    # 1. Check that an exception s thrown if we wait for a child and
+    # 1. Check that an exception is thrown if we wait for a child and
     # there is no child.
 
-    # "IGNORE" discards child termination status
-    trap "CHLD", "IGNORE"
-    pid = fork
-    exit unless pid
-    sleep 1                     # ensure child has exited (ish)
-    assert_exception(Errno::ECHILD) { Process.wait }
-    res = nil
+    # "IGNORE" discards child termination status (but apparently not
+    # under Cygwin/W2k
+
+    if $os != Cygwin
+      trap "CHLD", "IGNORE"
+      pid = fork
+      exit unless pid
+      sleep 1                     # ensure child has exited (ish)
+      assert_exception(Errno::ECHILD) { Process.wait }
+    end
 
     # 2. check that we run a proc as a handler when a child
     # terminates
+    res = nil
     lastProc = proc { res = 1 }
     trap("SIGCHLD", lastProc)
     fork { ; }

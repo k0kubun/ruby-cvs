@@ -27,8 +27,7 @@ class TestDir < Rubicon::TestCase
       [ %w( _test/_file1 _test/_file2 ), Dir["_test/_file{0,1,2,3}"] ],
       [ %w( ),                           Dir["_test/_file{4,5,6,7}"] ],
       
-      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]l*"] ],
-      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]e[0-9]"] ],
+      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]l*"] ],      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]e[0-9]"] ],
       [ %w( _test/_file1              ), Dir["**/_f*[il]e[01]"] ],
       [ %w( _test/_file1              ), Dir["**/_f*[il]e[01]*"] ],
       [ %w( _test/_file1              ), Dir["**/_f*[^ie]e[01]*"] ],
@@ -175,7 +174,6 @@ class TestDir < Rubicon::TestCase
     entry = nil
     got << entry while entry = d.read
     assert_set_equal(@files, got)
-    assert_nil(d.read)
   end
 
   def test_rewind
@@ -184,12 +182,10 @@ class TestDir < Rubicon::TestCase
     got = []
     got << entry while entry = d.read
     assert_set_equal(@files, got)
-    assert_nil(d.read)
     d.rewind
     got = []
     got << entry while entry = d.read
     assert_set_equal(@files, got)
-    assert_nil(d.read)
   end
 
   def test_seek
@@ -200,6 +196,7 @@ class TestDir < Rubicon::TestCase
     name = d.read
     assert_equal(d, d.seek(pos))
     assert_equal(name, d.read)
+    d.close
   end
 
   def test_tell
@@ -210,6 +207,7 @@ class TestDir < Rubicon::TestCase
     name = d.read
     assert_equal(d, d.seek(pos))
     assert_equal(name, d.read)
+    d.close
   end
 
 end
