@@ -47,6 +47,7 @@ group:rwiki:seki,nahi
 group:rwiki-installer:kazu
 group:drb:seki
 group:interbase:matz,bizenn
+group:rice:akira
 group:irc:iga,knu,gnhurst
 group:metaruby:matju,aleksi
 group:xlib:matju
@@ -89,6 +90,7 @@ grant:@rwiki-installer:app/rwiki/installer
 grant:@rwiki:app/rwiki
 grant:@drb:lib/drb
 grant:@interbase:lib/interbase
+grant:@rice:lib/rice
 grant:@irc:lib/irc
 grant:@metaruby:lib/metaruby
 grant:@xlib:lib/xlib
