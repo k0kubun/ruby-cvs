@@ -499,18 +499,10 @@ static void get_exception_info(VALUE str)
     ruby_errinfo = Qnil;
 }
 
-static void ruby_error_print(request_rec *r, int state)
+static VALUE get_error_info(request_rec *r, int state)
 {
     char buff[BUFSIZ];
-    VALUE errmsg, logmsg;
-
-    r->content_type = "text/html";
-    ap_send_http_header(r);
-    ap_rputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n", r);
-    ap_rputs("<html>\n", r);
-    ap_rputs("<head><title>Error</title></head>\n", r);
-    ap_rputs("<body>\n", r);
-    ap_rputs("<pre>\n", r);
+    VALUE errmsg;
 
     errmsg = STRING_LITERAL("");
     switch (state) {
@@ -544,8 +536,24 @@ static void ruby_error_print(request_rec *r, int state)
 	rb_str_cat(errmsg, buff, strlen(buff));
 	break;
     }
+    return errmsg;
+}
+
+static void ruby_error_print(request_rec *r, int state)
+{
+    VALUE errmsg, logmsg;
+
+    r->content_type = "text/html";
+    ap_send_http_header(r);
+    ap_rputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n", r);
+    ap_rputs("<html>\n", r);
+    ap_rputs("<head><title>Error</title></head>\n", r);
+    ap_rputs("<body>\n", r);
+    ap_rputs("<pre>\n", r);
+
+    errmsg = get_error_info(r, state);
     ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
-    logmsg = STRING_LITERAL("ruby script error\n");
+    logmsg = STRING_LITERAL("mod_ruby:\n");
     rb_str_concat(logmsg, errmsg);
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
 		 "%s", STR2CSTR(logmsg));
@@ -553,6 +561,18 @@ static void ruby_error_print(request_rec *r, int state)
     ap_rputs("</pre>\n", r);
     ap_rputs("</body>\n", r);
     ap_rputs("</html>\n", r);
+}
+
+static void ruby_log_error(request_rec *r, int state)
+{
+    VALUE errmsg, logmsg;
+
+    errmsg = get_error_info(r, state);
+    ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
+    logmsg = STRING_LITERAL("mod_ruby:\n");
+    rb_str_concat(logmsg, errmsg);
+    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
+		 "%s", STR2CSTR(logmsg));
 }
 
 static int get_client_block(request_rec *r, VALUE *str)
@@ -786,6 +806,8 @@ static int run_safely(request_rec *r, VALUE (*func)(), void *arg, VALUE *retval)
     ret = protect_funcall(thread, rb_intern("value"), &state, 0);
     if (retval)
 	*retval = ret;
+    if (state)
+	ruby_log_error(r, state);
     return state;
 }
 
@@ -843,7 +865,7 @@ static VALUE ruby_object_handler_0(request_rec *r, void *arg)
 
 static int ruby_object_handler(request_rec *r)
 {
-    int state;
+    int result;
     VALUE input, retval;
 
     (void) ap_acquire_mutex(mod_ruby_mutex);
@@ -854,16 +876,16 @@ static int ruby_object_handler(request_rec *r)
     rb_gv_set("$stdout", rb_defout);
 
     ap_soft_timeout("load ruby script", r);
-    state = run_safely(r, ruby_object_handler_0, NULL, &retval);
-    ap_kill_timeout(r);
-    (void) ap_release_mutex(mod_ruby_mutex);
-    if (state) {
-	return SERVER_ERROR;
-    }
-    else {
+    if (run_safely(r, ruby_object_handler_0, NULL, &retval) == 0) {
 	rb_request_flush(rb_defout);
 	return NUM2INT(retval);
     }
+    else {
+	result = SERVER_ERROR;
+    }
+    ap_kill_timeout(r);
+    (void) ap_release_mutex(mod_ruby_mutex);
+    return result;
 }
 
 /*
