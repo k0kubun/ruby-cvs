@@ -1,6 +1,7 @@
 /*
  * $Id$
- * Copyright (C) 1999  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  ZetaBITS, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  */
 
 #include "ruby.h"
@@ -122,6 +123,11 @@ static int set_mode(char *mode)
 	return -1;
     }
     return 0;
+}
+
+const char *eruby_version()
+{
+    return ERUBY_VERSION;
 }
 
 int eruby_parse_options(int argc, char **argv)

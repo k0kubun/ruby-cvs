@@ -1,12 +1,13 @@
 /*
  * $Id$
- * Copyright (C) 1999  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  ZetaBITS, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  */
 
 #ifndef ERUBY_H
 #define ERUBY_H
 
-#define ERUBY_VERSION "0.1.2"
+#define ERUBY_VERSION "0.1.3"
 
 #define ERUBY_MIME_TYPE "application/x-httpd-eruby"
 
@@ -31,6 +32,7 @@ extern VALUE eruby_charset;
 extern VALUE eruby_default_charset;
 #define ERUBY_CHARSET RSTRING(eruby_charset)->ptr
 
+const char *eruby_version();
 int eruby_parse_options(int argc, char **argv);
 int eruby_compile(FILE *in, FILE *out);
 VALUE eruby_compile_file(char *filename);

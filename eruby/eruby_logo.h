@@ -1,6 +1,7 @@
 /*
  * $Id$
- * Copyright (C) 1999  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  ZetaBITS, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  */
 
 #ifndef ERUBY_LOGO_H
