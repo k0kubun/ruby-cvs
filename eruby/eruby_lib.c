@@ -50,8 +50,6 @@ int eruby_noheader = 0;
 VALUE eruby_charset;
 VALUE eruby_default_charset;
 
-int eruby_optind = 1;
-
 #define ERUBY_BEGIN_DELIMITER "<%"
 #define ERUBY_END_DELIMITER "%>"
 #define ERUBY_EXPR_CHAR '='
@@ -113,16 +111,16 @@ static int set_mode(char *mode)
     return 0;
 }
 
-int eruby_parse_options(int argc, char **argv)
+int eruby_parse_options(int argc, char **argv, int *optind)
 {
+    int i, result = 0;
     unsigned char *s;
 
-    for (eruby_optind = 1; eruby_optind < argc; eruby_optind++) {
-	if (argv[eruby_optind][0] != '-' || argv[eruby_optind][1] == '\0') {
-	    eruby_filename = argv[eruby_optind];
+    for (i = 1; i < argc; i++) {
+	if (argv[i][0] != '-' || argv[i][1] == '\0') {
 	    break;
 	}
-	s = argv[eruby_optind];
+	s = argv[i];
       again:
 	while (isspace(*s))
 	    s++;
@@ -130,14 +128,14 @@ int eruby_parse_options(int argc, char **argv)
 	switch (*s) {
 	case 'M':
 	    if (set_mode(++s) == -1)
-		return 2;
+		result = 2; break;
 	    s++;
 	    goto again;
 	case 'K':
 	    s++;
 	    if (*s == '\0') {
 		fprintf(stderr, "%s: no arg given for -K\n", argv[0]);
-		return 2;
+		result = 2; break;
 	    }
 	    rb_set_kcode(s);
 	    s++;
@@ -146,12 +144,12 @@ int eruby_parse_options(int argc, char **argv)
 	    s++;
 	    if (isspace(*s)) s++;
 	    if (*s == '\0') {
-		eruby_optind++;
-		if (eruby_optind == argc) {
+		i++;
+		if (i == argc) {
 		    fprintf(stderr, "%s: no arg given for -C\n", argv[0]);
-		    return 2;
+		    result = 2; break;
 		}
-		eruby_charset = rb_str_new2(argv[eruby_optind]);
+		eruby_charset = rb_str_new2(argv[i]);
 		break;
 	    }
 	    else {
@@ -177,7 +175,7 @@ int eruby_parse_options(int argc, char **argv)
 	    break;
 	case 'h':
 	    usage(argv[0]);
-	    return 1;
+	    result = 1; break;
 	case '-':
 	    s++;
 	    if (strncmp(s , "debug", 5) == 0
@@ -195,7 +193,7 @@ int eruby_parse_options(int argc, char **argv)
 	    else if (strncmp(s, "version", 7) == 0
 		     && (s[7] == '\0' || isspace(s[7]))) {
 		show_version();
-		return 1;
+		result = 1; break;
 	    }
 	    else if (strncmp(s, "verbose", 7) == 0
 		     && (s[7] == '\0' || isspace(s[7]))) {
@@ -206,21 +204,22 @@ int eruby_parse_options(int argc, char **argv)
 	    else if (strncmp(s, "help", 4) == 0
 		     && (s[4] == '\0' || isspace(s[4]))) {
 		usage(argv[0]);
-		return 1;
+		result = 1; break;
 	    }
 	    else {
 		fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
 		fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
-		return 1;
+		result = 1; break;
 	    }
 	default:
 	    fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
 	    fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
-	    return 2;
+	    result = 2; break;
 	}
     }
 
-    return 0;
+    if (optind)	*optind = i;
+    return result;
 }
 
 typedef struct eruby_compiler {
@@ -482,7 +481,7 @@ static VALUE eruby_compile(eruby_compiler_t *compiler)
 	    while (*p && !isspace(*p)) p++;
 	    while (isspace(*p)) p++;
 	    argv[1] = p;
-	    if (eruby_parse_options(2, argv) != 0) {
+	    if (eruby_parse_options(2, argv, NULL) != 0) {
 		rb_raise(eERubyCompileError, "invalid #! line");
 	    }
 	    compiler->lex_p = compiler->lex_pend;

@@ -448,9 +448,11 @@ static void init()
 
 static void proc_args(int argc, char **argv)
 {
+    int option_index;
+
     ruby_script(argv[0]);
 
-    switch (eruby_parse_options(argc, argv)) {
+    switch (eruby_parse_options(argc, argv, &option_index)) {
     case 1:
 	exit(0);
     case 2:
@@ -483,23 +485,19 @@ static void proc_args(int argc, char **argv)
 	    query_string = "";
 	qs_has_equal = (strchr(query_string, '=') != NULL);
 
-	fprintf(stderr, "query_string: %s\n", query_string);
-	if (eruby_optind < argc)
-	    fprintf(stderr, "argv[eruby_optind]: %s\n", argv[eruby_optind]);
-
 	if (path_translated[0] &&
-	    ((eruby_optind == argc &&
+	    ((option_index == argc &&
 	      (!query_string[0] || qs_has_equal)) ||
-	     (eruby_optind == argc - 1 &&
-	      !qs_has_equal && strcmp(argv[eruby_optind], query_string) == 0))) {
+	     (option_index == argc - 1 &&
+	      !qs_has_equal && strcmp(argv[option_index], query_string) == 0))) {
 	    eruby_filename = path_translated;
 	}
-	else if ((eruby_optind == argc - 1 &&
+	else if ((option_index == argc - 1 &&
 		  (!query_string[0] || qs_has_equal)) ||
-		 (eruby_optind == argc - 2 &&
+		 (option_index == argc - 2 &&
 		  !qs_has_equal &&
-		  strcmp(argv[eruby_optind + 1], query_string) == 0)) {
-	    eruby_filename = argv[eruby_optind];
+		  strcmp(argv[option_index + 1], query_string) == 0)) {
+	    eruby_filename = argv[option_index];
 	}
 	else {
 	    fprintf(stderr, "%s: missing required file to process\n", argv[0]);
@@ -513,11 +511,11 @@ static void proc_args(int argc, char **argv)
 	*/
     }
     else {
-	if (eruby_optind == argc) {
+	if (option_index == argc) {
 	    eruby_filename = "-";
 	}
 	else {
-	    eruby_filename = argv[eruby_optind];
+	    eruby_filename = argv[option_index];
 	}
     }
 }

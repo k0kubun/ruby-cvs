@@ -33,10 +33,8 @@ extern VALUE eruby_charset;
 extern VALUE eruby_default_charset;
 #define ERUBY_CHARSET RSTRING(eruby_charset)->ptr
 
-extern int eruby_optind;
-
 const char *eruby_version();
-int eruby_parse_options(int argc, char **argv);
+int eruby_parse_options(int argc, char **argv, int *optind);
 VALUE eruby_compiler_new();
 VALUE eruby_compiler_compile_file(VALUE self, VALUE file);
 VALUE eruby_compiler_compile_string(VALUE self, VALUE s);

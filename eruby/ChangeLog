@@ -1,3 +1,8 @@
+Tue Jun 12 15:54:22 2001  Shugo Maeda <shugo@modruby.net>
+
+	* eruby_lib.c (eruby_parse_options): added new argument for
+	optind.
+
 Mon Jun 11 14:33:58 2001  Shugo Maeda <shugo@modruby.net>
 
 	* eruby_main.c (proc_args): distinguish stand-alone CGI scripts
