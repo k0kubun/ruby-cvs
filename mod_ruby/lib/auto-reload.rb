@@ -53,7 +53,7 @@ module AutoReload
       return super(lib)
     end
     mtime = File.mtime(file)
-    if mtime == LIBRARY_MTIMES[file]
+    if LIBRARY_MTIMES[file] == mtime
       return false
     else
       LIBRARY_MTIMES[file] = mtime
