@@ -1,3 +1,7 @@
+Thu Apr 19 15:40:57 2001  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby.h: new constant ERUBY_VERSION_CODE.
+
 Thu Apr 19 14:59:50 2001  Shugo Maeda <shugo@ruby-lang.org>
 
 	* eruby_lib.c: renamed from eruby.c.
