@@ -232,10 +232,10 @@ class TestIO < Rubicon::TestCase
 
   def test_s_select
     assert_nil(select(nil, nil, nil, 0))
-    assert_exception(ArgumentError) { select(nil, nil, nil, -1) }
+    assert_exception(ArgumentError) { IO.select(nil, nil, nil, -1) }
     
     File.open(@file) do |file|
-      res = select([file], [$stdout, $stderr], [file,$stdout,$stderr], 1)
+      res = IO.select([file], [$stdout, $stderr], [file,$stdout,$stderr], 1)
       assert_equal([[file], [$stdout, $stderr], []], res)
     end
     

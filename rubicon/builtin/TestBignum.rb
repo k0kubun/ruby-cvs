@@ -212,10 +212,10 @@ class TestBignum < Rubicon::TestCase
     b = 10**80
     a = b * 9 + 7
 
-    assert_equal(7,  a % b)
-    assert_equal(7,  a % (-b))
-    assert_equal(-7, (-a) % b)
-    assert_equal(-7, (-a) % (-b))
+    assert_equal(7,  a.remainder(b))
+    assert_equal(7,  a.remainder(-b))
+    assert_equal(-7, (-a).remainder(b))
+    assert_equal(-7, (-a).remainder(-b))
   end
 
   def test_size

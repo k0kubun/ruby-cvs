@@ -804,8 +804,8 @@ class TestString < Rubicon::TestCase
   end
 
   def test_sub
-    assert_equal("h*llo","hello".sub(/[aeiou]/,'*'))
-    assert_equal("h<e>llo","hello".sub(/([aeiou])/,'<\1>'))
+    assert_equal("h*llo",    "hello".sub(/[aeiou]/,'*'))
+    assert_equal("h<e>llo",  "hello".sub(/([aeiou])/,'<\1>'))
     assert_equal("104 ello", "hello".sub('.') {
                    |s| s[0].to_s+' '})
     assert_equal("HELL-o", "hello".sub(/(hell)(.)/) {
@@ -813,7 +813,7 @@ class TestString < Rubicon::TestCase
                    })
     a = "hello"
     a.taint
-    assert_equal(true, (a.sub('.','X').tainted?))
+    assert(a.sub('.', 'X').tainted?)
   end
 
   def test_sub!

@@ -94,7 +94,7 @@ class TestKernel < Rubicon::TestCase
       $> = dt
       assert_nil("hello".display)
       assert_equal("!hello!", dt.val)
-    rescue
+    ensure
       $> = save
     end
   end
@@ -534,11 +534,14 @@ class TestKernel < Rubicon::TestCase
       puts "goodbye"
       exit 99
     else
-      assert_equal("goodbye\n", p.gets)
-      assert_equal("cruel\n", p.gets)
-      assert_equal("world\n", p.gets)
-      p.close
-      assert_equal(99<<8, $?)
+      begin
+        assert_equal("goodbye\n", p.gets)
+        assert_equal("cruel\n", p.gets)
+        assert_equal("world\n", p.gets)
+      ensure
+        p.close
+        assert_equal(99<<8, $?)
+      end
     end
   end
 
@@ -586,8 +589,46 @@ class TestKernel < Rubicon::TestCase
     assert(blocker2() { 1 })
   end
 
+  def callcc_test(n)
+    cont = nil
+    callcc { |cont|
+      return [cont, n]
+    }
+    n -= 1
+    return [n.zero? ? nil : cont, n ]
+  end
+
   def test_s_callcc
-    assert_fail("untested")
+    res = nil
+    cont = nil
+    assert_equal(2, 
+                 callcc { |cont|
+                   res = 1
+                   res = 2
+                 })
+    assert_equal(2, res)
+
+    res = nil 
+    assert_equal(99, 
+                 callcc { |cont|
+                   res = 1
+                   cont.call 99
+                   res = 2
+                 })
+    assert_equal(1, res)
+
+    # Test gotos!
+    callcc { |cont| res = 0 }
+    res += 1
+    cont.call if res < 4
+    assert_equal(4, res)
+    
+    # Test reactivating procedures
+    n = 4
+    cont, res = callcc_test(4)
+    assert_equal(n, res)
+    n -= 1
+    puts cont.call if cont
   end
 
   def caller_test
@@ -696,7 +737,7 @@ class TestKernel < Rubicon::TestCase
   def test_s_exec
     p = IO.popen("-")
     if p.nil?
-      exec "echo TestKer*.rb"
+      exec "echo TestKer*l.rb"
     else
       begin
         assert_equal("TestKernel.rb\n", p.gets)
@@ -708,10 +749,10 @@ class TestKernel < Rubicon::TestCase
     # With separate parameters, don't do expansion
     p = IO.popen("-")
     if p.nil?
-      exec "echo", "TestKer*.rb"
+      exec "echo", "TestKer*l.rb"
     else
       begin
-        assert_equal("TestKer*.rb\n", p.gets)
+        assert_equal("TestKer*l.rb\n", p.gets)
       ensure
         p.close
       end
@@ -1010,7 +1051,42 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_load
-    assert_fail("untested")
+    File.open("_dummy_load.rb", "w") do |f|
+     f.print <<-EOM
+      module Module_Load
+        VAL = 234
+      end
+      EOM
+    end
+    assert(!defined? Module_Load)
+    load("./_dummy_load.rb")
+    assert(defined? Module_Load::VAL)
+    assert_equal(234, Module_Load::VAL)
+    assert(!$".include?("./_dummy_load.rb"))#"
+
+    # Prove it's reloaded
+    File.open("_dummy_load.rb", "w") do |f|
+     f.print <<-EOM
+      module Module_Load
+        VAL1 = 456
+      end
+      EOM
+    end
+    load("./_dummy_load.rb")
+    assert_equal(456, Module_Load::VAL1)
+
+    # check that the sandbox works
+    File.open("_dummy_load.rb", "w") do |f|
+     f.print <<-EOM
+      GLOBAL_VAL = 789
+      EOM
+    end
+    load("./_dummy_load.rb", true)
+    assert(!defined? GLOBAL_VAL)
+    load("./_dummy_load.rb", false)
+    assert(defined? GLOBAL_VAL)
+    assert_equal(789, GLOBAL_VAL)
+    File.delete("./_dummy_load.rb")
   end
 
   def local_variable_test(c)
@@ -1262,7 +1338,7 @@ class TestKernel < Rubicon::TestCase
         puts "Goodbye" if $stdin.gets == "Hello\n"
         exit
       end
-    rescue
+    ensure
       teardownTestDir
     end
   end
@@ -1280,8 +1356,12 @@ class TestKernel < Rubicon::TestCase
         p PTest2.new
         exit
       end
-      assert_equal("1\n", pipe.gets)
-      assert_equal("ptest2\n", pipe.gets)
+      begin
+        assert_equal("1\n", pipe.gets)
+        assert_equal("ptest2\n", pipe.gets)
+      ensure
+        pipe.close
+      end
     end
   end
 
@@ -1301,8 +1381,12 @@ class TestKernel < Rubicon::TestCase
         print 1, "cat", PrintTest.new, "\n"
         exit
       end
-      assert_equal("1printtest\n", pipe.gets)
-      assert_equal("1:cat:printtest:\n", pipe.gets)
+      begin
+        assert_equal("1printtest\n", pipe.gets)
+        assert_equal("1:cat:printtest:\n", pipe.gets)
+      ensure
+        pipe.close
+      end
     end
   end
 
@@ -1327,10 +1411,14 @@ class TestKernel < Rubicon::TestCase
                 171)
         exit
       end
-      assert_equal("00123\n", pipe.gets)
-      assert_equal("123  |00000001\n", pipe.gets)
-      assert_equal(" hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB\n",
-                   pipe.gets)
+      begin
+        assert_equal("00123\n", pipe.gets)
+        assert_equal("123  |00000001\n", pipe.gets)
+        assert_equal(" hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB\n",
+                     pipe.gets)
+      ensure
+        pipe.close
+      end
     end
   end
 
@@ -1416,31 +1504,36 @@ class TestKernel < Rubicon::TestCase
     end
   end
 
-  def rand_test(limit, result_type, bucket_scale, average)
+  def rand_test(limit, result_type, bucket_scale, bucket_max, average)
 
     n = rand(limit)
     assert_instance_of(result_type, n)
 
     repeat = 10000
     sum = 0
-    sumsq = 0
     min = 2**30
     max = -1
-    buckets = [0] * 100
+    buckets = [0] * bucket_max
+    sumstep = 0
 
     repeat.times do
-      n = rand(limit)
+      last, n = n, rand(limit)
+      sumstep += (n-last).abs
       min = n if min > n
       max = n if max < n
       sum += n
-      sumsq += (n*n)
-      buckets[bucket_scale(n)] += 1
+      buckets[bucket_scale.call(n)] += 1
     end
     
+    # Normalize the limit
+    limit = limit.to_i
+    limit = 1 if limit == 0
+
+    # Check the mean is about right
     assert(min >= 0.0)
-    assert(max < 1)
+    assert(max < limit)
     avg = Float(sum) / Float(repeat)
-    puts avg
+
     if (avg < Float(average)*.95 or avg > Float(average)*1.05) 
       $stderr.puts "
          I am about to fail a test, but the failure may be purely
@@ -1449,10 +1542,22 @@ class TestKernel < Rubicon::TestCase
       assert_fail("Average out of range (got #{avg}, expected #{average}")
     end
 
+    # Now do the same for the average difference
+    avgstep = Float(sumstep) / Float(repeat)
+    expstep = Float(limit)/3.0
+
+    if (avgstep < Float(expstep)*.95 or avgstep > Float(expstep)*1.05) 
+      $stderr.puts "
+         I am about to fail a test, but the failure may be purely
+         a statistical coincidence. Try a difference see and see if
+         if still happens."
+      assert_fail("Avg. step out of range (got #{avgstep}, expected #{expstep}")
+    end
+
     # check that no bucket has les than repeats/100/2 or more than
     # repeats/100*1.5
 
-    expected = repeat/100
+    expected = repeat/bucket_max
     low = expected/2
     high = (expected*3)/2
 
@@ -1460,17 +1565,14 @@ class TestKernel < Rubicon::TestCase
       assert(item > low && item < high, 
              "Bucket[#{index}] has #{item} entries. Expected roughly #{expected}")
     end
-    
-    # Calculate T-test
-    variance = (sumsq - sum*sum/repeat)/(repeat-1)
-    t = (avg - 0.5)*Math.sqrt(repeat)/Math.sqrt(variance)
-    puts "Variance = #{variance}, t = #{t}"
   end
   
   # Now the same, but with integers
   def test_s_rand
-    rand_test(0,   Float, proc {|n| (100*n).to_i }, .5)
-    rand_test(100, Fixnum, proc {|n| n }, 49.5)
+    rand_test(  0, Float,  proc {|n| (100*n).to_i }, 100,    .5)
+    rand_test(100, Fixnum, proc {|n| n },            100,  49.5)
+    rand_test( 50, Fixnum, proc {|n| n },             50,  24.5)
+    rand_test(500, Fixnum, proc {|n| n/5 },          100, 249)
   end
 
   def test_s_readline1
@@ -1549,7 +1651,32 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_require
-    assert_fail("untested")
+    assert_exception(LoadError) { require("gumby") }
+
+    File.open("_dummy_req.rb", "w") do |f|
+     f.print <<-EOM
+      module Module_Require
+        VAL = 234
+      end
+      EOM
+    end
+    assert(!defined? Module_Require)
+    assert(require("./_dummy_req.rb"))
+    assert(defined? Module_Require::VAL)
+    assert_equal(234, Module_Require::VAL)
+    assert($".include?("./_dummy_req.rb"))#"
+
+    # Prove it isn;t reloaded
+    File.open("_dummy_req.rb", "w") do |f|
+     f.print <<-EOM
+      module Module_Require
+        VAL1 = 456
+      end
+      EOM
+    end
+    assert(!require("./_dummy_req.rb"))
+    assert(!defined? Module_Require::VAL1)
+    File.delete("./_dummy_req.rb")
   end
 
   def test_s_scan
@@ -1574,19 +1701,74 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_select
-    assert_fail("untested")
+    assert_nil(select(nil, nil, nil, 0))
+    assert_exception(ArgumentError) { select(nil, nil, nil, -1) }
+    
+    File.open(".") do |file|
+      res = select([file], [$stdout, $stderr], [file,$stdout,$stderr], 1)
+      assert_equal([[file], [$stdout, $stderr], []], res)
+    end
+  end
+
+  def trace_func(*params)
+    params.slice!(4)     # Can't check the binding
+    @res << params
+  end
+
+  def trace_func_test(file, line)
+    __LINE__
   end
 
   def test_s_set_trace_func
-    assert_fail("untested")
+    @res = []
+    line = __LINE__
+    set_trace_func(proc {|*a| trace_func(*a) })
+    innerLine = trace_func_test(__FILE__, __LINE__)
+    set_trace_func(nil)
+    assert_equal(["line", __FILE__, line+2, :test_s_set_trace_func, TestKernel],
+                 @res[0])
+    assert_equal(["call", __FILE__, innerLine-1, :trace_func_test, TestKernel],
+                 @res[1])
+    assert_equal(["line", __FILE__, innerLine, :trace_func_test, TestKernel],
+                 @res[2])
+    assert_equal(["return", __FILE__, line+3, :test_s_set_trace_func, TestKernel],
+                 @res[3])
   end
 
+  class SMATest
+    @@sms = []
+    def SMATest.singleton_method_added(id)
+      @@sms << id.id2name
+    end
+    def getsms() @@sms end
+    def SMATest.b() end
+  end
+  def SMATest.c() end
+
   def test_s_singleton_method_added
-    assert_fail("untested")
+    assert_set_equal(%w(singleton_method_added b c), SMATest.new.getsms)
   end
 
   def test_s_sleep
-    assert_fail("untested")
+    s1 = Time.now
+    11.times { sleep .1 }
+    s2 = Time.now
+    assert((s2-s1) >= 1)
+    assert((s2-s1) <= 3)
+
+    duration = sleep(.1)
+    assert_instance_of(Fixnum, duration)
+    assert(duration >= 0 && duration < 2)
+
+    # Does Thread.run interrupt a sleep
+    pThread = Thread.current
+    Thread.new { sleep 1; pThread.run }
+    s1 = Time.now
+    duration = sleep 999
+    s2 = Time.now
+    assert(duration >= 0 && duration < 2)
+    assert((s2-s1) >= 0)
+    assert((s2-s1) <= 3)
   end
 
   def test_s_split
@@ -1642,43 +1824,182 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_srand
-    assert_fail("untested")
+    # Check that srand with an argument always returns the same value
+    [ 0, 123, 45678980].each do |seed|
+      srand(seed)
+      expected = rand(2**30)
+      5.times do
+        assert_equal(seed, srand(seed))
+        assert_equal(expected, rand(2**30))
+      end
+    end
+
+    # Now check that the seed is random if called with no argument
+    keys = {}
+    values = {}
+    100.times do
+      oldSeed = srand
+      assert_nil(keys[oldSeed])
+      keys[oldSeed] = 1
+      value = rand(2**30)
+      assert_nil(values[value])
+      values[value] = 1
+    end
+
+    # and check that the seed is randomized for different runs of Ruby
+    values = {}
+    5.times do
+      val = `ruby -e "puts rand(2**30)"`
+      assert($? == 0)
+      val = val.to_i
+      assert_nil(values[val])
+      values[val] = 1
+    end
   end
 
   def test_s_sub
-    assert_fail("untested")
+    $_ = "hello"
+    assert_equal("hello", sub(/x/,'*'))
+    assert_equal("hello", $_)
+
+    $_ = "hello"
+    assert_equal("h*llo", sub(/[aeiou]/,'*'))
+    assert_equal("h*llo", $_)
+
+    $_ = "hello"
+    assert_equal("h<e>llo", sub(/([aeiou])/,'<\1>'))
+    assert_equal("h<e>llo", $_)
+
+    $_ = "hello"
+    assert_equal("104 ello", sub('.') { |s| s[0].to_s+' '})
+    assert_equal("104 ello", $_)
+
+    $_ = "hello"
+    assert_equal("HELL-o", sub(/(hell)(.)/) {|s| $1.upcase + '-' + $2})
+    assert_equal("HELL-o", $_)
+
+    $_ = "hello".taint
+    assert(sub('.','X').tainted?)
   end
 
   def test_s_sub!
-    assert_fail("untested")
+    $_ = "hello"
+    assert_equal(nil,     sub!(/x/,'*'))
+    assert_equal("hello", $_)
+
+    $_ = "hello"
+    assert_equal("h*llo", sub!(/[aeiou]/,'*'))
+    assert_equal("h*llo", $_)
+
+    $_ = "hello"
+    assert_equal("h<e>llo", sub!(/([aeiou])/,'<\1>'))
+    assert_equal("h<e>llo", $_)
+
+    $_ = "hello"
+    assert_equal("104 ello", sub!('.') { |s| s[0].to_s+' '})
+    assert_equal("104 ello", $_)
+
+    $_ = "hello"
+    assert_equal("HELL-o", sub!(/(hell)(.)/) {|s| $1.upcase + '-' + $2})
+    assert_equal("HELL-o", $_)
+
+    $_ = "hello".taint
+    assert(sub!('.','X').tainted?)
   end
 
   def test_s_syscall
-    assert_fail("untested")
+    skipping("platform specific")
   end
 
   def test_s_system
-    assert_fail("untested")
+    p = IO.popen("-")
+    if p.nil?
+      system("echo TestKer*l.rb")
+      exit
+    else
+      begin
+        assert_equal("TestKernel.rb\n", p.gets)
+      ensure
+        p.close
+      end
+    end
+
+    # With separate parameters, don't do expansion
+    p = IO.popen("-")
+    if p.nil?
+      system("echo", "TestKer*l.rb")
+      exit
+    else
+      begin
+        assert_equal("TestKer*l.rb\n", p.gets)
+      ensure
+        p.close
+      end
+    end
   end
 
-  def test_s_test
-    assert_fail("untested")
-  end
+#  def test_s_test
+#    # in TestKernelTest
+#  end
 
   def test_s_throw
-    assert_fail("untested")
+    # tested by test_s_catch
   end
 
   def test_s_trace_var
-    assert_fail("untested")
+    val = nil
+    p = proc { |val| }
+    trace_var(:$_, p)
+    $_ = "123"
+    assert_equal($_, val)
+    $_ = nil
+    assert_equal($_, val)
+    untrace_var("$_")
+    $_ = "123"
+    assert_equal(nil, val)
+    assert_equal("123", $_)
   end
 
   def test_s_trap
-    assert_fail("untested")
+    trap "CHLD", "IGNORE"
+    fork { ; }
+    Process.wait
+    res = nil
+    lastProc = proc { res = 1 }
+
+    trap("SIGCHLD", lastProc)
+    fork { ; }
+    Process.wait
+    assert_equal(1, res)
+    assert_equal(lastProc, trap("SIGCHLD", "SIG_IGN"))
+
+    res = nil
+    fork { ; }
+    Process.wait
+    assert_nil(res)
+    
+    # test EXIT handling
+    fork {
+      trap "EXIT", "exit!"      # sets return code to -1
+      exit 99
+    }
+    Process.wait
+    assert_equal(255<<8, $?)
   end
 
-  def test_s_untrace_var
-    assert_fail("untested")
+  def test_s_untrace_var1
+    trace_var(:$_, "puts 99")
+    p = proc { |val| }
+    trace_var("$_", p)
+    assert_set_equal(["puts 99", p], untrace_var(:$_))
+    assert_equal([], untrace_var(:$_))
+  end
+
+  def test_s_untrace_var2
+    trace_var(:$_, "puts 99")
+    p = proc { |val| }
+    trace_var("$_", p)
+    assert_set_equal(["puts 99", p], untrace_var(:$_))
   end
 
 end

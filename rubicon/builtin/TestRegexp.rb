@@ -62,9 +62,9 @@ class TestRegexp < Rubicon::TestCase
     a = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
     b = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
     c = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "n")
-    assert_equal("none", a.kcode) if $KCODE == "NONE"
+    assert_equal(nil, a.kcode) if $KCODE == "NONE"
     assert_equal("sjis", b.kcode)
-    assert_equal("none", c.kcode)
+    assert_equal("none",    c.kcode)
   end
 
   def test_s_last_match
