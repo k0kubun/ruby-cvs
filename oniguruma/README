@@ -1,8 +1,8 @@
-README  2002/03/25
+README  2002/04/01
 
 OniGuruma (regular expression library)
 
-Copyright (C) 2002  K.Kosako (kosako@sofnec.co.jp)
+K.Kosako <kosako@sofnec.co.jp>
 
 
 There are two ways of using of it in this program.
@@ -60,6 +60,7 @@ Differences with japanized GNU regex(version 0.12) of Ruby
    + look-behind (?<=fixed-char-length-pattern) and
                  (?<!fixed-char-length-pattern) are added.
      (char-class, anychar(.) and anchor(^,$,\A only) are allowed.)
+   + specify wide-char value by \x{hexadecimal-number} form.
    + Octal or hexadecimal number sequence can be treated as 
      a multibyte code char in char-class, if multibyte encoding is specified.
      (ex. [\xa1\xa2], [\xa1\xa7-\xa4\xa1])
@@ -78,11 +79,13 @@ Differences with japanized GNU regex(version 0.12) of Ruby
 
 ToDo
 
+   + check invalid wide char value in WC2MB, WC2MB_FIRST on Ruby M17N.
    + benchmark script.
 
    ? get tail string optimizing info. ex. /X((.*).)+X/
      (add backward link to NCONS)
    ? reduce null-check range at bytecode compile time.
+     ex. (?:a*)+  ===> (?:aa*|)+
    ? add a new stack type for anystar(.*) matching process.
      [STK_ANYCHAR_STAR, address, str-low, str-now]
   ?? POSIX compatible API.
@@ -106,16 +109,26 @@ Problem
 
 History
 
-2002/03/25: [spec] if encoding is utf-8, combination of singlebyte - 
-                   multibyte code range in char class is allowed.
-2002/03/25: the description of the license condition is added to README.
+2002/04/01: Version 1.3
+
+2002/04/01: [dist] add COPYING.
+2002/03/30: [spec] warn redundant nested repeat operator
+                   in Ruby verbose mode.  ex. (?:a*)?
+2002/03/30: [spec] nested repeat operator error check should be 
+                   same with GNU regex.             (thanks Guy Decoux)
+2002/03/30: [new]  add \x{hexadecimal-wide-char}.   (thanks matz)
+2002/03/27: [bug]  MBCTYPE_XXX symbol values should be same with GNU regex.
+2002/03/27: [impl] add THREAD_ATOMIC to regex_clone(), regex_init(), regex_end().
+2002/03/25: [spec] if encoding is utf-8, allow combination of singlebyte and
+                   multibyte code range in char class.
+2002/03/25: [dist] description of the license condition is added to README.
 2002/03/23: [bug]  should set all bits of reg->mem_stats,
                    if REG_OPTION_FIND_LONGEST or REG_OPTION_NOT_EMPTY.
 2002/03/23: [new]  add a new option REG_OPTION_NOT_EMPTY.
 2002/03/20: [spec] allow incompleted left brace as a usual char.
                    ex. /{/, /({)/, /a{2,3/ etc...
 2002/03/20: [impl] serialize integer in bytecode.
-                   (switch by UNALIGNED_WORD_ACCESS macro in regex.c)
+                   (switch by UNALIGNED_WORD_ACCESS in regex.c)
 2002/03/20: [impl] change re_mbcinit() for REG_RUBY_M17N.
 2002/03/19: [impl] word alignment of char class multi-byte code ranges.
 2002/03/19: [impl] replace OP_EXACTMB4N with OP_EXACTMB3N.
@@ -147,7 +160,7 @@ History
                    an octal value in scanBackSlash(). ex. /\0111/
                    (thanks matz)
 2002/03/11: [new]  \k (single-byte word char), \K (multi-byte char).
-2002/03/09: [inst] add two targets to Makefile.in (166 and 177).
+2002/03/09: [inst] add two targets to Makefile.in (166 and 172).
 2002/03/09: [spec] decrease REG_MAX_BACKREF_NUM, REG_MAX_REPEAT_NUM
                    values.
 2002/03/08: [spec] allow use of "\A"(begin-buf) in look-behind.
@@ -198,3 +211,5 @@ History
 [spec: specification change]
 [impl: implementation change]
 [inst: changes for installation]
+[dist: distribution change]
+[test: test]

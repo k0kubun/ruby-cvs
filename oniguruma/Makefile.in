@@ -30,7 +30,7 @@ libname = libregex.a
 libobjs = regex.o
 headers = regex.h
 patchfiles = *.patch
-distfiles = README Makefile.in configure.in config.h.in configure \
+distfiles = README COPYING Makefile.in configure.in config.h.in configure \
 	    $(headers) regex.c onigtest.rb $(patchfiles)
 
 makeargs = $(MFLAGS) CPPFLAGS='$(CPPFLAGS)' CFLAGS='$(CFLAGS)' CC='$(CC)'
