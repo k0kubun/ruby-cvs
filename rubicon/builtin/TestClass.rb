@@ -1,4 +1,5 @@
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 #
 # Note - real testing of class semantics occurs in language stuff

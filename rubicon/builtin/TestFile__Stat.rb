@@ -1,3 +1,4 @@
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'stat'
 require 'FileInfoTest.rb'
 

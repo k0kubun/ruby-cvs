@@ -1,4 +1,4 @@
-require '../rubicon'
+require 'rubicon'
 
 # This class tests the functionality of an Array-like object.
 #

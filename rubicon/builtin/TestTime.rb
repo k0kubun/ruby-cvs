@@ -1,4 +1,5 @@
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 #
 # NOTICE: These tests assume that your local time zone is *not* GMT.

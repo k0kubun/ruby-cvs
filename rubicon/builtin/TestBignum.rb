@@ -1,4 +1,5 @@
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 # Note: conversion tests etc are in the language tests. This is
 # simply for the class methods

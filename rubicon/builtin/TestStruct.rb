@@ -1,4 +1,5 @@
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 class TestStruct < Rubicon::TestCase
   def test_00s_new

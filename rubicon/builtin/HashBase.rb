@@ -14,8 +14,7 @@
 
 =end
 
-$: << File.dirname($0) << File.join(File.dirname($0), "..")
-require "rubicon.rb"
+require "rubicon"
 
 
 class HashBase < Rubicon::TestCase

@@ -1,4 +1,5 @@
-require '../rubicon'
+$: << File.dirname($0) << File.join(File.dirname($0), "..")
+require 'rubicon'
 
 #
 # This is the tets of all the private methods of Module that can really

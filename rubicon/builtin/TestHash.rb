@@ -1,7 +1,5 @@
-#!/usr/bin/env ruby
-
 $: << File.dirname($0) << File.join(File.dirname($0), "..")
-require "HashBase.rb"
+require "HashBase"
 
 
 class TestHash < HashBase
