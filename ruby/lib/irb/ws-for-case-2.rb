@@ -1,5 +1,5 @@
 #
-#   irb/version.rb - irb version definition file
+#   irb/ws-for-case-2.rb - 
 #   	$Release Version: 0.7.3$
 #   	$Revision$
 #   	$Date$
@@ -10,7 +10,6 @@
 #   
 #
 
-module IRB
-  @RELEASE_VERSION = "0.7.3"
-  @LAST_UPDATE_DATE = "01/04/16"
+while true
+  IRB::BINDING_QUEUE.push b = binding
 end
