@@ -38,6 +38,12 @@ class TestFile < Rubicon::TestCase
     assert_equal("",    File.basename(File.join("/tmp/")))
     assert_equal("b",   File.basename(File.join(*%w( g f d s a b))))
     assert_equal("",    File.basename("/"))
+   
+    if $rubyVersion >= "1.7.2" 
+      unless File::ALT_SEPARATOR.nil?
+        assert_equal("base", File.basename("dir" + File::ALT_SEPARATOR + "base")) 
+      end
+    end
   end
 
   def test_s_chmod
@@ -82,6 +88,12 @@ class TestFile < Rubicon::TestCase
     assert_equal("/tmp",      File.dirname(File.join("/tmp/")))
     assert_equal("g/f/d/s/a", File.dirname(File.join(*%w( g f d s a b))))
     assert_equal("/",         File.dirname("/"))
+
+    if $rubyVersion >= "1.7.2" 
+      unless File::ALT_SEPARATOR.nil? 
+        assert_equal("dir", File.dirname("dir" + File::ALT_SEPARATOR + "base")) 
+      end
+    end
   end
 
   def test_s_expand_path

@@ -1,3 +1,13 @@
+2001-11-26  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestFile.rb: Patches from Patrick Cheng for basename and
+	dirname to support ALT_SEPARATOR.
+	
+
+2001-11-19  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestIO.rb, Kernel: Array separator behavior changes back.
+
 2001-11-25    <Administrator@WALTER>
 
 
