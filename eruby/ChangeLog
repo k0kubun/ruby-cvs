@@ -1,3 +1,7 @@
+Mon Mar 26 17:48:33 2001  Nobuyoshi.Nakada <nobu.nakada@nifty.ne.jp>
+
+	* Makefile.RB: hack for mswin32.
+
 Fri Dec 22 11:22:45 2000  WATANABE Hirofumi <eban@os.rim.or.jp>
 
 	* eruby_main.c: hack for mswin32.

@@ -140,6 +140,14 @@ if PLATFORM =~ /-mswin32/
   $LIBERUBY_A = "liberuby.lib"
   $LIBERUBY = "$(LIBERUBY_A)"
   $LIBRUBYARG.gsub!(CONFIG["RUBY_SO_NAME"] + ".lib", CONFIG["LIBRUBY_A"])
+  if /nmake/i =~ $make
+    LD = "(set LIB=$(libdir:/=\\);$(LIB))& $(CC)"
+    $VPATH = "{$(VPATH)}"
+  else
+    LD = "env LIB='$(subst /,\\\\,$(libdir));$(LIB)' $(CC)"
+  end
+else
+  LD = "$(CC)"
 end
 
 mfile = open("Makefile", "w")
@@ -147,9 +155,11 @@ begin
   mfile.write <<EOMF
 # Generated automatically by Makefile.RB.
 
-VPATH = #{srcdir}
+srcdir = #{srcdir}
+VPATH = $(srcdir)
 CC = #{CONFIG["CC"]}
 AR = #{CONFIG["AR"]}
+LD = #{LD}
 RANLIB = #{CONFIG["RANLIB"]}
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 RUBY = $(RUBY_INSTALL_NAME)
@@ -176,7 +186,7 @@ LIBRUBYARG = #{$LIBRUBYARG}
 RM = ruby -e "ARGV.each {|f|File.unlink(f) rescue Errno}"
 
 TARGET = eruby#{CONFIG["EXEEXT"]}
-MANPAGE = eruby.1
+MANPAGE = #{srcdir}/eruby.1
 
 MAJOR = #{$MAJOR}
 MINOR = #{$MINOR}
@@ -188,11 +198,12 @@ LIBERUBY_SO = #{$LIBERUBY_SO}
 LIBERUBY_ALIASES = #{$LIBERUBY_ALIASES}
 LIBERUBY = #{$LIBERUBY}
 LIBERUBYARG = #{$LIBERUBYARG}
+.SUFFIXES: .#{$OBJEXT} .c .rd
 
 ERUBY_OBJS = eruby.#{$OBJEXT}
 OBJS = eruby_logo.#{$OBJEXT} eruby_main.#{$OBJEXT}
 
-.c.o:
+#{$VPATH}.c.#{$OBJEXT}:
 	$(CC) $(CFLAGS) -c $<
 
 all: $(LIBERUBY_A) $(TARGET) $(MANPAGE)
@@ -234,18 +245,20 @@ $(LIBERUBY_SO): $(ERUBY_OBJS)
 		File.symlink "$(LIBERUBY_SO)", link}' $(LIBERUBY_ALIASES)
 
 $(TARGET): $(OBJS) $(LIBERUBY)
-	$(CC) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@
 
-$(MANPAGE): eruby.rd
-	rd2 -r rd/rd2man-lib $< > $@
-	$(RUBY) -i -pe 'gsub(/eruby\.rd/, "eruby")' $@
-	$(RUBY) -i -ne 'print if ~/.+/' $@
+$(MANPAGE): #{$VPATH}eruby.rd
 
-eruby_logo.c: eruby_logo.png
-	./bin2c eruby_logo.png
-eruby.#{$OBJEXT}: eruby.c eruby.h config.h
-eruby_logo.#{$OBJEXT}: eruby_logo.c eruby_logo.h
-eruby_main.#{$OBJEXT}: eruby_main.c eruby.h eruby_logo.h
+#{$VPATH}.rd#{$VPATH}.1:
+	$(RUBY) -S rd2 -r rd/rd2man-lib -o $* $<
+	$(RUBY) -i~ -ne 'print if ~/.+/' $@
+	$(RM) $@~
+
+eruby_logo.c: #{$VPATH}eruby_logo.png
+	$(srcdir)/bin2c $(srcdir)/eruby_logo.png
+eruby.#{$OBJEXT}: #{$VPATH}eruby.c #{$VPATH}eruby.h config.h
+eruby_logo.#{$OBJEXT}: #{$VPATH}eruby_logo.c #{$VPATH}eruby_logo.h
+eruby_main.#{$OBJEXT}: #{$VPATH}eruby_main.c #{$VPATH}eruby.h #{$VPATH}eruby_logo.h
 EOMF
 ensure
   mfile.close
