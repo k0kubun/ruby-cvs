@@ -86,30 +86,37 @@ class TestThread < Rubicon::TestCase
     assert_equal(false, Thread.current.abort_on_exception)
   end
 
+  class MyException < Exception; end
+
   def test_abort_on_exception=()
     save_stderr = nil
-
     begin
-      Thread.new do
-	raise "boom"
+      begin
+        t = Thread.new do
+          raise MyException, "boom"
+        end
+        Thread.pass
+        assert(true)
+      rescue MyException
+        assert_fail("Thread exception propogated to main thread")
       end
-      assert(true)
-    rescue Exception
-      fail("Thread exception propogated to main thread")
-    end
-
-    begin
-      Thread.new do
-	Thread.current.abort_on_exception = true
-	save_stderr = $stderr
-	$stderr = nil
-	raise "boom"
+      
+      begin
+        Thread.new do
+          Thread.current.abort_on_exception = true
+          save_stderr = $stderr
+          $stderr = nil
+          raise MyException, "boom"
+        end
+        Thread.pass
+        assert_fail("Exception should have interrupted main thread")
+      rescue TestThread::MyException
+        assert(true)
+      ensure
+        $stderr = save_stderr
       end
-      fail("Exception should have interrupted main thread")
     rescue Exception
-      assert(true)
-    ensure
-      $stderr = save_stderr
+      assert_fail($!.to_s)
     end
   end
 
