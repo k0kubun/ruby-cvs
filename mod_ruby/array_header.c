@@ -43,6 +43,14 @@ VALUE rb_apache_array_new(array_header *arr)
     return Data_Wrap_Struct(rb_cApacheArrayHeader, NULL, NULL, arr);
 }
 
+static VALUE array_length(VALUE self, VALUE idx)
+{
+    array_header *arr;
+
+    Data_Get_Struct(self, array_header, arr);
+    return INT2NUM(arr->nelts);
+}
+
 static VALUE array_aref(VALUE self, VALUE idx)
 {
     array_header *arr;
@@ -100,6 +108,7 @@ void rb_init_apache_array()
 						  rb_cObject);
     rb_include_module(rb_cApacheArrayHeader, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheArrayHeader), "new");
+    rb_define_method(rb_cApacheArrayHeader, "length", array_length, 0);
     rb_define_method(rb_cApacheArrayHeader, "[]", array_aref, 1);
     rb_define_method(rb_cApacheArrayHeader, "[]=", array_aset, 2);
     rb_define_method(rb_cApacheArrayHeader, "each", array_each, 0);

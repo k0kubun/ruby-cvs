@@ -37,7 +37,7 @@
 #include "apachelib.h"
 
 VALUE rb_cApacheTable;
-VALUE rb_cApacheInTable;
+VALUE rb_cApacheRestrictedTable;
 
 VALUE rb_apache_table_new(VALUE klass, table *tbl)
 {
@@ -187,7 +187,7 @@ static VALUE table_each_value(VALUE self)
     return Qnil;
 }
 
-static VALUE in_table_get(VALUE self, VALUE name)
+static VALUE restricted_table_get(VALUE self, VALUE name)
 {
     table *tbl;
     const char *key, *res;
@@ -204,7 +204,7 @@ static VALUE in_table_get(VALUE self, VALUE name)
 	return Qnil;
 }
 
-static VALUE in_table_each(VALUE self)
+static VALUE restricted_table_each(VALUE self)
 {
     VALUE assoc;
     table *tbl;
@@ -228,7 +228,7 @@ static VALUE in_table_each(VALUE self)
     return Qnil;
 }
 
-static VALUE in_table_each_key(VALUE self)
+static VALUE restricted_table_each_key(VALUE self)
 {
     table *tbl;
     array_header *hdrs_arr;
@@ -249,7 +249,7 @@ static VALUE in_table_each_key(VALUE self)
     return Qnil;
 }
 
-static VALUE in_table_each_value(VALUE self)
+static VALUE restricted_table_each_value(VALUE self)
 {
     table *tbl;
     array_header *hdrs_arr;
@@ -289,11 +289,15 @@ void rb_init_apache_table()
     rb_define_method(rb_cApacheTable, "each", table_each, 0);
     rb_define_method(rb_cApacheTable, "each_key", table_each_key, 0);
     rb_define_method(rb_cApacheTable, "each_value", table_each_value, 0);
-    rb_cApacheInTable = rb_define_class_under(rb_mApache, "InTable",
-					      rb_cApacheTable);
-    rb_define_method(rb_cApacheInTable, "get", in_table_get, 1);
-    rb_define_method(rb_cApacheInTable, "[]", in_table_get, 1);
-    rb_define_method(rb_cApacheInTable, "each", in_table_each, 0);
-    rb_define_method(rb_cApacheInTable, "each_key", in_table_each_key, 0);
-    rb_define_method(rb_cApacheInTable, "each_value", in_table_each_value, 0);
+
+    rb_cApacheRestrictedTable = rb_define_class_under(rb_mApache,
+						      "RestrictedTable",
+						      rb_cApacheTable);
+    rb_define_method(rb_cApacheRestrictedTable, "get", restricted_table_get, 1);
+    rb_define_method(rb_cApacheRestrictedTable, "[]", restricted_table_get, 1);
+    rb_define_method(rb_cApacheRestrictedTable, "each", restricted_table_each, 0);
+    rb_define_method(rb_cApacheRestrictedTable, "each_key",
+		     restricted_table_each_key, 0);
+    rb_define_method(rb_cApacheRestrictedTable, "each_value",
+		     restricted_table_each_value, 0);
 }

@@ -118,7 +118,7 @@ static int ruby_script_handler(request_rec*);
 static int eruby_script_handler(request_rec*);
 #endif
 static int ruby_object_handler(request_rec*);
-static int ruby_translate_handler(request_rec*);
+static int ruby_trans_handler(request_rec*);
 static int ruby_authen_handler(request_rec*);
 static int ruby_authz_handler(request_rec*);
 static int ruby_access_handler(request_rec*);
@@ -149,7 +149,7 @@ MODULE_VAR_EXPORT module ruby_module =
     NULL,			/* merge server config */
     ruby_cmds,			/* command table */
     ruby_handlers,		/* handlers */
-    ruby_translate_handler,	/* filename translation */
+    ruby_trans_handler,	/* filename translation */
     ruby_authen_handler,	/* check_user_id */
     ruby_authz_handler,		/* check auth */
     ruby_access_handler,	/* check access */
@@ -182,13 +182,6 @@ MODULE_VAR_EXPORT module ruby_module =
 
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
 #define STR_CAT_LITERAL(str, s) rb_str_cat(str, s, sizeof(s) - 1)
-
-#define get_server_config(s) \
-	((ruby_server_config *) ap_get_module_config(s->module_config, \
-						     &ruby_module))
-#define get_dir_config(r) \
-	((ruby_dir_config *) ap_get_module_config(r->per_dir_config, \
-						  &ruby_module))
 
 typedef struct protect_call_arg {
     VALUE recv;
@@ -719,7 +712,7 @@ typedef struct handler_arg {
     ID mid;
 } handler_arg_t;
 
-static VALUE ruby_request_handler_0(void *arg)
+static VALUE ruby_handler_0(void *arg)
 {
     handler_arg_t *ha = (handler_arg_t *) arg;
     request_rec *r = ha->r;
@@ -732,8 +725,14 @@ static VALUE ruby_request_handler_0(void *arg)
     ret = protect_funcall(rb_eval_string(handler), mid, &state,
 			  1, rb_request);
     if (state) {
-	log_error(r, state);
-	return INT2NUM(SERVER_ERROR);
+	if (state == TAG_RAISE &&
+	    rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
+	    ret = rb_iv_get(ruby_errinfo, "status");
+	}
+	else {
+	    log_error(r, state);
+	    return INT2NUM(SERVER_ERROR);
+	}
     }
     if (TYPE(ret) != T_FIXNUM &&
 	TYPE(ret) != T_BIGNUM) {
@@ -746,7 +745,7 @@ static VALUE ruby_request_handler_0(void *arg)
     return INT2NUM(retval);
 }
 
-static int ruby_request_handler(request_rec *r, char *handler, ID mid)
+static int ruby_handler(request_rec *r, char *handler, ID mid)
 {
     ruby_server_config *sconf = get_server_config(r->server);
     ruby_dir_config *dconf = get_dir_config(r);
@@ -763,7 +762,7 @@ static int ruby_request_handler(request_rec *r, char *handler, ID mid)
     arg.handler = handler;
     arg.mid = mid;
     if ((state = run_safely(safe_level, sconf->timeout,
-			    ruby_request_handler_0, &arg, &ret)) == 0) {
+			    ruby_handler_0, &arg, &ret)) == 0) {
 	rb_apache_request_flush(rb_request);
 	retval = NUM2INT(ret);
     }
@@ -783,26 +782,30 @@ static int ruby_object_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_handler,
-				rb_intern("handler"));
+    return ruby_handler(r, dconf->ruby_handler,
+			rb_intern("handler"));
 }
 
-static int ruby_translate_handler(request_rec *r)
+static int ruby_trans_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_trans_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_trans_handler,
-				rb_intern("translate_name"));
+    return ruby_handler(r, dconf->ruby_trans_handler,
+			rb_intern("translate_name"));
 }
 
 static int ruby_authen_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
+    int retval;
 
     if (dconf->ruby_authen_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_authen_handler,
-				rb_intern("check_user_id"));
+    ap_table_set(r->notes, "In-RubyAuthenHandler", "true");
+    retval = ruby_handler(r, dconf->ruby_authen_handler,
+			  rb_intern("check_user_id"));
+    ap_table_unset(r->notes, "In-RubyAuthenHandler");
+    return retval;
 }
 
 static int ruby_authz_handler(request_rec *r)
@@ -810,8 +813,8 @@ static int ruby_authz_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_authz_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_authz_handler,
-				rb_intern("check_auth"));
+    return ruby_handler(r, dconf->ruby_authz_handler,
+			rb_intern("check_auth"));
 }
 
 static int ruby_access_handler(request_rec *r)
@@ -819,8 +822,8 @@ static int ruby_access_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_access_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_access_handler,
-				rb_intern("check_access"));
+    return ruby_handler(r, dconf->ruby_access_handler,
+			rb_intern("check_access"));
 }
 
 static int ruby_type_handler(request_rec *r)
@@ -828,8 +831,8 @@ static int ruby_type_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_type_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_type_handler,
-				rb_intern("find_types"));
+    return ruby_handler(r, dconf->ruby_type_handler,
+			rb_intern("find_types"));
 }
 
 static int ruby_fixup_handler(request_rec *r)
@@ -837,8 +840,8 @@ static int ruby_fixup_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_fixup_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_fixup_handler,
-				rb_intern("fixup"));
+    return ruby_handler(r, dconf->ruby_fixup_handler,
+			rb_intern("fixup"));
 }
 
 static int ruby_log_handler(request_rec *r)
@@ -846,8 +849,8 @@ static int ruby_log_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_log_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_log_handler,
-				rb_intern("log_transaction"));
+    return ruby_handler(r, dconf->ruby_log_handler,
+			rb_intern("log_transaction"));
 }
 
 static int ruby_header_parser_handler(request_rec *r)
@@ -855,8 +858,8 @@ static int ruby_header_parser_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     if (dconf->ruby_header_parser_handler == NULL) return DECLINED;
-    return ruby_request_handler(r, dconf->ruby_header_parser_handler,
-				rb_intern("header_parse"));
+    return ruby_handler(r, dconf->ruby_header_parser_handler,
+			rb_intern("header_parse"));
 }
 
 static int script_handler(VALUE (*func)(void*), request_rec *r)

@@ -283,6 +283,21 @@ void rb_init_apache()
     rb_define_const(rb_mApache, "VARIANT_ALSO_VARIES",
 		    INT2NUM(VARIANT_ALSO_VARIES));
 
+    rb_define_const(rb_mApache, "OPT_NONE", INT2NUM(OPT_NONE));
+    rb_define_const(rb_mApache, "OPT_INDEXES", INT2NUM(OPT_INDEXES));
+    rb_define_const(rb_mApache, "OPT_INCLUDES", INT2NUM(OPT_INCLUDES));
+    rb_define_const(rb_mApache, "OPT_SYM_LINKS", INT2NUM(OPT_SYM_LINKS));
+    rb_define_const(rb_mApache, "OPT_EXECCGI", INT2NUM(OPT_EXECCGI));
+    rb_define_const(rb_mApache, "OPT_UNSET", INT2NUM(OPT_UNSET));
+    rb_define_const(rb_mApache, "OPT_INCNOEXEC", INT2NUM(OPT_INCNOEXEC));
+    rb_define_const(rb_mApache, "OPT_SYM_OWNER", INT2NUM(OPT_SYM_OWNER));
+    rb_define_const(rb_mApache, "OPT_MULTI", INT2NUM(OPT_MULTI));
+    rb_define_const(rb_mApache, "OPT_ALL", INT2NUM(OPT_ALL));
+
+    rb_define_const(rb_mApache, "SATISFY_ALL", INT2NUM(SATISFY_ALL));
+    rb_define_const(rb_mApache, "SATISFY_ANY", INT2NUM(SATISFY_ANY));
+    rb_define_const(rb_mApache, "SATISFY_NOSPEC", INT2NUM(SATISFY_NOSPEC));
+
     rb_init_apache_array();
     rb_init_apache_table();
     rb_init_apache_connection();

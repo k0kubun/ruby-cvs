@@ -1,8 +1,45 @@
+Mon Jun 11 11:12:57 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_handler_0): handle SystemExit correctly.
+
+	* array_header.c (array_length): new method.
+
+	* table.c: renamed ApacheInTable to ApacheRestrictedTable.
+
+	* request.c (rb_apache_request_new): don't set content_type.
+
+	* request.c (request_headers_in): return non-restricted table for
+	RubyAuthenHandler.
+
+	* request.c (request_notes): removed.
+
+	* request.c (request_allow_options): new method.
+
+	* request.c (request_allow_overrides): ditto.
+
+	* request.c (request_default_type): ditto.
+
+	* request.c (request_construct_url): ditto.
+
+	* request.c (request_auth_type): ditto.
+
+	* request.c (request_auth_name): ditto.
+
+	* request.c (request_satisfies): ditto.
+
+	* request.c (request_requires): ditto.
+
+	* request.c (request_note_auth_failure): ditto.
+
+	* request.c (request_note_basic_auth_failure): ditto.
+
+	* request.c (request_note_digest_auth_failure): ditto.
+
+	* request.c (request_basic_auth_pw): ditto.
+
 Sun Jun 10 01:23:53 2001  Shugo Maeda <shugo@modruby.net>
 
-	* mod_ruby.c (ruby_translate_handler): new handler.
-
-	* mod_ruby.c (ruby_authen_handler): ditto.
+	* mod_ruby.c (ruby_trans_handler): new handler.
 
 	* mod_ruby.c (ruby_authen_handler): ditto.
 

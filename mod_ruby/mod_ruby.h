@@ -58,6 +58,13 @@ int ruby_require(char*);
 void ruby_add_path(const char *path);
 void rb_setup_cgi_env(request_rec *r);
 
+#define get_server_config(s) \
+	((ruby_server_config *) ap_get_module_config(s->module_config, \
+						     &ruby_module))
+#define get_dir_config(r) \
+	((ruby_dir_config *) ap_get_module_config(r->per_dir_config, \
+						  &ruby_module))
+
 #endif /* !MOD_RUBY_H */
 
 /*

@@ -41,7 +41,7 @@ VALUE rb_apache_array_new(array_header *arr);
 
 /* table.c */
 extern VALUE rb_cApacheTable;
-extern VALUE rb_cApacheInTable;
+extern VALUE rb_cApacheRestrictedTable;
 void rb_init_apache_table();
 VALUE rb_apache_table_new(VALUE klass, table *tbl);
 

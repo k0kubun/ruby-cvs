@@ -92,7 +92,6 @@ VALUE rb_apache_request_new(request_rec *r)
     request_data *data;
     VALUE result;
     
-    r->content_type = "text/html";
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
 			      request_mark, free, data);
     data->request = r;
@@ -423,8 +422,14 @@ static VALUE request_headers_in(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->headers_in)) {
-	data->headers_in = rb_apache_table_new(rb_cApacheInTable,
-					       data->request->headers_in);
+	if (ap_table_get(data->request->notes, "In-RubyAuthenHandler")) {
+	    data->headers_in = rb_apache_table_new(rb_cApacheTable,
+						   data->request->headers_in);
+	}
+	else {
+	    data->headers_in = rb_apache_table_new(rb_cApacheRestrictedTable,
+						   data->request->headers_in);
+	}
     }
     return data->headers_in;
 }
@@ -464,18 +469,6 @@ static VALUE request_subprocess_env(VALUE self)
 				data->request->subprocess_env);
     }
     return data->subprocess_env;
-}
-
-static VALUE request_notes(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    if (NIL_P(data->notes)) {
-	data->notes = rb_apache_table_new(rb_cApacheTable,
-					  data->request->notes);
-    }
-    return data->notes;
 }
 
 static VALUE request_finfo(VALUE self)
@@ -703,6 +696,32 @@ static VALUE request_binmode(VALUE self)
     return Qnil;
 }
 
+static VALUE request_allow_options(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2NUM(ap_allow_options(data->request));
+}
+
+static VALUE request_allow_overrides(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2NUM(ap_allow_overrides(data->request));
+}
+
+static VALUE request_default_type(VALUE self)
+{
+    request_data *data;
+    const char *type;
+
+    Data_Get_Struct(self, request_data, data);
+    type = ap_default_type(data->request);
+    return type ? rb_str_new2(type) : Qnil;
+}
+
 static VALUE request_remote_host(VALUE self)
 {
     request_data *data;
@@ -725,6 +744,16 @@ static VALUE request_remote_logname(VALUE self)
     return logname ? rb_str_new2(logname) : Qnil;
 }
 
+static VALUE request_construct_url(VALUE self, VALUE uri)
+{
+    request_data *data;
+    char *url;
+
+    Data_Get_Struct(self, request_data, data);
+    url = ap_construct_url(data->request->pool, STR2CSTR(uri), data->request);
+    return rb_str_new2(url);
+}
+
 static VALUE request_server_name(VALUE self)
 {
     request_data *data;
@@ -739,6 +768,56 @@ static VALUE request_server_port(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     return INT2NUM(ap_get_server_port(data->request));
+}
+
+static VALUE request_auth_type(VALUE self)
+{
+    request_data *data;
+    const char *auth_type;
+
+    Data_Get_Struct(self, request_data, data);
+    auth_type = ap_auth_type(data->request);
+    return auth_type ? rb_str_new2(auth_type) : Qnil;
+}
+
+static VALUE request_auth_name(VALUE self)
+{
+    request_data *data;
+    const char *auth_name;
+
+    Data_Get_Struct(self, request_data, data);
+    auth_name = ap_auth_name(data->request);
+    return auth_name ? rb_str_new2(auth_name) : Qnil;
+}
+
+static VALUE request_satisfies(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2NUM(ap_satisfies(data->request));
+}
+
+static VALUE request_requires(VALUE self)
+{
+    VALUE result, req;
+    request_data *data;
+    const array_header *reqs_arr;
+    require_line *reqs;
+    int i;
+
+    Data_Get_Struct(self, request_data, data);
+    reqs_arr = ap_requires(data->request);
+    if (reqs_arr == NULL)
+	return Qnil;
+    reqs = (require_line *) reqs_arr->elts;
+    result = rb_ary_new2(reqs_arr->nelts);
+    for (i = 0; i < reqs_arr->nelts; i++) {
+	req = rb_assoc_new(INT2NUM(reqs[i].method_mask),
+			   rb_str_new2(reqs[i].requirement));
+	rb_ary_push(result, req);
+    }
+    return result;
 }
 
 static VALUE request_escape_html(VALUE self, VALUE str)
@@ -798,6 +877,49 @@ static VALUE request_kill_timeout(VALUE self)
     Data_Get_Struct(self, request_data, data);
     ap_kill_timeout(data->request);
     return Qnil;
+}
+
+static VALUE request_note_auth_failure(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_note_auth_failure(data->request);
+    return Qnil;
+}
+
+static VALUE request_note_basic_auth_failure(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_note_basic_auth_failure(data->request);
+    return Qnil;
+}
+
+static VALUE request_note_digest_auth_failure(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_note_digest_auth_failure(data->request);
+    return Qnil;
+}
+
+static VALUE request_get_basic_auth_pw(VALUE self)
+{
+    request_data *data;
+    const char *pw;
+    int res;
+
+    Data_Get_Struct(self, request_data, data);
+    if (ap_table_get(data->request->notes, "In-RubyAuthenHandler") == NULL) {
+	rb_raise(rb_eSecurityError, "Only RubyAuthenHandler can get password");
+    }
+    if ((res = ap_get_basic_auth_pw(data->request, &pw)) != OK) {
+	rb_apache_exit(res);
+    }
+    return rb_str_new2(pw);
 }
 
 static VALUE request_add_common_vars(VALUE self)
@@ -885,7 +1007,6 @@ void rb_init_apache_request()
 		     request_err_headers_out, 0);
     rb_define_method(rb_cApacheRequest, "subprocess_env",
 		     request_subprocess_env, 0);
-    rb_define_method(rb_cApacheRequest, "notes", request_notes, 0);
     rb_define_method(rb_cApacheRequest, "finfo", request_finfo, 0);
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);
@@ -905,11 +1026,23 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "eof", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "eof?", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "binmode", request_binmode, 0);
+    rb_define_method(rb_cApacheRequest, "allow_options",
+		     request_allow_options, 0);
+    rb_define_method(rb_cApacheRequest, "allow_overrides",
+		     request_allow_overrides, 0);
+    rb_define_method(rb_cApacheRequest, "default_type",
+		     request_default_type, 0);
     rb_define_method(rb_cApacheRequest, "remote_host", request_remote_host, 0);
     rb_define_method(rb_cApacheRequest, "remote_logname",
 		     request_remote_logname, 0);
+    rb_define_method(rb_cApacheRequest, "construct_url",
+		     request_construct_url, 1);
     rb_define_method(rb_cApacheRequest, "server_name", request_server_name, 0);
     rb_define_method(rb_cApacheRequest, "server_port", request_server_port, 0);
+    rb_define_method(rb_cApacheRequest, "auth_type", request_auth_type, 0);
+    rb_define_method(rb_cApacheRequest, "auth_name", request_auth_name, 0);
+    rb_define_method(rb_cApacheRequest, "satisfies", request_satisfies, 0);
+    rb_define_method(rb_cApacheRequest, "requires", request_requires, 0);
     rb_define_method(rb_cApacheRequest, "escape_html", request_escape_html, 1);
     rb_define_method(rb_cApacheRequest, "signature", request_signature, 0);
     rb_define_method(rb_cApacheRequest, "reset_timeout",
@@ -920,6 +1053,14 @@ void rb_init_apache_request()
 		     request_soft_timeout, 1);
     rb_define_method(rb_cApacheRequest, "kill_timeout",
 		     request_kill_timeout, 0);
+    rb_define_method(rb_cApacheRequest, "note_auth_failure",
+		     request_note_auth_failure, 0);
+    rb_define_method(rb_cApacheRequest, "note_basic_auth_failure",
+		     request_note_basic_auth_failure, 0);
+    rb_define_method(rb_cApacheRequest, "note_digest_auth_failure",
+		     request_note_digest_auth_failure, 0);
+    rb_define_method(rb_cApacheRequest, "get_basic_auth_pw",
+		     request_get_basic_auth_pw, 0);
     rb_define_method(rb_cApacheRequest, "add_common_vars",
 		     request_add_common_vars, 0);
     rb_define_method(rb_cApacheRequest, "add_cgi_vars",
