@@ -1,3 +1,9 @@
+Fri Dec 22 11:22:45 2000  WATANABE Hirofumi <eban@os.rim.or.jp>
+
+	* eruby_main.c: hack for mswin32.
+
+	* Makefile.RB: ditto.
+
 Tue Dec 12 14:39:12 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* version 0.1.3 released.

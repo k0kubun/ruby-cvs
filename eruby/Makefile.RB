@@ -47,8 +47,9 @@ rescue
   exit(1)
 end
 
+srcdir = File.dirname($0)
 $MAJOR, $MINOR, $TEENY =
-  open("eruby.h").grep(/ERUBY_VERSION/)[0].scan(/(\d+).(\d+).(\d+)/)[0]
+  open(File.join(srcdir, "eruby.h")).grep(/ERUBY_VERSION/)[0].scan(/(\d+).(\d+).(\d+)/)[0]
 
 $CFLAGS = CFLAGS
 
@@ -146,7 +147,10 @@ begin
   mfile.write <<EOMF
 # Generated automatically by Makefile.RB.
 
+VPATH = #{srcdir}
 CC = #{CONFIG["CC"]}
+AR = #{CONFIG["AR"]}
+RANLIB = #{CONFIG["RANLIB"]}
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 RUBY = $(RUBY_INSTALL_NAME)
 
@@ -159,7 +163,7 @@ mandir = #{CONFIG["mandir"]}
 topdir = #{$topdir}
 hdrdir = #{$hdrdir}
 
-CFLAGS = #{$CFLAGS} -I$(hdrdir)
+CFLAGS = #{CONFIG["CCDLFLAGS"]} #{$CFLAGS} -I. -I$(hdrdir)
 LDFLAGS = #{CONFIG["LDFLAGS"]}
 LIBS = #{CONFIG["LIBS"]}
 XLDFLAGS = #{$XLDFLAGS}
@@ -204,8 +208,8 @@ install: all
 			$(LIBERUBY_ALIASES); \
 	fi
 	@-$(INSTALL_DATA) $(LIBERUBY_A) $(libdir)/$(LIBERUBY_A)
-	@-$(INSTALL_DATA) eruby.h $(includedir)/eruby.h
-	@-$(INSTALL_DATA) $(MANPAGE) $(mandir)/man1/$(MANPAGE)
+	@-$(INSTALL_DATA) #{srcdir}/eruby.h $(includedir)/eruby.h
+	@-$(INSTALL_DATA) #{srcdir}/$(MANPAGE) $(mandir)/man1/$(MANPAGE)
 
 clean:
 	$(RM) $(TARGET)
@@ -221,8 +225,8 @@ distclean: clean
 	$(RM) config.h Makefile
 
 $(LIBERUBY_A): $(ERUBY_OBJS)
-	#{$AR} #{$AROPT} $(ERUBY_OBJS)
-	@-ranlib $@ 2> /dev/null || true
+	$(AR) #{$AROPT} $(ERUBY_OBJS)
+	@-$(RANLIB) $@ 2> /dev/null || true
 
 $(LIBERUBY_SO): $(ERUBY_OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(ERUBY_OBJS) -o $@
