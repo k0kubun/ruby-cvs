@@ -302,15 +302,34 @@ module Rubicon
     attr_reader   :config
     attr_reader   :date
     attr_reader   :rubicon_version
+    attr_reader   :ruby_version
+    attr_reader   :ruby_release_date
+    attr_reader   :ruby_architecture
+
+    # Two sage initialization, so that Rubric doesn't create all the
+    # internals when we unmarshal
 
     def initialize(name = '')
       @name    = ''
+    end
+
+    def setup
       @results = {}
       @config  = Config::CONFIG
       @date    = Time.now
       @rubicon_version = RUBICON_VERSION
+
+      ver = `#$interpreter --version`
+      # ruby 1.7.1 (2001-07-26) [i686-linux]  
+      unless ver =~ /ruby (\d+\.\d+\.\d+)\s+\((.*?)\)\s+\[(.*?)\]/
+        raise "Couldn't find version in '#{ver}'" 
+      end
+      @ruby_version      = $1
+      @ruby_release_date = $2
+      @ruby_architecture = $3
+      self
     end
-    
+
     def add(klass, result_set)
       @results[klass.name] = Results.new.initialize_from(result_set)
     end
@@ -326,7 +345,7 @@ module Rubicon
     def initialize(args, group_name)
       @groupName = group_name
       @files     = []
-      @results   = ResultGatherer.new
+      @results   = ResultGatherer.new.setup
       @results.name   = group_name
       @op_class_file  = "ascii"
 
