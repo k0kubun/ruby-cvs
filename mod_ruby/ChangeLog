@@ -1,3 +1,13 @@
+Wed Jun 27 12:44:24 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (per_request_init): recycle rb_request.
+
+	* request.c: removed notes from struct request_data.
+
+	* request.c (rb_apache_request_flush): flush only once.
+
+	* request.c (request_to_s): removed.
+
 Fri Jun 22 12:14:14 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (load_eruby_script): don't use print_error().

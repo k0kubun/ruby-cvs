@@ -696,7 +696,8 @@ static void per_request_init(request_rec *r)
     ruby_verbose = Qfalse;
     if (dconf->kcode)
 	rb_set_kcode(dconf->kcode);
-    rb_request = rb_apache_request_new(r);
+    if (NIL_P(rb_request))
+	rb_request = rb_apache_request_new(r);
 }
 
 static VALUE exec_end_proc(VALUE arg)
@@ -708,7 +709,6 @@ static VALUE exec_end_proc(VALUE arg)
 static void per_request_cleanup()
 {
     rb_protect(exec_end_proc, Qnil, NULL);
-    rb_request = Qnil;
     rb_set_kcode(default_kcode);
 }
 
@@ -892,6 +892,7 @@ static void ruby_cleanup_handler(void *data)
 
     ruby_handler(r, dconf->ruby_cleanup_handler,
 		 rb_intern("cleanup"), 1);
+    rb_request = Qnil;
 }
 
 static int ruby_post_read_request_handler(request_rec *r)

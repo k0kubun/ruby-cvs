@@ -57,7 +57,7 @@ void *ruby_create_server_config(pool *p, server_rec *s)
     return conf;
 }
 
-void *ruby_create_dir_config (pool *p, char *dirname)
+void *ruby_create_dir_config(pool *p, char *dirname)
 {
     ruby_dir_config *conf =
 	(ruby_dir_config *) ap_palloc(p, sizeof (ruby_dir_config));

@@ -50,7 +50,6 @@ typedef struct request_data {
     VALUE headers_out;
     VALUE err_headers_out;
     VALUE subprocess_env;
-    VALUE notes;
     VALUE finfo;
     int send_http_header;
     long pos;
@@ -83,7 +82,6 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->headers_out);
     rb_gc_mark(data->err_headers_out);
     rb_gc_mark(data->subprocess_env);
-    rb_gc_mark(data->notes);
     rb_gc_mark(data->finfo);
 }
 
@@ -102,7 +100,6 @@ VALUE rb_apache_request_new(request_rec *r)
     data->headers_out = Qnil;
     data->err_headers_out = Qnil;
     data->subprocess_env = Qnil;
-    data->notes = Qnil;
     data->finfo = Qnil;
     data->send_http_header = 0;
     data->pos = 0;
@@ -116,14 +113,6 @@ long rb_apache_request_length(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     return RSTRING(data->outbuf)->len;
-}
-
-static VALUE request_to_s(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return data->outbuf;
 }
 
 static VALUE request_replace(int argc, VALUE *argv, VALUE self)
@@ -274,12 +263,16 @@ void rb_apache_request_flush(VALUE self)
     Data_Get_Struct(self, request_data, data);
     if (data->send_http_header) {
 	ap_send_http_header(data->request);
-	if (data->request->header_only)
+	data->send_http_header = 0;
+	if (data->request->header_only) {
+	    RSTRING(data->outbuf)->len = 0;
 	    return;
+	}
     }
     if (RSTRING(data->outbuf)->len > 0) {
 	ap_rwrite(RSTRING(data->outbuf)->ptr,
 		  RSTRING(data->outbuf)->len, data->request);
+	RSTRING(data->outbuf)->len = 0;
     }
 }
 
@@ -973,7 +966,6 @@ void rb_init_apache_request()
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
     rb_include_module(rb_cApacheRequest, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheRequest), "new");
-    rb_define_method(rb_cApacheRequest, "to_s", request_to_s, 0);
     rb_define_method(rb_cApacheRequest, "replace", request_replace, -1);
     rb_define_method(rb_cApacheRequest, "cancel", request_cancel, 0);
     rb_define_method(rb_cApacheRequest, "write", request_write, 1);
