@@ -1,3 +1,9 @@
+2002-10-27  Dave Thomas  <Dave@Thomases.com>
+
+	* language/TestEval.rb: Patch from  Anders Bengtsson to remove
+	dependency on support for Kernel#binding (presumably to allow
+	JRuby tests to run).
+
 2002-10-07  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* replace "type" by "class" since Object#type is deprecated in

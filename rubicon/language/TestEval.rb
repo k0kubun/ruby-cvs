@@ -53,7 +53,9 @@ end
 module EvTest
   EVTEST1 = 25
   evtest2 = 125
-  BINDING = binding
+  if respond_to? :binding
+    BINDING = binding
+  end
 end
 
 class TestEval
