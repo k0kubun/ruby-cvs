@@ -1,3 +1,38 @@
+Tue May 21 12:25:35 2002  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.c (apache_server_root): moved from
+	request.c:request_server_root().
+
+	* request.c (request_proxy_q): fix for Apache2.
+
+	* request.c (request_proxy_pass_q): ditto.
+
+	* request.c (request_lookup_uri): ditto.
+
+	* request.c (request_lookup_file): ditto.
+
+Tue May 21 11:57:01 2002  Sean Chittenden <sean@chittenden.org>
+
+	* request.c (request_server_root): new method.
+
+	* request.c (request_get_dispatch_handler): ditto.
+
+	* request.c (request_set_dispatch_handler): ditto.
+
+	* request.c (request_proxy_q): ditto.
+
+	* request.c (request_proxy_pass_q): ditto.
+
+	* request.c (request_get_cache_resp): ditto.
+
+	* request.c (request_set_cache_resp): ditto.
+
+	* request.c (request_get_cache_resp): ditto.
+
+	* request.c (request_lookup_uri): ditto.
+
+	* request.c (request_lookup_file): ditto.
+
 Thu May 16 14:15:49 2002  Sean Chittenden <sean@chittenden.org>
 
 	* mod_ruby.c (per_request_init): use sconf->load_path.

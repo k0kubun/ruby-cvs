@@ -519,6 +519,8 @@ REQUEST_INT_ATTR_WRITER(request_set_allowed, allowed);
 REQUEST_STRING_ATTR_READER(request_args, args);
 REQUEST_STRING_ATTR_READER(request_get_content_type, content_type);
 REQUEST_STRING_ATTR_READER(request_get_content_encoding, content_encoding);
+REQUEST_STRING_ATTR_READER(request_get_dispatch_handler, handler);
+REQUEST_STRING_ATTR_WRITER(request_set_dispatch_handler, handler);
 
 static VALUE request_request_time(VALUE self)
 {
@@ -1473,7 +1475,11 @@ static VALUE request_bytes_sent(VALUE self)
 static VALUE request_send_fd(VALUE self, VALUE io)
 {
     OpenFile *fptr;
+#ifdef APACHE2
+    apr_size_t bytes_sent;
+#else
     long bytes_sent;
+#endif
     request_data *data;
 
     request_set_sync(self, Qtrue);
@@ -1488,7 +1494,125 @@ static VALUE request_send_fd(VALUE self, VALUE io)
     bytes_sent = ap_send_fd_length(fptr->f, data->request, -1);
 #endif
 
-    return INT2NUM((int)bytes_sent);
+    return INT2NUM(bytes_sent);
+}
+
+static VALUE request_proxy_q(VALUE self)
+{
+    request_data *data = get_request_data(self);
+
+    switch (data->request->proxyreq) {
+#ifdef APACHE2
+    case PROXYREQ_NONE:
+	return Qfalse;
+    case PROXYREQ_PROXY:
+    case PROXYREQ_REVERSE:
+	return Qtrue;
+#else
+    case NOT_PROXY:
+	return Qfalse;
+    case STD_PROXY:
+    case PROXY_PASS:
+	return Qtrue;
+#endif
+    default:
+      rb_raise(rb_eArgError, "Unknown Proxy Type");
+    }
+}
+
+static VALUE request_proxy_pass_q(VALUE self)
+{
+    request_data *data = get_request_data(self);
+
+#ifdef APACHE2
+    if (data->request->proxyreq == PROXYREQ_REVERSE)
+#else
+    if (data->request->proxyreq == PROXY_PASS)
+#endif
+      return Qtrue;
+    else
+      return Qfalse;
+}
+
+static VALUE request_get_cache_resp(VALUE self)
+{
+    request_data *data;
+    table *tbl;
+    table_entry *hdrs;
+    const array_header *hdrs_arr;
+    int i;
+
+    data = get_request_data(self);
+
+    if (NIL_P(data->headers_out))
+        data->headers_out = rb_apache_table_new(rb_cApacheTable,
+					       data->request->headers_out);
+
+    Data_Get_Struct(data->headers_out, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+        if (hdrs[i].key == NULL)
+	    continue;
+	if (strcasecmp(hdrs[i].key, "Pragma") ||
+	    strcasecmp(hdrs[i].key, "Cache-control")) {
+	    return Qtrue;
+	}
+    }
+    return Qfalse;
+}
+
+static VALUE request_set_cache_resp(VALUE self, VALUE arg)
+{
+    request_data *data;
+    table *tbl;
+
+    data = get_request_data(self);
+
+    if (NIL_P(data->headers_out))
+        data->headers_out = rb_apache_table_new(rb_cApacheTable,
+					       data->request->headers_out);
+
+    Data_Get_Struct(data->headers_out, table, tbl);
+    if (arg == Qtrue) {
+        ap_table_setn(tbl, "Pragma", "no-cache");
+	ap_table_setn(tbl, "Cache-control", "no-cache");
+	return Qtrue;
+    } else {
+        ap_table_unset(tbl, "Pragma");
+	ap_table_unset(tbl, "Cache-control");
+	return Qfalse;
+    }
+}
+
+static VALUE request_lookup_uri(VALUE self, VALUE uri)
+{
+    request_data *data;
+    request_rec *new_rec;
+
+    Check_Type(uri, T_STRING);
+    data = get_request_data(self);
+#ifdef APACHE2
+    new_rec = ap_sub_req_lookup_uri(STR2CSTR(uri), data->request, NULL);
+#else
+    new_rec = ap_sub_req_lookup_uri(STR2CSTR(uri), data->request);
+#endif
+    return apache_request_new(new_rec);
+}
+
+static VALUE request_lookup_file(VALUE self, VALUE file)
+{
+    request_data *data;
+    request_rec *new_rec;
+
+    Check_Type(file, T_STRING);
+    data = get_request_data(self);
+#ifdef APACHE2
+    new_rec = ap_sub_req_lookup_file(STR2CSTR(file), data->request, NULL);
+#else
+    new_rec = ap_sub_req_lookup_file(STR2CSTR(file), data->request);
+#endif
+    return apache_request_new(new_rec);
 }
 
 void rb_init_apache_request()
@@ -1663,4 +1787,18 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "auth_name=", request_set_auth_name, 1);
     rb_define_method(rb_cApacheRequest, "bytes_sent", request_bytes_sent, 0);
     rb_define_method(rb_cApacheRequest, "send_fd", request_send_fd, 1);
+    rb_define_method(rb_cApacheRequest, "proxy?",
+		     request_proxy_q, 0);
+    rb_define_method(rb_cApacheRequest, "proxy_pass?",
+		     request_proxy_pass_q, 0);
+    rb_define_method(rb_cApacheRequest, "dispatch_handler",
+		     request_get_dispatch_handler, 0);
+    rb_define_method(rb_cApacheRequest, "dispatch_handler=",
+		     request_set_dispatch_handler, 1);
+    rb_define_method(rb_cApacheRequest, "cache_resp",
+		     request_get_cache_resp, 0);
+    rb_define_method(rb_cApacheRequest, "cache_resp=",
+		     request_set_cache_resp, 1);
+    rb_define_method(rb_cApacheRequest, "lookup_uri", request_lookup_uri, 1);
+    rb_define_method(rb_cApacheRequest, "lookup_file", request_lookup_file, 1);
 }

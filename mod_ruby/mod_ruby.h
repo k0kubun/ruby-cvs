@@ -72,6 +72,8 @@ typedef apr_table_entry_t table_entry;
 #define APR_CLEANUP_RETURN_TYPE void
 #define APR_CLEANUP_RETURN_SUCCESS() return
 
+#include "http_conf_globals.h"
+
 #endif
 
 #define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.8"

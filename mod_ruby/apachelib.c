@@ -152,6 +152,11 @@ static VALUE apache_chdir_file(VALUE self, VALUE file)
     return Qnil;
 }
 
+static VALUE apache_server_root(VALUE self)
+{
+    return rb_str_new2(ap_server_root);
+}
+
 void rb_init_apache()
 {
     rb_request = Qnil;
@@ -170,6 +175,7 @@ void rb_init_apache()
     rb_define_module_function(rb_mApache, "request", apache_request, 0);
     rb_define_module_function(rb_mApache, "unescape_url", apache_unescape_url, 1);
     rb_define_module_function(rb_mApache, "chdir_file", apache_chdir_file, 1);
+    rb_define_module_function(rb_mApache, "server_root", apache_server_root, 0);
 
     rb_eApacheTimeoutError =
 	rb_define_class_under(rb_mApache, "TimeoutError", rb_eException);
