@@ -5,18 +5,19 @@
 #
 # Use only args, not STDIN.
 # ARG0 : $CVSROOT
-# ARG1 : Absolute path of the module
-# ARG2 : CVS user name
-# ARG3 : filename of the first file
-# ARG4 : filename of the second file
+# ARG1 : CVS user name
+# ARG2 : absolute path of the module
+# ARG3 : file1
+# ARG4 : file2
 # ..
 #
 # $Idaemons: /home/cvs/cvsmailer/commitinfo.rb,v 1.4 2001/01/19 17:22:53 knu Exp $
+# $devId: commitinfo.rb,v 1.6 2001/01/30 15:39:47 knu Exp $
 # $Id$
 #
 
 if ARGV.size < 4
-  puts "Usage: #{$0} CVSROOT USER module file file file..."
+  puts "Usage: #{$0} CVSROOT USER module file1 [file2...]"
   exit 1	# No way!
 end
 
@@ -25,121 +26,14 @@ $cvsroot, $cvsuser, $modulename, *$cvsfiles = *ARGV
 $cvsroot.tr_s!('/', '/')
 $modulename.tr_s!('/', '/')
 
-$aclfile = "#{$cvsroot}/acl"
+$aclfile = "#{$cvsroot}/CVSROOT/acl"
 
-# sanity check: 
-require 'socket'
-hostname = Socket.gethostbyname(Socket.gethostname)[0]
-
-case hostname.downcase
-when "helium.ruby-lang.org", "cvs.ruby-lang.org"
-  # ok
-else
-  puts "ERROR: You are committing on `#{hostname}'!  Please specify CVSROOT properly and commit on `cvs.ruby-lang.org'."
-  exit 1	# No way!
-end
-
-# acl check:
-class Group
-  @@group_table = {}
-
-  def Group::add(gid, obj)
-    @@group_table[gid] = if obj.is_a?(Group) then obj else Group.new(obj) end
-    self
-  end
-
-  def Group::group(gid)
-    if @@group_table.key? gid
-      @@group_table[gid]
-    else
-      nil
-    end
-  end
-
-  def initialize(list)
-    @members = []
-    @all = false
-
-    return if list == nil
-
-    list.each do |e|
-      if e =~ /^@(.*)/
-	gid = $1
-
-	g = Group.group(gid)
-
-	if g == nil
-	  puts "No such group defined: '#{gid}'"
-	  next
-	end
-
-	if g.all?
-	  all!
-	  break
-	end
-
-	@members |= g.members
-      else
-	@members |= [e]
-      end
-    end
-  end
-
-  def all?
-    @all
-  end
-
-  def all!
-    @all = true
-    @member = nil
-    self
-  end
-
-  def member?(u)
-    @all || @members.member?(u)
-  end
-
-  def members
-    @members
-  end
-
-  # Register a special group named 'all'
-  add('all', new(nil).all!)
-end
-
-def check_acl(aclfile, user, modulename)
-  File.open(aclfile) do |f|
-    f.each_line do |line|
-      line.strip!
-      case line
-      when /^#/, /^$/
-	next
-      else
-	fields = line.split(':')
-	command = fields[0]
-
-	case command
-	when 'group'
-	  Group.add(fields[1], fields[2].split(','))
-	when 'deny', 'grant'
-	  if Group.new(fields[1].split(',')).member? user
-	    re = Regexp.new("^/?(?:#{fields[2]})(?:/|$)")
-
-	    if re =~ modulename
-	      return (command == 'grant')
-	    end
-	  end
-	end
-      end
-    end
-  end
-
-  true		# Grant by default
-end
+# ACL check:
+$:.unshift "#{$cvsroot}/CVSROOT"
+require "cvsacl"
 
 if File.exist?($aclfile) && !check_acl($aclfile, $cvsuser, $modulename)
-  puts "ERROR: You are not granted to commit on #{$modulename}'!"
-  exit 2	# No way!
+  exit 1	# No way!
 end
 
 # append a line to a file

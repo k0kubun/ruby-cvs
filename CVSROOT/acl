@@ -5,9 +5,25 @@
 #
 
 #
+# Restrict hosts on which one could commit
+#
+# Usage:
+#   host:hostname1[,hostname2..]
+#
+# Note:
+#   If none matches, user is told to use hostname1 as the CVS host.
+#
+
+host:cvs.ruby-lang.org,helium.ruby-lang.org
+
+#
 # Define groups
 #
-# Note: "all" is a pre-defined special group that includes everyone
+# Usage:
+#   group:groupname:{username|@groupname}[,{username|@groupname}..]
+#
+# Note:
+#   "all" is a pre-defined special group that includes everyone
 #
 
 group:admin:matz,shugo,akira,knu
@@ -17,14 +33,29 @@ group:eruby:shugo
 group:mod_ruby:shugo
 group:rubicon:dave,andy
 group:cvsmailer:knu
+group:rwiki:seki,nahi
 group:irc:iga,knu
+
+group:www:@all
+
+group:doc:@all
 
 
 #
 # List access controls
 #
-# Note: they work on a first-match-wins basis.  If none matches,
-#       access will be granted.
+# Usage:
+#   {grant|deny}:{username|@groupname}[,{username|@groupname}..]:module_pattern
+#
+# Note:
+#   For convenience, each module_pattern match is done with an
+#   implicit `^/?(?:' at the beginning and an implicit `)(?:/|$)' at
+#   the end.
+#
+#   Also, each comparison is made case-insensitively.
+#
+#   They work on a first-match-wins basis.  If none matches, access
+#   will be granted.
 #
 
 # Grant "admin" members everything
@@ -35,7 +66,12 @@ grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
 grant:@cvsmailer:app/cvsmailer
+grant:@rwiki:app/rwiki
 grant:@irc:lib/irc
+
+grant:@www:www
+
+grant:@doc:doc
 
 # Deny access if we reach here
 deny:@all:.*

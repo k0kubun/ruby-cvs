@@ -30,14 +30,14 @@ $pgrp = Process.getpgrp()
 # parse arguments
 #
 
-if ARGV.size != 7
-  puts "Usage: #{$0} CVSROOT USER 'CVS-LOG-STRING' MAILADDR HELO_DOMAIN\n SMTP_IP SUBJECT_PREFIX"
+if ARGV.size != 8
+  puts "Usage: #{$0} CVSROOT USER 'CVS-LOG-STRING' MAILADDR HELO_DOMAIN\n SMTP_IP SUBJECT_PREFIX X_HEADER_PREFIX"
   exit 1	# No way!
 end
 
 puts "Invoking loginfo.rb...."
 
-$cvsroot, $cvsuser, $cvsarg, $mailaddr, $helo_domain, $smtp_ipaddr, $subject_prefix = *ARGV
+$cvsroot, $cvsuser, $cvsarg, $mailaddr, $helo_domain, $smtp_ipaddr, $subject_prefix, $x_header_prefix = *ARGV
 
 # Temporary control files
 $commitinfosavefile	= sprintf("/tmp/commitinfo.%s.%d", $cvsuser, $pgrp)
@@ -87,10 +87,10 @@ Date: #{$datestr}
 Subject: #{subject}
 To: #{$mailaddr}
 Sender: #{$ecvsuser}@#{$helo_domain}
-X-Ruby-CVS-User: #{$cvsuser}
-X-Ruby-CVS-Root: #{$cvsroot}
-X-Ruby-CVS-Module: #{$modulename}
-X-Ruby-CVS-Branch: #{$branch}
+#{$x_header_prefix}CVS-User: #{$cvsuser}
+#{$x_header_prefix}CVS-Root: #{$cvsroot}
+#{$x_header_prefix}CVS-Module: #{$modulename}
+#{$x_header_prefix}CVS-Branch: #{$branch}
 EOF
 end
 
