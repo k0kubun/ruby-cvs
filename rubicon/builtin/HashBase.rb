@@ -313,38 +313,30 @@ class HashBase < Rubicon::TestCase
   end
 
   def test_indexes
-    res = @h.indexes( *%w( dog cat horse ) )
-    assert(res.length == 3)
-    assert_equal([nil, nil, nil], res)
-
-    res = @h.indexes()
-    assert(res.length == 0)
-
-    res = @h.indexes( 3, 2, 1, nil )
-    assert(res.length == 4)
-    assert_equal(%w( three two one nil ), res)
-
-    res = @h.indexes( 3, 99, 1, nil )
-    assert(res.length == 4)
-    assert_equal([ 'three', nil, 'one', 'nil' ], res)
+    generic_index_tester(:indexes)
   end
 
   def test_indices
-    res = @h.indices( *%w( dog cat horse ) )
+    generic_index_tester(:indices)
+  end
+
+  def generic_index_tester(symbol)
+    res = @h.send symbol, *%w( dog cat horse ) 
     assert(res.length == 3)
     assert_equal([nil, nil, nil], res)
 
-    res = @h.indices()
+    res = @h.send symbol
     assert(res.length == 0)
 
-    res = @h.indices( 3, 2, 1, nil )
+    res = @h.send symbol, 3, 2, 1, nil 
     assert(res.length == 4)
     assert_equal(%w( three two one nil ), res)
 
-    res = @h.indices( 3, 99, 1, nil )
+    res = @h.send symbol, 3, 99, 1, nil 
     assert(res.length == 4)
     assert_equal([ 'three', nil, 'one', 'nil' ], res)
   end
+
 
   def test_invert
     h = @h.invert
