@@ -251,11 +251,13 @@ clean:
 	$(RM) $(LIBERUBY_ALIASES)
 	$(RM) $(LIBERUBY_OBJS)
 	$(RM) $(OBJS)
+	$(RM) $(EXT_OBJS)
 	$(RM) eruby.imp
-	$(RM) *~
 
 distclean: clean
-	$(RM) config.h Makefile
+	$(RM) config.h
+	$(RM) Makefile
+	$(RM) *~
 
 $(LIBERUBY_A): $(LIBERUBY_OBJS)
 	$(AR) #{$AROPT} $(LIBERUBY_OBJS)

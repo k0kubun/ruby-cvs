@@ -1,3 +1,9 @@
+Sun Apr 22 21:52:34 2001  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.RB (clean): remove eruby_ext.o.
+
+	* eruby_lib.c (eruby_compiler_compile_string): check type.
+
 Fri Apr 20 18:28:36 2001  WATANABE Hirofumi <eban@os.rim.or.jp>
 
 	* Makefile.RB: use INSTALL_DLLIB instead of INSTALL_DATA.

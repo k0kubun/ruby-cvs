@@ -29,7 +29,6 @@ char *eruby_filename = NULL;
 int eruby_mode = MODE_UNKNOWN;
 int eruby_noheader = 0;
 VALUE eruby_charset;
-VALUE eruby_cgi;
 VALUE eruby_default_charset;
 
 #define ERUBY_BEGIN_DELIMITER "<%"
@@ -558,6 +557,7 @@ VALUE eruby_compiler_compile_string(VALUE self, VALUE s)
 {
     eruby_compiler_t *compiler;
 
+    Check_Type(s, T_STRING);
     Data_Get_Struct(self, eruby_compiler_t, compiler);
     compiler->output = rb_str_new("", 0);
     compiler->lex_gets = lex_str_gets;
