@@ -23,23 +23,9 @@ mod_rubyはApacheウェブサーバにRubyインタプリタを組み込み、CGIスクリ
 
 (3) `make install'とタイプし、ファイルをインストールしてください。
 
-(4) Apacheにmod_rubyをロードさせるため、`httpd.conf'を編集してください。
+(4) examples/httpd.confを参考にhttpd.confを編集してください。
 
-      LoadModule ruby_module `apachelibexec'/mod_ruby.so
-
-(5) `srm.conf'を編集し、`ruby-script'ハンドラをセットしてください。
-
-      AddHandler ruby-script .rb
-
-    あるいは
-
-      Alias /ruby/ /usr/lib/cgi-bin/
-      <Location /ruby/>
-      SetHandler ruby-script
-      Options ExecCGI
-      </Location>
-
-(6) Apacheを再起動してください。
+(5) Apacheを再起動してください。
 
 =end
 

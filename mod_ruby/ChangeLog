@@ -1,3 +1,7 @@
+Mon Jun  4 19:16:45 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.8.2 released.
+
 Mon Jun  4 12:07:02 2001  Shugo Maeda <shugo@modruby.net>
 
 	* lib/auto-reload: new file.

@@ -23,23 +23,9 @@ start up much faster than without mod_ruby.
 
 (3) Type `make install' to install files.
 
-(4) Edit `httpd.conf' to make Apache load mod_ruby.
+(4) Edit `httpd.conf'. (see examples/httpd.conf.)
 
-      LoadModule ruby_module `apachelibexec'/mod_ruby.so
-
-(5) Edit `srm.conf' to set `ruby-script' handler.
-
-      AddHandler ruby-script .rb
-
-    or
-
-      Alias /ruby/ /usr/lib/cgi-bin/
-      <Location /ruby/>
-      SetHandler ruby-script
-      Options ExecCGI
-      </Location>
-
-(6) Restart Apache.
+(5) Restart Apache.
 
 =end
 
