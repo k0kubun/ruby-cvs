@@ -43,6 +43,7 @@ group:mod_ruby:shugo
 group:rubicon:dave,andy
 group:cvsmailer:knu
 group:rwiki:seki,nahi
+group:interbase:matz,bizenn
 group:irc:iga,knu
 
 group:www:@all
@@ -76,6 +77,7 @@ grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
 grant:@cvsmailer:app/cvsmailer
 grant:@rwiki:app/rwiki
+grant:@interbase:lib/interbase
 grant:@irc:lib/irc
 
 grant:@www:www
