@@ -85,7 +85,12 @@ class TestModule < Rubicon::TestCase
     assert_equal( 0, Mixin <=> Mixin)
     assert_equal(-1, User <=> Mixin)
     assert_equal( 1, Mixin <=> User)
-    assert_equal( 1, Mixin <=> Other)
+    Version.less_than("1.7") do
+      assert_equal(1, Mixin <=> User)
+    end
+    Version.greater_or_equal("1.7") do
+      assert_exception(ArgumentError) { Mixin <=> Other }
+    end 
 
     assert_equal( 0, Object <=> Object)
     assert_equal(-1, String <=> Object)
