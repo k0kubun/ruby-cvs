@@ -54,14 +54,6 @@ end
 $APACHE_INCLUDEDIR = `apxs -q INCLUDEDIR`
 $APACHE_LIBEXECDIR = `apxs -q LIBEXECDIR`
 
-$install = CONFIG["INSTALL_PROGRAM"]
-$install_data = CONFIG["INSTALL_DATA"]
-$install_dllib = CONFIG["INSTALL_DLLIB"] || $install_data
-if $install =~ %r!^[^\s/]+/! then
-  $install = CONFIG["compile_dir"]+"/"+$install
-  $install_dllib = CONFIG["compile_dir"]+"/"+$install_dllib
-end
-
 mfile = open("Makefile", "w")
 begin
   mfile.write <<EOMF
@@ -75,8 +67,7 @@ LIBS = #{CONFIG["LIBS"]}
 XLDFLAGS = #{CONFIG["XLDFLAGS"]}
 LDSHARED = #{CONFIG["LDSHARED"]}
 DLDFLAGS = #{CONFIG["DLDFLAGS"]}
-INSTALL = #{$install}
-INSTALL_DLLIB = #{$install_dllib}
+INSTALL_DLLIB = ruby -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
 
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 LIBRUBYARG = #$LIBRUBYARG

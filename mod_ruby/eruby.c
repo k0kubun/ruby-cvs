@@ -86,6 +86,20 @@ int eruby_compile(FILE *in, FILE *out)
     int c, prevc = EOF;
     int err;
 
+    c = getc(in);
+    if (c == '#') {
+	do {
+	    c = getc(in);
+	    if (c == '\n') {
+		putc('\n', out);
+		break;
+	    }
+	} while (c != EOF);
+    }
+    else {
+	ungetc(c, in);
+    }
+
     for (;;) {
 	c = getc(in);
     again:

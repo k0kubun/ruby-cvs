@@ -1,3 +1,11 @@
+Tue Aug 10 15:41:30 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.4 released.
+
+Tue Aug 10 15:39:32 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* Makefile.RB: use ftools instead of INSTALL_PROGRAM.
+
 Thu Jul 22 15:47:51 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* mod_ruby.c (ruby_error_print): pass "%s" to ap_log_error().
