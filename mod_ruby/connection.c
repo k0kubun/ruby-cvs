@@ -1,7 +1,6 @@
 /*
  * $Id$
- * Copyright (C) 2000  ZetaBITS, Inc.
- * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
  *
  * Author: Shugo Maeda <shugo@modruby.net>
  *

@@ -1,3 +1,11 @@
+Wed May  2 17:44:45 2001  Shugo Maeda <shugo@modruby.net>
+
+	* fixed copyright notice.
+
+	* array_header.c: new file for Apache::ArrayHeader.
+
+	* server.c: added some methods.
+
 Fri Apr 27 18:23:44 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.8.1 released.

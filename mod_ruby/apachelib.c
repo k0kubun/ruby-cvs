@@ -2,6 +2,7 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
  *
  * Author: Shugo Maeda <shugo@modruby.net>
  *
@@ -270,6 +271,7 @@ void rb_init_apache()
     rb_define_const(rb_mApache, "VARIANT_ALSO_VARIES",
 		    INT2NUM(VARIANT_ALSO_VARIES));
 
+    rb_init_apache_array();
     rb_init_apache_table();
     rb_init_apache_connection();
     rb_init_apache_server();

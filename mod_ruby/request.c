@@ -2,6 +2,7 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
  *
  * Author: Shugo Maeda <shugo@modruby.net>
  *
@@ -22,8 +23,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
  * 02111-1307, USA
  */
-
-#include <string.h>
 
 #include "httpd.h"
 #include "http_config.h"
@@ -378,6 +377,7 @@ static VALUE request_get_content_languages(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (data->request->content_languages) {
+#if 0
 	VALUE ary = rb_ary_new();
 	int i, len =  data->request->content_languages->nelts;
 	char **langs = (char **) data->request->content_languages->elts;
@@ -386,6 +386,9 @@ static VALUE request_get_content_languages(VALUE self)
 	}
 	rb_ary_freeze(ary);
 	return ary;
+#else
+	return rb_apache_array_new(data->request->content_languages);
+#endif	
     }
     else {
 	return Qnil;

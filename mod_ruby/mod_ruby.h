@@ -2,6 +2,7 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
  *
  * Author: Shugo Maeda <shugo@modruby.net>
  *
@@ -26,7 +27,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.8.1"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.8.2"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {

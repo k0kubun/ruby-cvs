@@ -163,6 +163,7 @@ TARGET = mod_ruby.so
 OBJS	= mod_ruby.o \
 	  ruby_config.o \
 	  apachelib.o \
+	  array_header.o \
 	  table.o \
 	  connection.o \
 	  server.o \
@@ -195,6 +196,7 @@ $(TARGET): $(OBJS)
 mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h
 ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h
 apachelib.o: apachelib.c apachelib.h
+array_header.o: array_header.c apachelib.h
 table.o: table.c apachelib.h
 connection.o: connection.c apachelib.h
 server.o: server.c apachelib.h

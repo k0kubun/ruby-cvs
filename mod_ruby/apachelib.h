@@ -2,6 +2,7 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
  *
  * Author: Shugo Maeda <shugo@modruby.net>
  *
@@ -32,6 +33,11 @@ extern VALUE rb_eApacheTimeoutError;
 extern VALUE rb_request;
 void rb_init_apache();
 void rb_apache_exit(int status);
+
+/* array_header.c */
+extern VALUE rb_cApacheArrayHeader;
+void rb_init_apache_array();
+VALUE rb_apache_array_new(array_header *arr);
 
 /* table.c */
 extern VALUE rb_cApacheTable;

@@ -1,7 +1,6 @@
 /*
  * $Id$
- * Copyright (C) 2000  ZetaBITS, Inc.
- * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
  *
  * Author: Shugo Maeda <shugo@modruby.net>
  *
@@ -54,6 +53,45 @@ DEFINE_UINT_ATTR_READER(server_port, server_rec, port);
 DEFINE_STRING_ATTR_READER(server_error_fname, server_rec, error_fname);
 DEFINE_INT_ATTR_READER(server_loglevel, server_rec, loglevel);
 DEFINE_BOOL_ATTR_READER(server_is_virtual, server_rec, is_virtual);
+DEFINE_INT_ATTR_READER(server_timeout, server_rec, timeout);
+DEFINE_INT_ATTR_READER(server_keep_alive_timeout, server_rec,
+		       keep_alive_timeout);
+DEFINE_INT_ATTR_READER(server_keep_alive_max, server_rec, keep_alive_max);
+DEFINE_BOOL_ATTR_READER(server_keep_alive, server_rec, keep_alive);
+DEFINE_INT_ATTR_READER(server_send_buffer_size, server_rec, send_buffer_size);
+DEFINE_STRING_ATTR_READER(server_path, server_rec, path);
+DEFINE_INT_ATTR_READER(server_uid, server_rec, server_uid);
+DEFINE_INT_ATTR_READER(server_gid, server_rec, server_gid);
+DEFINE_INT_ATTR_READER(server_limit_req_line, server_rec, limit_req_line);
+DEFINE_INT_ATTR_READER(server_limit_req_fieldsize, server_rec,
+		       limit_req_fieldsize);
+DEFINE_INT_ATTR_READER(server_limit_req_fields, server_rec, limit_req_fields);
+
+static VALUE server_names(VALUE self)
+{
+    server_rec *server;
+
+    Data_Get_Struct(self, server_rec, server);
+    if (server->names) {
+	return rb_apache_array_new(server->names);
+    }
+    else {
+	return Qnil;
+    }
+}
+
+static VALUE server_wild_names(VALUE self)
+{
+    server_rec *server;
+
+    Data_Get_Struct(self, server_rec, server);
+    if (server->wild_names) {
+	return rb_apache_array_new(server->wild_names);
+    }
+    else {
+	return Qnil;
+    }
+}
 
 void rb_init_apache_server()
 {
@@ -71,4 +109,24 @@ void rb_init_apache_server()
     rb_define_method(rb_cApacheServer, "loglevel", server_loglevel, 0);
     rb_define_method(rb_cApacheServer, "is_virtual", server_is_virtual, 0);
     rb_define_method(rb_cApacheServer, "virtual?", server_is_virtual, 0);
+    rb_define_method(rb_cApacheServer, "timeout", server_timeout, 0);
+    rb_define_method(rb_cApacheServer, "keep_alive_timeout",
+		     server_keep_alive_timeout, 0);
+    rb_define_method(rb_cApacheServer, "keep_alive_max",
+		     server_keep_alive_max, 0);
+    rb_define_method(rb_cApacheServer, "keep_alive", server_keep_alive, 0);
+    rb_define_method(rb_cApacheServer, "keep_alive?", server_keep_alive, 0);
+    rb_define_method(rb_cApacheServer, "send_buffer_size",
+		     server_send_buffer_size, 0);
+    rb_define_method(rb_cApacheServer, "path", server_path, 0);
+    rb_define_method(rb_cApacheServer, "names", server_names, 0);
+    rb_define_method(rb_cApacheServer, "wild_names", server_wild_names, 0);
+    rb_define_method(rb_cApacheServer, "uid", server_uid, 0);
+    rb_define_method(rb_cApacheServer, "gid", server_gid, 0);
+    rb_define_method(rb_cApacheServer, "limit_req_line",
+		     server_limit_req_line, 0);
+    rb_define_method(rb_cApacheServer, "limit_req_fieldsize",
+		     server_limit_req_fieldsize, 0);
+    rb_define_method(rb_cApacheServer, "limit_req_fields",
+		     server_limit_req_fields, 0);
 }
