@@ -412,10 +412,13 @@ AC_WITH("apache") { |withval|
     AC_MSG_ERROR("You need to specify a directory with --with-apache")
   end
   $APACHE_SRCDIR = File.expand_path(withval)
-  unless File.file?("#{$APACHE_SRCDIR}/src/include/httpd.h")
+  if File.file?("#{$APACHE_SRCDIR}/src/include/httpd.h")
+    $APACHE_INCLUDES = "-I#{$APACHE_SRCDIR}/src/include -I#{$APACHE_SRCDIR}/src/os/unix"
+  elsif File.file?("#{$APACHE_SRCDIR}/include/httpd.h")
+    AC_MSG_ERROR("static module is not supported for Apache2. Please use --with-apxs option")
+  else
     AC_MSG_ERROR("Unable to locate #{withval}/src/include/httpd.h")
   end
-  $APACHE_INCLUDES = "-I#{$APACHE_SRCDIR}/src/include -I#{$APACHE_SRCDIR}/src/os/unix"
   $TARGET = "libruby.a"
   $INSTALL_TARGET = "install-static"
   st = File.stat($APACHE_SRCDIR)
@@ -428,6 +431,9 @@ AC_WITH("apache") { |withval|
 
 AC_MSG_CHECKING("for dynamic Apache module support")
 AC_WITH("apxs") { |withval|
+  if $TARGET
+    AC_MSG_ERROR("--with-apache and --with-apxs are mutually exclusive")
+  end
   if withval == "yes"
     $APXS = "apxs"
   else
