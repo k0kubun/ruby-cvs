@@ -167,12 +167,14 @@ const char *ruby_cmd_add_path(cmd_parms *cmd, ruby_dir_config *dconf, char *arg)
     return NULL;
 }
 
-const char *ruby_cmd_require(cmd_parms *cmd, void *dummy, char *arg)
+const char *ruby_cmd_require(cmd_parms *cmd, ruby_dir_config *dconf, char *arg)
 {
+    ruby_server_config *sconf;
     int state;
 
     if (ruby_running()) {
-	if ((state = ruby_require(arg))) {
+	sconf = get_server_config(cmd->server);
+	if ((state = ruby_require(arg, sconf, dconf))) {
 	    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
 			 APLOG_STATUS(0) cmd->server,
 			 "mod_ruby: failed to require %s", arg);

@@ -1,3 +1,8 @@
+Tue May 21 13:57:42 2002  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_require): takes ruby_server_config* and
+	ruby_dir_config* as arguments to setup the load path.
+
 Tue May 21 12:25:35 2002  Shugo Maeda <shugo@modruby.net>
 
 	* apachelib.c (apache_server_root): moved from

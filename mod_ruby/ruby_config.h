@@ -35,7 +35,7 @@ void *ruby_merge_dir_config(pool*, void*, void*);
 void *ruby_create_dir_config (pool*, char*);
 const char *ruby_cmd_kanji_code(cmd_parms*, ruby_dir_config*, char*);
 const char *ruby_cmd_add_path(cmd_parms*, ruby_dir_config*, char*);
-const char *ruby_cmd_require(cmd_parms*, void*, char*);
+const char *ruby_cmd_require(cmd_parms*, ruby_dir_config*, char*);
 const char *ruby_cmd_pass_env(cmd_parms*, void*, char*);
 const char *ruby_cmd_set_env(cmd_parms*, ruby_dir_config*, char*, char*);
 const char *ruby_cmd_timeout(cmd_parms*, void*, char*);

@@ -131,7 +131,8 @@ VALUE rb_protect_funcall(VALUE recv, ID mid, int *state, int argc, ...);
 void ruby_log_error(server_rec *s, VALUE errmsg);
 VALUE ruby_get_error_info(int state);
 int ruby_running();
-int ruby_require(char*);
+int ruby_require(char *filename,
+		 ruby_server_config *sconf, ruby_dir_config *dconf);
 void ruby_add_path(const char *path);
 void rb_setup_cgi_env(request_rec *r);
 

@@ -449,22 +449,40 @@ int ruby_running()
     return ruby_is_running;
 }
 
-static void init_loadpath()
+static void setup_loadpath(ruby_server_config *sconf,
+			   ruby_dir_config *dconf)
 {
-    int i;
+    int i, n;
+    char **paths;
 
     rb_load_path = rb_ary_new();
     for (i = 0; i < RARRAY(default_load_path)->len; i++) {
 	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
     }
+    if (sconf && sconf->load_path) {
+	paths = (char **) sconf->load_path->elts;
+	n = sconf->load_path->nelts;
+	for (i = 0; i < n; i++) {
+	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
+	}
+    }
+    if (dconf && dconf->load_path) {
+	paths = (char **) dconf->load_path->elts;
+	n = dconf->load_path->nelts;
+	for (i = 0; i < n; i++) {
+	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
+	}
+    }
 }
 
-int ruby_require(char *filename)
+int ruby_require(char *filename,
+		 ruby_server_config *sconf,
+		 ruby_dir_config *dconf)
 {
     VALUE fname, exit_status;
     int state;
 
-    init_loadpath();
+    setup_loadpath(sconf, dconf);
     rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
     fname = rb_str_new2(filename);
     rb_protect_funcall(Qnil, rb_intern("require"), &state, 1, fname);
@@ -587,7 +605,7 @@ static void ruby_startup(server_rec *s, pool *p)
 	    list = (char **) ruby_required_libraries->elts;
 	    n = ruby_required_libraries->nelts;
 	    for (i = 0; i < n; i++) {
-		if ((state = ruby_require(list[i]))) {
+		if ((state = ruby_require(list[i], NULL, NULL))) {
 		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
 				 APLOG_STATUS(0) s,
 				 "mod_ruby: failed to require %s", list[i]);
@@ -806,29 +824,10 @@ static void per_request_init(request_rec *r)
 {
     ruby_server_config *sconf;
     ruby_dir_config *dconf;
-    char **paths;
-    int i, n;
 
     dconf = get_dir_config(r);
     sconf = get_server_config(r->server);
-    rb_load_path = rb_ary_new();
-    for (i = 0; i < RARRAY(default_load_path)->len; i++) {
-	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
-    }
-    if (dconf->load_path) {
-	paths = (char **) dconf->load_path->elts;
-	n = dconf->load_path->nelts;
-	for (i = 0; i < n; i++) {
-	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
-	}
-    }
-    if (sconf->load_path) {
-	paths = (char **) sconf->load_path->elts;
-	n = sconf->load_path->nelts;
-	for (i = 0; i < n; i++) {
-	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
-	}
-    }
+    setup_loadpath(sconf, dconf);
     ruby_debug = Qfalse;
     ruby_verbose = Qfalse;
     if (dconf->kcode)
