@@ -37,7 +37,8 @@ host:cvs.ruby-lang.org,helium.ruby-lang.org
 
 group:admin:matz,shugo,akira,knu
 
-group:ruby:matz,shugo,aamine,wakou,eban,knu,komatsu,usa,keiju,nobu,ts,ttate,nagai,akr,nahi
+group:ruby:matz,shugo,aamine,wakou,eban,knu,komatsu,usa,keiju,nobu,ts,ttate,nagai,akr,nahi,gotoken
+group:shim:@ruby
 group:rough:@all
 group:eruby:shugo
 group:mod_ruby:shugo
@@ -89,6 +90,7 @@ grant:@admin:.*
 grant:@ruby:ruby
 grant:@ruby,@doc:ruby/doc
 grant:@rough:rough
+grant:@shim:shim
 grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
