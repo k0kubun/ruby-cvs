@@ -1,27 +1,33 @@
 # Generated automatically by configure.rb.
 
 srcdir = @srcdir@
+topdir = @topdir@
+hdrdir = @hdrdir@
 VPATH = $(srcdir)
+
+RUBY_INSTALL_NAME = @RUBY_INSTALL_NAME@
+RUBY = $(RUBY_INSTALL_NAME)
+arch = @arch@
+ruby_version = @ruby_version@
+
+DESTDIR = 
+
+prefix = $(DESTDIR)@prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+libdir = @libdir@
+rubylibdir = @rubylibdir@
+archdir = @archdir@
+sitedir = @sitedir@
+sitelibdir = @sitelibdir@
+sitearchdir = @sitearchdir@
+includedir = @includedir@
+mandir = @mandir@
+
 CC = @CC@
 AR = @AR@
 LD = @LD@
 RANLIB = @RANLIB@
-RUBY_INSTALL_NAME = @RUBY_INSTALL_NAME@
-RUBY = $(RUBY_INSTALL_NAME)
-
-DESTDIR = 
-
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = $(DESTDIR)@bindir@
-libdir = $(DESTDIR)@libdir@
-includedir = $(DESTDIR)@includedir@
-archdir = $(DESTDIR)@archdir@
-sitearchdir = $(DESTDIR)@sitearchdir@
-mandir = $(DESTDIR)@mandir@
-
-topdir = @topdir@
-hdrdir = @hdrdir@
 
 CFLAGS = @CFLAGS@ -I. -I$(hdrdir)
 LDFLAGS = @LDFLAGS@

@@ -54,13 +54,17 @@ $DEFAULT_CHARSET = case $KCODE
 		   end
 $ENABLE_SHARED = false
 
-$prefix = CONFIG["prefix"]
+drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
+prefix = Regexp.new("\\A" + Regexp.quote(CONFIG["prefix"]))
+$prefix = CONFIG["prefix"].sub(drive, '')
 $exec_prefix = "$(prefix)"
-prefix = Regexp.new("\\A" + Regexp.quote($prefix))
-$bindir = CONFIG["bindir"].sub(prefix, "$(exec_prefix)")
-$libdir = CONFIG["libdir"].sub(prefix, "$(exec_prefix)")
-$includedir = CONFIG["includedir"].sub(prefix, "$(prefix)")
-$mandir = CONFIG["mandir"].sub(prefix, "$(prefix)")
+$bindir = CONFIG["bindir"].sub(prefix, "$(exec_prefix)").sub(drive, '')
+$libdir = CONFIG["libdir"].sub(prefix, "$(exec_prefix)").sub(drive, '')
+$archdir = $archdir.sub(prefix, "$(prefix)").sub(drive, '')
+$sitelibdir = $sitelibdir.sub(prefix, "$(prefix)").sub(drive, '')
+$sitearchdir = $sitearchdir.sub(prefix, "$(prefix)").sub(drive, '')
+$includedir = CONFIG["includedir"].sub(prefix, "$(prefix)").sub(drive, '')
+$mandir = CONFIG["mandir"].sub(prefix, "$(prefix)").sub(drive, '')
 
 parser = GetoptLong.new
 parser.set_options(["--help", GetoptLong::NO_ARGUMENT],
@@ -109,30 +113,32 @@ end
 config = {}
 
 config["srcdir"] = File.dirname($0)
+config["topdir"] = $topdir
+config["hdrdir"] = $hdrdir
 config["VPATH"] = ""
 
-config["CC"] = CONFIG["CC"]
-config["AR"] = CONFIG["AR"]
-config["AROPT"] = "rcu $@"
-config["LD"] = "$(CC)"
-config["RANLIB"] = CONFIG["RANLIB"]
-
 config["RUBY_INSTALL_NAME"] = CONFIG["RUBY_INSTALL_NAME"]
+config["arch"] = CONFIG["arch"]
+config["ruby_version"] = Config::CONFIG["ruby_version"]
 
 config["prefix"] = $prefix
 config["exec_prefix"] = $exec_prefix
 
 config["bindir"] = $bindir
 config["libdir"] = $libdir
+config["rubylibdir"] = $rubylibdir
+config["archdir"] = $archdir
+config["sitedir"] = $sitedir
+config["sitelibdir"] = $sitelibdir
+config["sitearchdir"] = $sitearchdir
 config["includedir"] = $includedir
 config["mandir"] = $mandir
 
-drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
-config["archdir"] = $archdir.sub(drive, '')
-config["sitearchdir"] = $sitearchdir.sub(drive, '')
-
-config["topdir"] = $topdir
-config["hdrdir"] = $hdrdir
+config["CC"] = CONFIG["CC"]
+config["AR"] = CONFIG["AR"]
+config["AROPT"] = "rcu $@"
+config["LD"] = "$(CC)"
+config["RANLIB"] = CONFIG["RANLIB"]
 
 config["CFLAGS"] = CFLAGS + " " + CONFIG["CCDLFLAGS"]
 config["LDFLAGS"] = CONFIG["LDFLAGS"]
