@@ -61,16 +61,16 @@ void *ruby_create_dir_config (pool *p, char *dirname)
     return conf;
 }
 
-void *ruby_merge_dir_config(pool *p, void *parent_conf, void *newloc_conf)
+void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
 {
-    ruby_dir_config *merged_conf =
+    ruby_dir_config *new =
 	(ruby_dir_config *) ap_pcalloc(p, sizeof(ruby_dir_config));
-    ruby_dir_config *pconf = (ruby_dir_config *) parent_conf;
-    ruby_dir_config *nconf = (ruby_dir_config *) newloc_conf;
+    ruby_dir_config *base = (ruby_dir_config *) basev;
+    ruby_dir_config *add = (ruby_dir_config *) addv;
 
-    merged_conf->kcode = ap_pstrdup(p, nconf->kcode);
-    merged_conf->env = ap_overlay_tables(p, nconf->env, pconf->env);
-    return (void *) merged_conf;
+    new->kcode = add->kcode ? add->kcode : base->kcode;
+    new->env = ap_overlay_tables(p, add->env, base->env);
+    return (void *) new;
 }
 
 const char *ruby_cmd_kanji_code(cmd_parms *cmd, ruby_dir_config *conf, char *arg)

@@ -1,3 +1,7 @@
+Wed Jan 24 16:52:48 2001  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.c (ruby_init_apachelib): fixed Apache::InTable#[].
+
 Tue Dec 12 14:40:19 2000  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.2.2 released.

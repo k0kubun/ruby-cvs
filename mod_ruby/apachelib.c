@@ -1124,9 +1124,9 @@ void ruby_init_apachelib()
     rb_undef_method(CLASS_OF(rb_cApacheTable), "new");
     rb_define_method(rb_cApacheTable, "clear", table_clear, 0);
     rb_define_method(rb_cApacheTable, "get", table_get, 1);
-    rb_define_alias(rb_cApacheTable, "[]", "get");
+    rb_define_method(rb_cApacheTable, "[]", table_get, 1);
     rb_define_method(rb_cApacheTable, "set", table_set, 2);
-    rb_define_alias(rb_cApacheTable, "[]=", "set");
+    rb_define_method(rb_cApacheTable, "[]=", table_set, 2);
     rb_define_method(rb_cApacheTable, "setn", table_setn, 2);
     rb_define_method(rb_cApacheTable, "merge", table_merge, 2);
     rb_define_method(rb_cApacheTable, "mergen", table_mergen, 2);
@@ -1139,6 +1139,7 @@ void ruby_init_apachelib()
     rb_cApacheInTable = rb_define_class_under(rb_mApache, "InTable",
 					      rb_cApacheTable);
     rb_define_method(rb_cApacheInTable, "get", in_table_get, 1);
+    rb_define_method(rb_cApacheInTable, "[]", in_table_get, 1);
     rb_define_method(rb_cApacheInTable, "each", in_table_each, 0);
     rb_define_method(rb_cApacheInTable, "each_key", in_table_each_key, 0);
     rb_define_method(rb_cApacheInTable, "each_value", in_table_each_value, 0);
