@@ -1,3 +1,15 @@
+Tue May 30 11:29:45 2000  Katsuyuki Komatsu <komatsu@sarion.co.jp>
+
+	* Makefile.RB: use CCDLFLAGS.
+
+	* Makefile.RB: added topdir, RUBY_INSTALL_NAME.
+
+	* Makefile.RB: use OBJEXT and EXEEXT.
+
+	* eruby.h: define S_ISDIR and W_OK.
+
+	* eruby_main.c: use EXTERN instead of extern.
+
 Wed May 24 14:11:22 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.0.8 released.

@@ -55,15 +55,17 @@ begin
 # Generated automatically by Makefile.RB.
 
 CC = #{CONFIG["CC"]}
-RUBY = #{CONFIG["ruby_install_name"]}
+RUBY_INSTALL_NAME = #{CONFIG["ruby_install_name"]}
+RUBY = $(RUBY_INSTALL_NAME)
 
 prefix = #{CONFIG["prefix"]}
 bindir = $(prefix)/bin
 libdir = $(prefix)/lib
 
+topdir = #{$topdir}
 hdrdir = #{$hdrdir}
 
-CFLAGS = -I$(hdrdir) #{CFLAGS}
+CFLAGS = #{CONFIG["CCDLFLAGS"]} -I$(hdrdir) #{CFLAGS}
 LDFLAGS = #{CONFIG["LDFLAGS"]}
 LIBS = #{CONFIG["LIBS"]}
 XLDFLAGS = #{CONFIG["XLDFLAGS"]}
@@ -71,9 +73,9 @@ DLDFLAGS = #{$DLDFLAGS} #{$LDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
 INSTALL_PROGRAM = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
 
-OBJS = eruby.o eruby_logo.o eruby_main.o
+OBJS = eruby.#{$OBJEXT} eruby_logo.#{$OBJEXT} eruby_main.#{$OBJEXT}
 LIBRUBYARG = #{$LIBRUBYARG}
-TARGET = eruby
+TARGET = eruby#{CONFIG["EXEEXT"]}
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -94,9 +96,9 @@ $(TARGET): $(OBJS)
 
 eruby_logo.c: eruby_logo.png
 	./bin2c eruby_logo.png
-eruby.o: eruby.c eruby.h config.h
-eruby_logo.o: eruby_logo.c eruby_logo.h
-eruby_main.o: eruby_main.c eruby.h eruby_logo.h
+eruby.#{$OBJEXT}: eruby.c eruby.h config.h
+eruby_logo.#{$OBJEXT}: eruby_logo.c eruby_logo.h
+eruby_main.#{$OBJEXT}: eruby_main.c eruby.h eruby_logo.h
 EOMF
 ensure
   mfile.close

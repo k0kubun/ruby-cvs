@@ -231,6 +231,14 @@ int eruby_compile(FILE *in, FILE *out)
     return ERUBY_OK;
 }
 
+#ifndef S_ISDIR
+# define S_ISDIR(m) ((m & S_IFMT) == S_IFDIR)
+#endif
+
+#ifndef W_OK
+# define W_OK 2
+#endif
+
 static char *check_dir(char *dir)
 {
     struct stat st;
