@@ -3,7 +3,7 @@
 # protect the namespace a tad
 #
 
-RUBICON_VERSION = "V0.3.4"
+RUBICON_VERSION = "V0.3.5"
 
 
 module Rubicon

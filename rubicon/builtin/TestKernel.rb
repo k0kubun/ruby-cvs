@@ -1223,13 +1223,22 @@ class TestKernel < Rubicon::TestCase
       filen = "_test/_filen"
       
       open(filen, "w") {}
-      assert(File.exists?(filen))
-      File.delete(filen)
+      begin
+        assert(File.exists?(filen))
+      ensure
+        File.delete(filen)
+      end
       
       open(filen, "w", 0444) {}
-      assert(File.exists?(filen))
-      assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
-      File.delete(filen)
+      begin
+        assert(File.exists?(filen))
+        Cygwin.known_problem do
+          assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
+        end
+      ensure
+        File.delete(filen)
+      end
+
     ensure
       teardownTestDir           # also does a chdir
     end

@@ -326,13 +326,21 @@ class TestFile < Rubicon::TestCase
     filen = "_test/_filen"
 
     File.open(filen, "w") {}
-    assert(File.exists?(filen))
-    File.delete(filen)
+    begin
+      assert(File.exists?(filen))
+    ensure
+      File.delete(filen)
+    end
     
     File.open(filen, File::CREAT, 0444) {}
-    assert(File.exists?(filen))
-    assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
-    File.delete(filen)
+    begin
+      assert(File.exists?(filen))
+      Cygwi.known_problem do
+        assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
+      end
+    ensure
+      File.delete(filen)
+    end
   end
 
   def test_s_readlink

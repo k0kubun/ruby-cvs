@@ -20,6 +20,16 @@ require "rubicon_tests"
 #   Linux.only do .... end            # operating system is Linux
 #
 #   MsWin32.dont do .... end          # don't run under MsWin32
+#
+# If there is a known problem which is very, very unlikely ever to be
+# fixed, you can say
+#
+#   Cygwin.known_problem do
+#
+#   end
+#
+# This runs the test, but squelches the error on that particular operating
+# system
 
 class OS
   def OS.or_variant
@@ -32,6 +42,19 @@ class OS
 
   def OS.dont
     yield unless $os <= self
+  end
+
+  def OS.known_problem
+    if $os <= self
+      begin
+        yield
+      rescue RUNIT::AssertionFailedError => err
+        $stderr.puts "Ignoring known problem: #{err.message}"
+        $stderr.puts err.backtrace[0]
+      end
+    else
+      yield
+    end
   end
 end
 

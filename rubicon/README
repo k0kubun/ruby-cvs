@@ -5,7 +5,7 @@ Warning:
 ========
 
 This software is pre-alpha. It works on my box, and that's all I
-know ;-)  Be warning that you're entering the unknown here.
+know ;-)  Be warned that you're entering the unknown here.
 
 
 Prerequisites:
@@ -26,6 +26,8 @@ Installation:
 =============
 
   You've done it. Simply untar the files into a convenient directory.
+  (If you aren't actually reading this from your copy of the
+  distribution, then see "Contacts:", below.)
 
 
 Structure:
@@ -102,8 +104,8 @@ Changing:
     which I'd like to talk through with folks.
 
 
-Environmental Tests
-===================
+Environmental Tests:
+====================
 
     Some tests depend on the environment in which they run. Guard
     these with appropriate conditions:

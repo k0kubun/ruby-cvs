@@ -1,3 +1,10 @@
+2001-11-16  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestFile.rb, TestKernel: Cygwin can't support modes when
+	creating fles, so flag these two tests as known problems
+
+	* rubicon.rb: Add support for 'known_problem'
+
 2001-11-15  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/FileInfoTest.rb: If run in a directory with g+s, the
