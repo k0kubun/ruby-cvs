@@ -199,32 +199,43 @@ class TestThread < Rubicon::TestCase
     assert_equals(0, Thread.current.priority)
   end
 
-  def test_priority=
+  def test_priority=()
+    Cygwin.only do
+      assert_fail("Thread priorities seem broken under Cygwin")
+      return
+    end
+
     c1 = 0
     c2 = 0
-    a = Thread.new { Thread.stop; loop { c1 += 1 }}
-    b = Thread.new { Thread.stop; loop { c2 += 1 }}
-    a.priority = -2
-    b.priority = -1
-    1 until a.stop? and b.stop?
-    a.wakeup
-    b.wakeup
-    sleep 1
-    Thread.critical = true
+    my_priority = Thread.current.priority
     begin
-      assert (c2 > c1)
-      c1 = 0
-      c2 = 0
-      a.priority = -1
-      b.priority = -2
-      Thread.critical = false
-      sleep 1 
+      Thread.current.priority = 10
+      a = Thread.new { Thread.stop; loop { c1 += 1 }}
+      b = Thread.new { Thread.stop; loop { c2 += 1 }}
+      a.priority = my_priority - 2
+      b.priority = my_priority - 1
+      1 until a.stop? and b.stop?
+      a.wakeup
+      b.wakeup
+      sleep 1
       Thread.critical = true
-      assert (c1 > c2)
-      a.kill
-      b.kill
+      begin
+	assert (c2 > c1)
+	c1 = 0
+	c2 = 0
+	a.priority = my_priority - 1
+	b.priority = my_priority - 2
+	Thread.critical = false
+	sleep 1 
+	Thread.critical = true
+	assert (c1 > c2)
+	a.kill
+	b.kill
+      ensure
+	Thread.critical = false
+      end
     ensure
-      Thread.critical = false
+      Thread.current.priority = my_priority
     end
   end
 
