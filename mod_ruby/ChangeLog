@@ -1,3 +1,7 @@
+Mon Jul  2 15:26:47 2001  Shugo Maeda <shugo@modruby.net>
+
+	* request.c (request_sent_http_header): new method.
+
 Mon Jul  2 12:42:54 2001  Shugo Maeda <shugo@modruby.net>
 
 	* request.c (request_set_content_type): accept nil.

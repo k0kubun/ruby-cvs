@@ -265,6 +265,14 @@ VALUE rb_apache_request_send_http_header(VALUE self)
     return Qnil;
 }
 
+static VALUE request_sent_http_header(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->send_http_header ? Qtrue : Qfalse;
+}
+
 void rb_apache_request_flush(VALUE self)
 {
     request_data *data;
@@ -1021,6 +1029,8 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "<<", request_addstr, 1);
     rb_define_method(rb_cApacheRequest, "send_http_header",
 		     rb_apache_request_send_http_header, 0);
+    rb_define_method(rb_cApacheRequest, "sent_http_header?",
+		     request_sent_http_header, 0);
     rb_define_method(rb_cApacheRequest, "connection", request_connection, 0);
     rb_define_method(rb_cApacheRequest, "server", request_server, 0);
     rb_define_method(rb_cApacheRequest, "protocol", request_protocol, 0);
