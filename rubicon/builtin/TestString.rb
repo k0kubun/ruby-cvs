@@ -961,7 +961,81 @@ class TestString < Rubicon::TestCase
   end
 
   def test_unpack
-    assert_fail("untested")
+
+
+    a = %w( cat wombat x yy)
+    assert_equals(["cat","wom","x","yy"],"catwomx  yy ".unpack("A3A3A3A3"))
+
+    #assert_equals(["cat"],"cat".unpack("A*"))
+    #assert_equals(["cwx", "wx", "x", "yy"], "cwx  yy ".unpack("A3@1A3@2A3A3"))
+    #assert_equals(["cat", "wom", "x\000\000", "yy\000"],
+                  #"catwomx\000\000yy\000".unpack("a3a3a3a3"))
+    #assert_equals(["cat"],"cat".unpack("a*"))
+    #assert_equals(["ca"],"ca".unpack("a2"))
+
+    #assert_equals(["cat\000\000"],"cat\000\000".unpack("a5"))
+
+    assert_equals(["01100001"], "\x61".unpack("B8"))
+    assert_equals(["01100001"], "\x61".unpack("B*"))
+    assert_equals(["0110000100110111"], "\x61\x37".unpack("B16"))
+    assert_equals(["01100001", "00110111"],"\x61\x37".unpack("B8B8"))
+    assert_equals(["0110"],"\x60".unpack("B4"))
+
+    assert_equals(["01"],"\x40".unpack("B2"))
+
+    assert_equals(["01100001"], "\x86".unpack("b8"))
+    assert_equals(["01100001"], "\x86".unpack("b*"))
+
+    assert_equals(["0110000100110111"], "\x86\xec".unpack("b16"))
+    assert_equals(["01100001", "00110111"], "\x86\xec".unpack("b8b8"))
+
+    assert_equals(["0110"], "\x06".unpack("b4"))
+    assert_equals(["01"], "\x02".unpack("b2"))
+
+    assert_equals([ 65, 66, 67 ],"ABC".unpack("C3"))
+
+    assert_equals([ 255, 66, 67 ],"\377BC".unpack("C*"))
+    assert_equals([ 65, 66, 67 ],"ABC".unpack("c3"))
+    assert_equals([ -1, 66, 67 ],"\377BC".unpack("c*"))
+
+    
+    assert_equal(["4142", "0a", "1"],"AB\n\x10".unpack("H4H2H1"))
+    assert_equal(["1424", "a0", "2"],"AB\n\x02".unpack("h4h2h1"))
+
+    assert_equal(["abc\002defcat\001", "", ""],
+                 "abc=02def=\ncat=\n=01=\n".unpack("M9M3M4"))
+
+    assert_equal(["hello\n"],"aGVsbG8K\n".unpack("m"))
+
+    assert_equal(["hello\nhello\n"],",:&5L;&\\*:&5L;&\\*\n".unpack("u"))
+
+    assert_equal([0xa9, 0x42, 0x2260],"\xc2\xa9B\xe2\x89\xa0".unpack("U*"))
+
+    $stderr.puts "Not tested:
+        D,d & double-precision float, native format\\
+        E & double-precision float, little-endian byte order\\
+        e & single-precision float, little-endian byte order\\
+        F,f & single-precision float, native format\\
+        G & double-precision float, network (big-endian) byte order\\
+        g & single-precision float, network (big-endian) byte order\\
+        I & unsigned integer\\
+        i & integer\\
+        L & unsigned long\\
+        l & long\\
+
+        m & string encoded in base64 (uuencoded)\\
+        N & long, network (big-endian) byte order\\
+        n & short, network (big-endian) byte-order\\
+        P & pointer to a structure (fixed-length string)\\
+        p & pointer to a null-terminated string\\
+        S & unsigned short\\
+        s & short\\
+        V & long, little-endian byte order\\
+        v & short, little-endian byte order\\
+        X & back up a byte\\
+        x & null byte\\
+        Z & ASCII string (null padded, count is width)\\
+"
   end
 
   def test_upcase
