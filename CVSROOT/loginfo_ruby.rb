@@ -8,7 +8,7 @@
 # 0.12 subject_prefix, smtp_ipaddr, multiple-email-address. (2000/6/1)
 #
 # $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
-# $devId: loginfo.rb,v 1.6 2001/01/31 14:58:24 knu Exp $
+# $devId: loginfo.rb,v 1.7 2001/05/01 08:25:57 knu Exp $
 # $Id$
 #
 
@@ -47,6 +47,7 @@ $changelogfile		= sprintf("/tmp/loginfo.changelog.%s.%d", $cvsuser, $pgrp)
 $addlogfile		= sprintf("/tmp/loginfo.addlog.%s.%d", $cvsuser, $pgrp)
 $modlogfile		= sprintf("/tmp/loginfo.modlog.%s.%d", $cvsuser, $pgrp)
 $removelogfile		= sprintf("/tmp/loginfo.removelog.%s.%d", $cvsuser, $pgrp)
+$modulesfile		= sprintf("/tmp/loginfo.modules.%s.%d", $cvsuser, $pgrp)
 
 def cleanup_tmpfiles
   for f in [
@@ -55,7 +56,8 @@ def cleanup_tmpfiles
       $changelogfile,
       $addlogfile,
       $modlogfile,
-      $removelogfile ]
+      $removelogfile,
+      $modulesfile ]
     File.unlink(f) rescue true
   end
 end
@@ -90,7 +92,7 @@ To: #{$mailaddr}
 Sender: #{$ecvsuser}@#{$helo_domain}
 #{$x_header_prefix}CVS-User: #{$cvsuser}
 #{$x_header_prefix}CVS-Root: #{$cvsroot}
-#{$x_header_prefix}CVS-Module: #{$modulename}
+#{$x_header_prefix}CVS-Module: #{$modulenames.join(', ')}
 #{$x_header_prefix}CVS-Branch: #{$branch}
 EOF
 end
@@ -143,8 +145,8 @@ if !$isimport
   cfile.each_line { |i|
     i.chomp!
     tk = i.split(/ /)
-    croot = tk.shift + "/"      # CVSROOT mod-path file file file...
-    cmodpath = tk.shift.sub(/^#{Regexp.quote(croot)}/, "")
+    croot = tk.shift	# CVSROOT mod-path file file file...
+    cmodpath = tk.shift.sub(/^#{Regexp.quote(croot)}\//, "")
     tk.each { |j|
       commithash["#{cmodpath}/#{j}"] = true
     }
@@ -163,33 +165,34 @@ if !$isimport
   print "loginfo.rb is writing changelog..."
 
   cvsargtk = $cvsarg.split(/ /)
-  $modulename = cvsargtk.shift
+  modulename = cvsargtk.shift
 
   cvsargtk.each { |f|
     revision = ""
-    status = `#{$cvs} -Qn status #{f}`
-    status.split(/\n/).each { |i|
-      if i =~ /Repository revision:\s+(.+)\s+/
+    `#{$cvs} -Qn status #{f}`.each_line { |l|
+      l.strip!
+	    
+      if /^Repository revision:\s+(\S+)/ =~ l
 	revision = $1
 	break
       end
     }
-    log = `#{$cvs} -Qn log #{f}`.split(/\n/)
-    while true
-      line1 = log.shift
-      line1.strip!
-      if line1 =~ /^revision\s(.+)$/
-	if $1 == revision
-	  nextline = log.shift
-	  nextline.strip!
-	  nextline =~ /lines:\s+(.+)\s+(.+)$/
+    found = false
+    `#{$cvs} -Qn log #{f}`.each_line { |l|
+      l.strip!
+	    
+      if found
+	if /lines:\s+(.+)\s+(.+)$/ =~ l
 	  append_line($changelogfile, 
 		      sprintf("%-11s %-4s %-4s  %s/%s",
-			      revision, $1, $2, $modulename, f))
-	  break
+			      revision, $1, $2, modulename, f))
 	end
+
+	break
+      elsif /^revision\s(.+)$/ =~ l && $1 == revision
+	found = true
       end
-    end				   
+    }
   }
 
   puts "done"
@@ -199,7 +202,8 @@ end
 print "loginfo.rb is parsing log message..." 
 
 readmode = :init
-updatemsg = ""
+files_begin = false
+modulename = ""
 logtext = ""
 statustext = ""
 $branch = "HEAD"
@@ -207,16 +211,20 @@ $branch = "HEAD"
 STDIN.each_line do |l|
   case l
   when /^Update of (.*)/
-    updatemsg = $1.strip
+    modulename = $1.strip.sub(/^#{Regexp.quote($cvsroot)}\//, "")
+    append_line($modulesfile, modulename)
     next
   when /^Modified Files:/
     readmode = :modify
+    files_begin = true
     next
   when /^Added Files:/
     readmode = :add
+    files_begin = true
     next
   when /^Removed Files:/
     readmode = :remove
+    files_begin = true
     next
   when /^Log Message:/
     readmode = :log
@@ -224,21 +232,30 @@ STDIN.each_line do |l|
   when /^Status:/
     readmode = :status
     next
+  when /^\s+Tag:\s+(\S+)$/
+    $branch = $1
+    next
   when nil
     break
   end
 
   case readmode
-  when :modify
-    if l =~ /^\s+Tag:\s+(\S+)$/
-      $branch = $1
-    else
-      append_line($modlogfile, l.strip)
+  when :modify, :add, :remove
+    file = if readmode == :modify then
+	     $modlogfile
+	   elsif readmode == :add then
+	     $addlogfile
+	   else
+	     $removelogfile
+	   end
+
+    if files_begin
+      append_line(file, "#{modulename}:")
+      files_begin = false
     end
-  when :add
-    append_line($addlogfile, l.strip)
-  when :remove
-    append_line($removelogfile, l.strip)
+
+    s = l.strip
+    append_line(file, s.indent(2))
   when :log
     logtext += l
   when :status
@@ -265,8 +282,10 @@ puts "done"
 
 print "loginfo.rb is composing a mail..."
 
+$modulenames = (read_file($modulesfile).chomp.split("\n") rescue Array.new)
+
 # Use the first valuable line as the subject of the mail.
-subject = "#{$modulename}: "
+subject = "#{$modulenames.join(', ')}: "
 logtext.each_line { |i|
   i.strip!
   if i != ""
@@ -283,15 +302,13 @@ branchinfo = if $branch == 'HEAD'
 
 logtext.chomp!
 
-body =
-  build_bodyheader +
-  ("Module:\n" +
-   updatemsg.indent(2) +
-   "\n").indent(2)
+body = build_bodyheader
 
 if $isimport
   body +=
-    ("Log:\n" +
+    ("Module:\n" +
+     $modulenames.join("\n").indent(2) + "\n" +
+     "Log:\n" +
      logtext.chomp.indent(2) + "\n" +
      "\n" +
      "Imported files:#{branchinfo}\n" +
