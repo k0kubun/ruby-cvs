@@ -11,6 +11,11 @@ class TestDir < Rubicon::TestCase
     teardownTestDir
   end
 
+  def delete_test_dir
+    MsWin32.only do sys("del _test /s /q") end
+    MsWin32.dont do sys("rm _test/*") end
+  end
+
   def test_s_aref
     [
       [ %w( _test ),                     Dir["_test"] ],
@@ -61,7 +66,7 @@ class TestDir < Rubicon::TestCase
   def test_s_delete
     assert_kindof_exception(SystemCallError)    { Dir.delete "_wombat" } 
     assert_kindof_exception(SystemCallError)    { Dir.delete "_test" } 
-    sys("rm _test/*")
+    delete_test_dir
     assert_equal(0, Dir.delete("_test"))
     assert_kindof_exception(SystemCallError)    { Dir.delete "_test" } 
   end
@@ -158,7 +163,7 @@ class TestDir < Rubicon::TestCase
   def test_s_rmdir
     assert_kindof_exception(SystemCallError)    { Dir.rmdir "_wombat" } 
     assert_kindof_exception(SystemCallError)    { Dir.rmdir "_test" } 
-    sys("rm _test/*")
+    delete_test_dir
     assert_equal(0, Dir.rmdir("_test"))
     assert_kindof_exception(SystemCallError)    { Dir.rmdir "_test" } 
   end
@@ -166,7 +171,7 @@ class TestDir < Rubicon::TestCase
   def test_s_unlink
     assert_kindof_exception(SystemCallError)    { Dir.unlink "_wombat" } 
     assert_kindof_exception(SystemCallError)    { Dir.unlink "_test" } 
-    sys("rm _test/*")
+    delete_test_dir
     assert_equal(0, Dir.unlink("_test"))
     assert_kindof_exception(SystemCallError)    { Dir.unlink "_test" } 
   end

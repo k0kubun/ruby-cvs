@@ -1,3 +1,8 @@
+2002-03-21  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestDir.rb: Get working under Win2k, based on a patch
+	from Chris Morris
+
 2002-03-10  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* builtin/TestEnumerable.rb (TestEnumerable::test_each_with_index): 
