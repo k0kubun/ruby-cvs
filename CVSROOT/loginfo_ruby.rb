@@ -3,7 +3,7 @@
 # CVS commit mail script (loginfo)
 #
 # $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
-# $devId: loginfo.rb,v 1.10 2001/06/05 05:22:12 knu Exp $
+# $devId: loginfo.rb,v 1.11 2001/06/06 09:23:11 knu Exp $
 # $Id$
 #
 
@@ -148,7 +148,7 @@ EOF
 
   if $reply_to_address
     header << <<EOF
-Reply-To: ${reply_to_address}
+Reply-To: #{reply_to_address}
 EOF
   end
 
