@@ -145,7 +145,7 @@ class TestFile < Rubicon::TestCase
     MsWin32.dont do
       sock = UNIXServer.open("_sock")
       File.symlink("_file1", "_file3") # may fail
-   end
+    end
 
     begin
       tests = {
@@ -153,11 +153,13 @@ class TestFile < Rubicon::TestCase
         "_file1"   => "file",
       }
 
-      begin
-        tests[File.expand_path(File.readlink("/dev/tty"), "/dev")] =
-          "characterSpecial"
-      rescue Errno::EINVAL
-        tests["/dev/tty"] = "characterSpecial"
+      Windows.dont do
+	begin
+	  tests[File.expand_path(File.readlink("/dev/tty"), "/dev")] =
+	    "characterSpecial"
+	rescue Errno::EINVAL
+	  tests["/dev/tty"] = "characterSpecial"
+	end
       end
 
       MsWin32.dont do
@@ -403,17 +405,20 @@ class TestFile < Rubicon::TestCase
     }
   end
 
-  def myUmask
-    Integer(`sh -c umask`.chomp)
+  MsWin32.dont do
+    def myUmask
+      Integer(`sh -c umask`.chomp)
+    end
+
+    def test_s_umask
+      orig = myUmask
+      assert_equal(myUmask, File.umask)
+      assert_equal(myUmask, File.umask(0404))
+      assert_equal(0404, File.umask(orig))
+    end
   end
 
-  def test_s_umask
-    orig = myUmask
-    assert_equal(myUmask, File.umask)
-    assert_equal(myUmask, File.umask(0404))
-    assert_equal(0404, File.umask(orig))
-  end
-
+  
   def test_s_unlink
     Dir.chdir("_test")
     assert_equal(0, File.unlink)

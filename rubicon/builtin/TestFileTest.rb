@@ -96,7 +96,6 @@ class TestFileTest < FileInfoTest
         [ :symlink?,    ?l,    @file1,              false ],
         [ nil,          ?M,    @file1,              mtime ],
         [ :owned?,      ?o,    @file1,              true  ],
-        [ :owned?,      ?o,    "/etc/passwd",       Process.euid == 0 ],
         [ :pipe?,       ?p,    ".",                 false ],
         [ :readable?,   ?r,    @file1,              true  ],
         [ :size?,       ?s,    filez,               filez_size ],
@@ -104,7 +103,7 @@ class TestFileTest < FileInfoTest
         [ :socket?,     ?S,    ".",                 false ],
         [ :socket?,     ?S,    @file1,              false ],
         [ :setuid?,     ?u,    @file1,              false ],
-        [ :writable?,   ?w,    filew,               Process.euid == 0 ],
+        [ :writable?,   ?w,    filew,               Process.euid == 0],
         [ :writable?,   ?w,    @file2,              true  ],
         [ :executable?, ?x,    "/dev/fd0",          false ],
         [ :zero?,       ?z,    filez,               false ],
@@ -116,6 +115,7 @@ class TestFileTest < FileInfoTest
         tests << [ :symlink?,    ?l,    filel,               true  ]
         tests << [ :readable?,   ?r,    filer,               Process.euid == 0 ]
         tests << [ :setuid?,     ?u,    fileu,               true  ]
+        tests << [ :owned?,      ?o,    "/etc/passwd",       Process.euid == 0 ]
       end
 
       MsWin32.dont do 
