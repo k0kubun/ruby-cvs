@@ -40,7 +40,7 @@ VALUE rb_apache_server_new(server_rec *server)
 
 DEFINE_STRING_ATTR_READER(server_defn_name, server_rec, defn_name);
 DEFINE_UINT_ATTR_READER(server_defn_line_number, server_rec, defn_line_number);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 static VALUE server_srm_confname(VALUE self)
 {
     rb_notimplement();
@@ -67,7 +67,7 @@ DEFINE_INT_ATTR_READER(server_keep_alive_timeout, server_rec,
 		       keep_alive_timeout);
 DEFINE_INT_ATTR_READER(server_keep_alive_max, server_rec, keep_alive_max);
 DEFINE_BOOL_ATTR_READER(server_keep_alive, server_rec, keep_alive);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 static VALUE server_send_buffer_size(VALUE self)
 {
     rb_notimplement();
@@ -77,7 +77,7 @@ static VALUE server_send_buffer_size(VALUE self)
 DEFINE_INT_ATTR_READER(server_send_buffer_size, server_rec, send_buffer_size);
 #endif
 DEFINE_STRING_ATTR_READER(server_path, server_rec, path);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 static VALUE server_uid(VALUE self)
 {
     rb_notimplement();

@@ -30,6 +30,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+/* for core_module */
+#define CORE_PRIVATE
+
 #include "mod_ruby.h"
 #include "apachelib.h"
 
@@ -63,9 +66,11 @@ typedef struct request_data {
 static VALUE fname(VALUE self, VALUE val) \
 { \
     request_data *data; \
+    Check_Type(val, T_STRING); \
     data = get_request_data(self); \
     data->request->member = \
-	ap_pstrdup(data->request->pool, STR2CSTR(val)); \
+	ap_pstrndup(data->request->pool, \
+		    RSTRING(val)->ptr, RSTRING(val)->len); \
     return val; \
 }
 
@@ -541,7 +546,8 @@ static VALUE request_set_content_type(VALUE self, VALUE str)
 	Check_Type(str, T_STRING);
 	str = rb_funcall(str, rb_intern("downcase"), 0);
 	data->request->content_type =
-	    ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+	    ap_pstrndup(data->request->pool,
+			RSTRING(str)->ptr, RSTRING(str)->len);
     }
     return str;
 }
@@ -558,7 +564,9 @@ static VALUE request_set_content_encoding(VALUE self, VALUE str)
 	Check_Type(str, T_STRING);
 	str = rb_funcall(str, rb_intern("downcase"), 0);
 	data->request->content_encoding =
-	    ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+	    ap_pstrndup(data->request->pool,
+			RSTRING(str)->ptr,
+			RSTRING(str)->len);
     }
     return str;
 }
@@ -607,7 +615,9 @@ static VALUE request_set_content_languages(VALUE self, VALUE ary)
 	    VALUE str = RARRAY(ary)->ptr[i];
 	    str = rb_funcall(str, rb_intern("downcase"), 0);
 	    *(char **) ap_push_array(data->request->content_languages) =
-		ap_pstrdup(data->request->pool, STR2CSTR(str));
+		ap_pstrndup(data->request->pool,
+			    RSTRING(str)->ptr,
+			    RSTRING(str)->len);
 	}
     }
     return ary;
@@ -695,7 +705,7 @@ static VALUE request_finfo(VALUE self)
     if (NIL_P(data->finfo)) {
 	cStat = rb_const_get(rb_cFile, rb_intern("Stat"));
 	data->finfo = Data_Make_Struct(cStat, struct stat, NULL, free, st);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 	memset(st, 0, sizeof(struct stat));
 	if (data->request->finfo.filetype != 0) {
 	    st->st_dev = data->request->finfo.device;
@@ -969,7 +979,7 @@ static VALUE request_remote_host(VALUE self)
     const char *host;
 
     data = get_request_data(self);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
     host = ap_get_remote_host(data->request->connection,
 			      data->request->per_dir_config,
 			      REMOTE_HOST, NULL);
@@ -1017,6 +1027,8 @@ static VALUE request_server_port(VALUE self)
     return INT2NUM(ap_get_server_port(data->request));
 }
 
+#if 0
+
 static VALUE request_auth_type(VALUE self)
 {
     request_data *data;
@@ -1036,6 +1048,8 @@ static VALUE request_auth_name(VALUE self)
     auth_name = ap_auth_name(data->request);
     return auth_name ? rb_str_new2(auth_name) : Qnil;
 }
+
+#endif
 
 static VALUE request_satisfies(VALUE self)
 {
@@ -1090,7 +1104,7 @@ static VALUE request_signature(VALUE self)
 
 static VALUE request_reset_timeout(VALUE self)
 {
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
     rb_notimplement();
 #else /* Apache 1.x */
     request_data *data;
@@ -1103,14 +1117,16 @@ static VALUE request_reset_timeout(VALUE self)
 
 static VALUE request_hard_timeout(VALUE self, VALUE name)
 {
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
     rb_notimplement();
 #else /* Apache 1.x */
     request_data *data;
+    char *s;
 
+    Check_Type(name, T_STRING);
     data = get_request_data(self);
-    ap_hard_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
-		    data->request);
+    s = ap_pstrndup(data->request->pool, RSTRING(name)->ptr, RSTRING(name)->len);
+    ap_hard_timeout(s, data->request);
 #endif
     return Qnil;
 }
@@ -1118,10 +1134,12 @@ static VALUE request_hard_timeout(VALUE self, VALUE name)
 static VALUE request_soft_timeout(VALUE self, VALUE name)
 {
     request_data *data;
+    char *s;
 
+    Check_Type(name, T_STRING);
     data = get_request_data(self);
-    ap_soft_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
-		    data->request);
+    s = ap_pstrndup(data->request->pool, RSTRING(name)->ptr, RSTRING(name)->len);
+    ap_soft_timeout(s, data->request);
     return Qnil;
 }
 
@@ -1214,7 +1232,7 @@ static VALUE request_log_reason(VALUE self, VALUE msg, VALUE file)
     Check_Type(msg, T_STRING);
     Check_Type(file, T_STRING);
     data = get_request_data(self);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
     host = ap_get_remote_host(data->request->connection,
 			      data->request->per_dir_config,
 			      REMOTE_HOST, NULL);
@@ -1257,8 +1275,20 @@ static VALUE request_exception(VALUE self)
     return data->exception;
 }
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 REQUEST_STRING_ATTR_READER(request_user, user);
+
+static VALUE request_set_user(VALUE self, VALUE val)
+{
+    request_data *data;
+
+    Check_Type(val, T_STRING);
+    data = get_request_data(self);
+    data->request->user = ap_pstrndup(data->request->pool,
+				      RSTRING(val)->ptr,
+				      RSTRING(val)->len);
+    return val;
+}
 #else /* Apache 1.x */
 static VALUE request_user(VALUE self)
 {
@@ -1267,7 +1297,79 @@ static VALUE request_user(VALUE self)
     conn = request_connection(self);
     return rb_funcall(conn, rb_intern("user"), 0);
 }
+
+static VALUE request_set_user(VALUE self, VALUE val)
+{
+    VALUE conn;
+
+    conn = request_connection(self);
+    return rb_funcall(conn, rb_intern("user="), 1, val);
+}
 #endif
+
+static VALUE request_auth_type(VALUE self)
+{
+    request_data *data;
+    core_dir_config *conf;
+
+    data = get_request_data(self);
+    conf = (core_dir_config *)
+	ap_get_module_config(data->request->per_dir_config, &core_module);
+    if (conf->ap_auth_type) {
+	return rb_tainted_str_new2(conf->ap_auth_type);
+    }
+    else {
+	return Qnil;
+    }
+}
+
+static VALUE request_set_auth_type(VALUE self, VALUE val)
+{
+    request_data *data;
+    core_dir_config *conf;
+
+    Check_Type(val, T_STRING);
+    data = get_request_data(self);
+    conf = (core_dir_config *)
+	ap_get_module_config(data->request->per_dir_config, &core_module);
+    conf->ap_auth_type = ap_pstrndup(data->request->pool,
+				     RSTRING(val)->ptr,
+				     RSTRING(val)->len);
+    ap_set_module_config(data->request->per_dir_config, &core_module, conf);
+    return val;
+}
+
+static VALUE request_auth_name(VALUE self)
+{
+    request_data *data;
+    core_dir_config *conf;
+
+    data = get_request_data(self);
+    conf = (core_dir_config *)
+	ap_get_module_config(data->request->per_dir_config, &core_module);
+    if (conf->ap_auth_name) {
+	return rb_tainted_str_new2(conf->ap_auth_name);
+    }
+    else {
+	return Qnil;
+    }
+}
+
+static VALUE request_set_auth_name(VALUE self, VALUE val)
+{
+    request_data *data;
+    core_dir_config *conf;
+
+    Check_Type(val, T_STRING);
+    data = get_request_data(self);
+    conf = (core_dir_config *)
+	ap_get_module_config(data->request->per_dir_config, &core_module);
+    conf->ap_auth_name = ap_pstrndup(data->request->pool,
+				     RSTRING(val)->ptr,
+				     RSTRING(val)->len);
+    ap_set_module_config(data->request->per_dir_config, &core_module, conf);
+    return val;
+}
 
 void rb_init_apache_request()
 {
@@ -1389,8 +1491,6 @@ void rb_init_apache_request()
 		     request_construct_url, 1);
     rb_define_method(rb_cApacheRequest, "server_name", request_server_name, 0);
     rb_define_method(rb_cApacheRequest, "server_port", request_server_port, 0);
-    rb_define_method(rb_cApacheRequest, "auth_type", request_auth_type, 0);
-    rb_define_method(rb_cApacheRequest, "auth_name", request_auth_name, 0);
     rb_define_method(rb_cApacheRequest, "satisfies", request_satisfies, 0);
     rb_define_method(rb_cApacheRequest, "requires", request_requires, 0);
     rb_define_method(rb_cApacheRequest, "escape_html", request_escape_html, 1);
@@ -1425,4 +1525,10 @@ void rb_init_apache_request()
 		     request_exception, 0);
     rb_define_method(rb_cApacheRequest, "user",
 		     request_user, 0);
+    rb_define_method(rb_cApacheRequest, "user=",
+		     request_set_user, 1);
+    rb_define_method(rb_cApacheRequest, "auth_type", request_auth_type, 0);
+    rb_define_method(rb_cApacheRequest, "auth_type=", request_set_auth_type, 1);
+    rb_define_method(rb_cApacheRequest, "auth_name", request_auth_name, 0);
+    rb_define_method(rb_cApacheRequest, "auth_name=", request_set_auth_name, 1);
 }

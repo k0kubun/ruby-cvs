@@ -39,7 +39,7 @@ DEFINE_BOOL_ATTR_READER(connection_aborted, conn_rec, aborted);
 DEFINE_STRING_ATTR_READER(connection_remote_ip, conn_rec, remote_ip);
 DEFINE_STRING_ATTR_READER(connection_remote_host, conn_rec, remote_host);
 DEFINE_STRING_ATTR_READER(connection_remote_logname, conn_rec, remote_logname);
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 static VALUE connection_user(VALUE self)
 {
     rb_notimplement();
@@ -51,12 +51,70 @@ static VALUE connection_auth_type(VALUE self)
     rb_notimplement();
     return Qnil;
 }
+
+static VALUE connection_set_user(VALUE self, VALUE user)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE connection_set_auth_type(VALUE self, VALUE auth_type)
+{
+    rb_notimplement();
+    return Qnil;
+}
 #else /* Apache 1.x */
 DEFINE_STRING_ATTR_READER(connection_user, conn_rec, user);
 DEFINE_STRING_ATTR_READER(connection_auth_type, conn_rec, ap_auth_type);
+
+static VALUE connection_set_user(VALUE self, VALUE val)
+{
+    conn_rec *conn;
+
+    Data_Get_Struct(self, conn_rec, conn);
+    Check_Type(val, T_STRING);
+    conn->user = ap_pstrndup(conn->pool,
+			     RSTRING(val)->ptr, RSTRING(val)->len);
+    return val;
+}
+
+static VALUE connection_set_auth_type(VALUE self, VALUE val)
+{
+    conn_rec *conn;
+
+    Data_Get_Struct(self, conn_rec, conn);
+    Check_Type(val, T_STRING);
+    conn->ap_auth_type = ap_pstrndup(conn->pool,
+				     RSTRING(val)->ptr, RSTRING(val)->len);
+    return val;
+}
 #endif
 DEFINE_STRING_ATTR_READER(connection_local_ip, conn_rec, local_ip);
 DEFINE_STRING_ATTR_READER(connection_local_host, conn_rec, local_host);
+
+static VALUE connection_local_port(VALUE self)
+{
+    conn_rec *conn;
+
+    Data_Get_Struct(self, conn_rec, conn);
+#ifdef APACHE2
+    return INT2NUM(conn->local_addr->port);
+#else
+    return INT2NUM(ntohs(conn->local_addr.sin_port));
+#endif
+}
+
+static VALUE connection_remote_port(VALUE self)
+{
+    conn_rec *conn;
+
+    Data_Get_Struct(self, conn_rec, conn);
+#ifdef APACHE2
+    return INT2NUM(conn->remote_addr->port);
+#else
+    return INT2NUM(ntohs(conn->remote_addr.sin_port));
+#endif
+}
 
 void rb_init_apache_connection()
 {
@@ -68,13 +126,20 @@ void rb_init_apache_connection()
 		     connection_remote_ip, 0);
     rb_define_method(rb_cApacheConnection, "remote_host",
 		     connection_remote_host, 0);
+    rb_define_method(rb_cApacheConnection, "remote_port",
+		     connection_remote_port, 0);
     rb_define_method(rb_cApacheConnection, "remote_logname",
 		     connection_remote_logname, 0);
     rb_define_method(rb_cApacheConnection, "user", connection_user, 0);
+    rb_define_method(rb_cApacheConnection, "user=", connection_set_user, 1);
     rb_define_method(rb_cApacheConnection, "auth_type",
 		     connection_auth_type, 0);
+    rb_define_method(rb_cApacheConnection, "auth_type=",
+		     connection_set_auth_type, 1);
     rb_define_method(rb_cApacheConnection, "local_ip",
 		     connection_local_ip, 0);
     rb_define_method(rb_cApacheConnection, "local_host",
 		     connection_local_host, 0);
+    rb_define_method(rb_cApacheConnection, "local_port",
+                     connection_local_port, 0);
 }

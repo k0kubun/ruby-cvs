@@ -92,7 +92,7 @@ static VALUE apache_server_version(VALUE self)
     return rb_str_new2(ap_get_server_version());
 }
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2 /* Apache 2.x */
 static VALUE apache_add_version_component(VALUE self, VALUE component)
 {
     rb_notimplement();
@@ -128,7 +128,7 @@ static VALUE apache_unescape_url(VALUE self, VALUE url)
     return rb_str_new2(buf);
 }
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2 /* Apache 2.x */
 static void ap_chdir_file(const char *file)
 {
     const char *x;

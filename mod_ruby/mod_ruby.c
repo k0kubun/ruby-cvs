@@ -97,7 +97,7 @@ static int ruby_access_handler(request_rec *r);
 static int ruby_type_handler(request_rec *r);
 static int ruby_fixup_handler(request_rec *r);
 static int ruby_log_handler(request_rec *r);
-#ifndef STANDARD20_MODULE_STUFF /* Apache 1.x */
+#ifndef APACHE2 /* Apache 1.x */
 static int ruby_header_parser_handler(request_rec *r);
 #endif
 static int ruby_post_read_request_handler(request_rec *r);
@@ -151,18 +151,10 @@ static const command_rec ruby_cmds[] =
     {NULL}
 };
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
-static int ruby_startup(pool*, pool*, pool*, server_rec*);
-#else /* Apache 1.x */
-static void ruby_startup(server_rec*, pool*);
-#endif
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
-static void ruby_child_init(pool*, server_rec*);
-#else /* Apache 1.x */
-static void ruby_child_init(server_rec*, pool*);
-#endif
+#ifdef APACHE2
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static int ruby_startup(pool*, pool*, pool*, server_rec*);
+static void ruby_child_init(pool*, server_rec*);
 
 static void ruby_register_hooks(pool *p)
 {
@@ -192,6 +184,9 @@ module AP_MODULE_DECLARE_DATA ruby_module =
 };
 
 #else /* Apache 1.x */
+
+static void ruby_startup(server_rec*, pool*);
+static void ruby_child_init(server_rec*, pool*);
 
 static const handler_rec ruby_handlers[] =
 {
@@ -526,7 +521,7 @@ static APR_CLEANUP_RETURN_TYPE ruby_cleanup(void *data)
 #define ruby_signal(sig,handle) signal((sig),(handle))
 #endif
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 static int ruby_startup(pool *p, pool *plog, pool *ptemp, server_rec *s)
 #else /* Apache 1.x */
 static void ruby_startup(server_rec *s, pool *p)
@@ -618,16 +613,13 @@ static void ruby_startup(server_rec *s, pool *p)
 	static char buf[BUFSIZ];
 	VALUE v;
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
-	ap_add_version_component(p, MOD_RUBY_STRING_VERSION);
-#else /* Apache 1.x */
-	ap_add_version_component(MOD_RUBY_STRING_VERSION);
-#endif
 	v = rb_const_get(rb_cObject, rb_intern("RUBY_VERSION"));
 	snprintf(buf, BUFSIZ, "Ruby/%s", STR2CSTR(v));
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
+	ap_add_version_component(p, MOD_RUBY_STRING_VERSION);
 	ap_add_version_component(p, buf);
 #else /* Apache 1.x */
+	ap_add_version_component(MOD_RUBY_STRING_VERSION);
 	ap_add_version_component(buf);
 #endif
     }
@@ -637,7 +629,7 @@ static void ruby_startup(server_rec *s, pool *p)
     if (ruby_module.dynamic_load_handle) 
 	ap_register_cleanup(p, NULL, ruby_cleanup, ap_null_cleanup);
 #endif
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
     return OK;
 #endif
 }
@@ -648,7 +640,7 @@ static APR_CLEANUP_RETURN_TYPE ruby_child_cleanup(void *data)
     APR_CLEANUP_RETURN_SUCCESS();
 }
 
-#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+#ifdef APACHE2
 static void ruby_child_init(pool *p, server_rec *s)
 #else /* Apache 1.x */
 static void ruby_child_init(server_rec *s, pool *p)
@@ -1033,7 +1025,7 @@ static int ruby_log_handler(request_rec *r)
 			rb_intern("log_transaction"), 1, 0);
 }
 
-#ifndef STANDARD20_MODULE_STUFF /* Apache 1.x */
+#ifndef APACHE2 /* Apache 1.x */
 static int ruby_header_parser_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);

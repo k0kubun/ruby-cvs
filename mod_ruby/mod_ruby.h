@@ -45,6 +45,8 @@
 
 #ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
 
+#define APACHE2
+
 #include "ap_compat.h"
 #include "apr_pools.h"
 #include "apr_strings.h"

@@ -1,3 +1,25 @@
+Wed Mar 27 14:12:21 2002  Shugo Maeda <shugo@modruby.net>
+
+	* request.c (request_set_user): new method.
+
+	* request.c (request_set_auth_type): ditto.
+
+	* request.c (request_set_auth_name): ditto.
+
+	* connection.c (connection_set_user): ditto.
+
+	* connection.c (connection_set_auth_type): ditto.
+
+	* connection.c (connection_remote_port): fix for Apache2.
+
+	* connection.c (connection_local_port): ditto.
+
+Sun Mar 24 22:57:43 2002  Sean Chittenden <sean@chittenden.org>
+
+	* connection.c (connection_remote_port): new method.
+
+	* connection.c (connection_local_port): ditto.
+
 Tue Mar 12 16:57:09 2002  Shugo Maeda <shugo@modruby.net>
 
 	* doc: added documents.

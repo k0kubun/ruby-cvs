@@ -67,6 +67,7 @@ static VALUE array_aset(VALUE self, VALUE idx, VALUE val)
     array_header *arr;
     int n;
 
+    Check_Type(val, T_STRING);
     Data_Get_Struct(self, array_header, arr);
     n = NUM2INT(idx);
     if (n < 0) {
@@ -78,7 +79,9 @@ static VALUE array_aset(VALUE self, VALUE idx, VALUE val)
     else if (n >= arr->nelts) {
 	rb_raise(rb_eIndexError, "index %d out of array", n);
     }
-    ((char **) arr->elts)[n] = ap_pstrdup(arr->pool, STR2CSTR(val));
+    ((char **) arr->elts)[n] = ap_pstrndup(arr->pool,
+					   RSTRING(val)->ptr,
+					   RSTRING(val)->len);
     return val;
 }
 
