@@ -3,9 +3,11 @@
 # CVS commit mail script (loginfo)
 #
 # $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
-# $devId: loginfo.rb,v 1.8 2001/05/07 16:35:22 knu Exp $
+# $devId: loginfo.rb,v 1.9 2001/06/04 16:30:07 knu Exp $
 # $Id$
 #
+
+MYNAME = File.basename($0)
 
 require 'parsearg'
 require 'socket'
@@ -30,21 +32,24 @@ puts "Invoking loginfo.rb...."
 
 def usage()
   puts <<-EOF
-Usage: ./loginfo.rb CVSROOT USER 'CVS-LOG-STRING' MAILADDR
-         [-d HELO_DOMAIN] [-s SMTP_SERVER] [-p SUBJECT_PREFIX]
-         [-x X_HEADER_PREFIX] [-w CVSWEB_URL] [-C PATH_TO_CVS] [-J]
+Usage: #{MYNAME} CVSROOT USER 'CVS-LOG-STRING' MAIL_ADDRESSES
+	[-d HELO_DOMAIN] [-s SMTP_SERVER] [-p SUBJECT_PREFIX]
+	[-S SENDER_ADDRESS] [-x X_HEADER_PREFIX] [-w CVSWEB_URL]
+	[-C PATH_TO_CVS] [-J]
 
 -d	specify the domain to use in the SMTP session and in the mail header
 	(default: FQDN of the host)
 -s	specify the SMTP server to mail via
 	(default: "localhost")
+-S	specify the sender address for the mail
+	(default: USER + "@" + HELO_DOMAIN)
 -p	specify the prefix for the mail subject (which will be surrounded
 	by `[' and `]')
 	(default: "cvs")
 -x	specify the prefix for the CVS informative headers
 	(default: "X-")
--w	specify the URL of the CVSweb with two %s's, one for a path, and
-	the other for a query (e.g. "'http://a.b/cvsweb.cgi%s?cvsroot=xyz&%s'")
+-w	specify the URL of the CVSweb with two @'s, one for a path, and
+	the other for a query (e.g. "'http://a.b/cvsweb.cgi@?cvsroot=xyz&@'")
 	(default: none - no CVSweb links will be added)
 -C	specify the full path to cvs
 	(default: "/usr/bin/cvs")
@@ -64,6 +69,7 @@ $USAGE = 'usage'
 parseArgs(0, nil, 'J',
 	  'd:' + Socket::gethostbyname(Socket::gethostname)[0],
 	  's:localhost',
+	  'S:',
 	  'p:cvs',
 	  'x:X-',
 	  'w:',
@@ -77,6 +83,13 @@ $cvsweb_url = $OPT_w
 $cvs_cmd = $OPT_C
 $japanese_support = $OPT_J
 
+if $OPT_S
+  $sender_address = $OPT_S
+else
+  $sender_address = "#{$ecvsuser}@#{$helo_domain}"
+end
+
+$from_address = sprintf('%s (%s)', $sender_address, $ecvsuser)
 
 # Temporary control files
 $commitinfosavefile	= sprintf("/tmp/commitinfo.%s.%d", $cvsuser, $pgrp)
@@ -122,12 +135,12 @@ def build_header(subject)
   subject = "[#{$subject_prefix}] #{subject}"
 
   return <<EOF
-Return-Path: #{$ecvsuser}@#{$helo_domain}
-From: #{$ecvsuser}@#{$helo_domain}
+Return-Path: #{$sender_address}
+From: #{$from_address}
 Date: #{$datestr}
 Subject: #{subject}
 To: #{$mailaddr}
-Sender: #{$ecvsuser}@#{$helo_domain}
+Sender: #{$sender_address}
 #{$x_header_prefix}CVS-User: #{$cvsuser}
 #{$x_header_prefix}CVS-Root: #{$cvsroot}
 #{$x_header_prefix}CVS-Module: #{$modulenames.join(', ')}
@@ -155,7 +168,7 @@ def send_mail(mail)
       mail = Kconv.tojis(mail)
     end
 
-    sm.sendmail(mail, "#{$ecvsuser}@#{$helo_domain}", $mailaddr.split(/,/))
+    sm.sendmail(mail, "#{$sender_address}", $mailaddr.split(/,/))
   rescue
     puts "ERROR: cannot send email using MTA on #{$smtp_server}"
   end
