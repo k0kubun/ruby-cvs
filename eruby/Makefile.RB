@@ -55,6 +55,7 @@ begin
 # Generated automatically by Makefile.RB.
 
 CC = #{CONFIG["CC"]}
+RUBY = #{CONFIG["ruby_install_name"]}
 
 prefix = #{CONFIG["prefix"]}
 bindir = $(prefix)/bin
@@ -68,11 +69,10 @@ LIBS = #{CONFIG["LIBS"]}
 XLDFLAGS = #{CONFIG["XLDFLAGS"]}
 DLDFLAGS = #{$DLDFLAGS} #{$LDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
-INSTALL_PROGRAM = ruby -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
+INSTALL_PROGRAM = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
 
 OBJS = eruby.o eruby_logo.o eruby_main.o
-RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
-LIBRUBYARG = #$LIBRUBYARG
+LIBRUBYARG = #{$LIBRUBYARG}
 TARGET = eruby
 
 .c.o:
@@ -81,7 +81,6 @@ TARGET = eruby
 all: $(TARGET)
 
 install: all
-	strip $(TARGET)
 	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
 
 clean:
