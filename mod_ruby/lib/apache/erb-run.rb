@@ -71,7 +71,7 @@ if !defined?(ERuby)
 end
 
 module Apache
-  class ERbRun < Apache::RubyRun
+  class ERbRun
     include Singleton
     include CGISupport
 

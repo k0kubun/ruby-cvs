@@ -74,7 +74,7 @@ static const char *default_kcode;
 static mutex *mod_ruby_mutex = NULL;
 #endif
 static int ruby_is_running = 0;
-/* static int exit_status; */
+array_header *ruby_required_libraries = NULL;
 
 static const command_rec ruby_cmds[] =
 {
@@ -402,7 +402,7 @@ static void ruby_print_error(request_rec *r, int state)
     ap_rputs("</html>\n", r);
 }
 
-static void ruby_log_error(server_rec *s, int state)
+void ruby_log_error(server_rec *s, int state)
 {
     VALUE errmsg, logmsg;
 
@@ -479,14 +479,15 @@ static void ruby_startup(server_rec *s, pool *p)
 
 	default_kcode = rb_get_kcode();
 
-	list = (char **) conf->required_files->elts;
-	n = conf->required_files->nelts;
-	for (i = 0; i < n; i++) {
-	    if ((state = ruby_require(list[i]))) {
-		ruby_log_error(s, state);
-		fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
-			list[i]);
-		exit(1);
+	if (ruby_required_libraries) {
+	    list = (char **) ruby_required_libraries->elts;
+	    n = ruby_required_libraries->nelts;
+	    for (i = 0; i < n; i++) {
+		if ((state = ruby_require(list[i]))) {
+		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
+				 "mod_ruby: failed to require %s", list[i]);
+		    ruby_log_error(s, state);
+		}
 	    }
 	}
 
@@ -494,7 +495,15 @@ static void ruby_startup(server_rec *s, pool *p)
     }
 
 #if MODULE_MAGIC_NUMBER >= 19980507
-    ap_add_version_component(MOD_RUBY_STRING_VERSION);
+    {
+	static char buf[BUFSIZ];
+	VALUE v;
+
+	ap_add_version_component(MOD_RUBY_STRING_VERSION);
+	v = rb_const_get(rb_cObject, rb_intern("RUBY_VERSION"));
+	snprintf(buf, BUFSIZ, "Ruby/%s", STR2CSTR(v));
+	ap_add_version_component(buf);
+    }
 #endif
 
 #if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164

@@ -46,7 +46,6 @@ void *ruby_create_server_config(pool *p, server_rec *s)
 	(ruby_server_config *) ap_pcalloc(p, sizeof(ruby_server_config));
 
     conf->load_path = ap_make_array(p, 1, sizeof(char*));
-    conf->required_files = ap_make_array(p, 1, sizeof(char*));
     conf->env = ap_make_table(p, 1);
     conf->timeout = MOD_RUBY_DEFAULT_TIMEOUT;
     return conf;
@@ -133,16 +132,19 @@ const char *ruby_cmd_add_path(cmd_parms *cmd, void *dummy, char *arg)
 
 const char *ruby_cmd_require(cmd_parms *cmd, void *dummy, char *arg)
 {
-    ruby_server_config *conf =
-	(ruby_server_config *) ap_get_module_config(cmd->server->module_config,
-						    &ruby_module);
+    int state;
 
     if (ruby_running()) {
-	ruby_require(arg);
+	if ((state = ruby_require(arg))) {
+	    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, cmd->server,
+			 "mod_ruby: failed to require %s", arg);
+	    ruby_log_error(cmd->server, state);
+	}
     }
     else {
-	*(char **) ap_push_array(conf->required_files) =
-	    ap_pstrdup(cmd->pool, arg);
+	if (ruby_required_libraries == NULL)
+	    ruby_required_libraries = ap_make_array(cmd->pool, 1, sizeof(char*));
+	*(char **) ap_push_array(ruby_required_libraries) = arg;
     }
     return NULL;
 }

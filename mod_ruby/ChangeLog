@@ -1,7 +1,14 @@
+Thu Jun 21 18:31:05 2001  Shugo Maeda <shugo@modruby.net>
+
+	* ruby_config.c (ruby_cmd_require): use ruby_required_libraries
+	for virtual hosts.
+
+	* lib/apache/erb-run.rb: no need to inherit Apache::RubyRun.
+
 Thu Jun 21 15:35:01 2001  Shugo Maeda <shugo@modruby.net>
 
-	* mod_ruby.c (ruby_startup): removed Ruby version from version
-	component.
+	* mod_ruby.c (ruby_startup): removed RUBY_RELEASE_DATE from
+	version	component.
 
 	* mod_ruby.c (ruby_startup): log error if ruby_require() fails.
 

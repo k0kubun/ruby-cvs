@@ -32,7 +32,6 @@
 
 typedef struct {
     array_header *load_path;
-    array_header *required_files;
     table *env;
     int timeout;
 } ruby_server_config;
@@ -53,6 +52,9 @@ typedef struct {
 } ruby_dir_config;
 
 extern MODULE_VAR_EXPORT module ruby_module;
+extern array_header *ruby_required_libraries;
+
+void ruby_log_error(server_rec *s, int state);
 int ruby_running();
 int ruby_require(char*);
 void ruby_add_path(const char *path);
