@@ -44,7 +44,11 @@ def Rational(a, b = 1)
 end
   
 class Rational < Numeric
+  @RCS_ID='-$Id$-'
+
   def Rational.reduce(num, den = 1)
+    raise ZeroDivisionError, "denometor is 0" if den == 0
+
     if den < 0
       num = -num
       den = -den
@@ -128,6 +132,7 @@ class Rational < Numeric
       den = @denominator * a.numerator
       Rational(num, den)
     elsif a.kind_of?(Integer)
+      raise ZeroDivisionError, "devided by 0" if a == 0
       self / Rational.new!(a, 1)
     elsif a.kind_of?(Float)
       Float(self) / a

@@ -96,6 +96,7 @@ class Prime
     @counts.push @seed + @seed
     return @seed
   end
+  alias next succ
 
   def each
     loop do
