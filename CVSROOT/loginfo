@@ -25,4 +25,4 @@
 
 ^CVSROOT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s cvs-admin@ruby-lang.org -d ruby-lang.org -p ruby-cvs -x X-Ruby- -w 'http://www.ruby-lang.org/cgi-bin/cvsweb.cgi@?cvsroot=src&@'
 
-DEFAULT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s ruby-cvs@ruby-lang.org -d ruby-lang.org -S ruby-cvs@ruby-lang.org -p ruby-cvs -x X-Ruby- -w 'http://www.ruby-lang.org/cgi-bin/cvsweb.cgi@?cvsroot=src&@'
+DEFAULT $CVSROOT/CVSROOT/loginfo_ruby.rb $CVSROOT $USER %s ruby-cvs@ruby-lang.org -d ruby-lang.org -S cvs-admin@ruby-lang.org -p ruby-cvs -x X-Ruby- -w 'http://www.ruby-lang.org/cgi-bin/cvsweb.cgi@?cvsroot=src&@'
