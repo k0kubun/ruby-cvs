@@ -593,6 +593,7 @@ class Matrix
 	end while a[i][k] == 0
 	a[i], a[k] = a[k], a[i]
 	akk = a[k][k]
+	det *= -1
       end
       (k + 1).upto(size) do
 	|i|
