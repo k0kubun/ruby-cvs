@@ -1,8 +1,0 @@
-include Makefile
-
-RUBYCWDLL=rubycw.dll
-
-miniruby$(EXEEXT): $(RUBYCWDLL)
-
-$(RUBYCWDLL): $(OBJS) dmyext.o
-	$(LDSHARED) $(DLDFLAGS) -o $(RUBYCWDLL) --output-lib=$(LIBRUBY_SO) --dllname=$(RUBYCWDLL) -Wl,-e,__cygwin_noncygwin_dll_entry@12 --add-stdcall-alias $(OBJS) dmyext.o
