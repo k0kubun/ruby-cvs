@@ -1,4 +1,4 @@
-# date2.rb: Written by Tadayoshi Funaba 1998-2000
+# date.rb: Written by Tadayoshi Funaba 1998-2000
 # $Id$
 
 class Date
