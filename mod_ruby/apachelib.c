@@ -452,7 +452,7 @@ static VALUE request_aref(VALUE self, VALUE vkey)
 	strcasecmp(key, "proxy-authorization") == 0)
 	return Qnil;
     Data_Get_Struct(self, request_data, data);
-    val = ap_table_get(data->request->headers_in, STR2CSTR(key));
+    val = ap_table_get(data->request->headers_in, key);
     return val ? rb_str_new2(val) : Qnil;
 }
 
