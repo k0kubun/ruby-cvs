@@ -1,3 +1,8 @@
+2002-08-28  Anders Bengtsson <ndrsbngtssn@yahoo.se>
+
+	* rubicon_tests.rb: Remove the need for Dir.chdir, as JRuby
+	doesn't support it.
+
 2002-08-21  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/StringBase.rb: Booker Bense supplied patch to fix split!

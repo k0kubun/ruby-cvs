@@ -193,18 +193,16 @@ module Rubicon
           "will destroy existing directory _test"
         exit(99)
       end
-      Dir.chdir("_test")
-      File.open("_file1", "w", 0644) {}
-      File.open("_file2", "w", 0644) {}
-      Dir.chdir("..")
+      File.open(File.join("_test", "_file1"), "w", 0644) {}
+      File.open(File.join("_test", "_file2"), "w", 0644) {}
       @files = %w(. .. _file1 _file2)
     end
     
     def deldir(name)
       File.chmod(0755, name)
-      Dir.chdir(name)
-      Dir.foreach(".") do |f|
+      Dir.foreach(name) do |f|
         next if f == '.' || f == '..'
+        f = File.join(name, f)
         if File.lstat(f).directory?
           deldir(f) 
         else
@@ -212,7 +210,6 @@ module Rubicon
           File.delete(f)
         end 
       end
-      Dir.chdir("..")
       Dir.rmdir(name)
     end
 
