@@ -601,9 +601,9 @@ VALUE eruby_compiler_compile_file(VALUE self, VALUE file)
     return eruby_compile(compiler);
 }
 
-static VALUE file_open(char *filename)
+static VALUE file_open(VALUE filename)
 {
-    return rb_file_open(filename, "r");
+    return rb_file_open((char *) filename, "r");
 }
 
 typedef struct compile_arg {
@@ -611,9 +611,10 @@ typedef struct compile_arg {
     VALUE input;
 } compile_arg_t;
 
-static VALUE eruby_compile_file(compile_arg_t *arg)
+static VALUE eruby_compile_file(VALUE arg)
 {
-    return eruby_compiler_compile_file(arg->compiler, arg->input);
+    return eruby_compiler_compile_file(((compile_arg_t *) arg)->compiler,
+				       ((compile_arg_t *) arg)->input);
 }
 
 typedef struct eval_arg {
@@ -621,10 +622,12 @@ typedef struct eval_arg {
     VALUE filename;
 } eval_arg_t;
 
-static VALUE eval_string(eval_arg_t *arg)
+static VALUE eval_string(VALUE arg)
 {
     return rb_funcall(ruby_top_self, rb_intern("eval"), 3,
-		      arg->src, Qnil, arg->filename);
+		      ((eval_arg_t *) arg)->src,
+		      Qnil,
+		      ((eval_arg_t *) arg)->filename);
 }
 
 VALUE eruby_load(char *filename, int wrap, int *state)

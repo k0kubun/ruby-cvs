@@ -111,28 +111,34 @@ AC_SUBST("LIBERUBY_SO")
 AC_SUBST("LIBERUBY_ALIASES")
 AC_SUBST("AROPT")
 
-$DLL_DLDFLAGS = CONFIG["DLDFLAGS"]
+$EXT_DLDFLAGS = CONFIG["DLDFLAGS"]
+if $RUBY_SHARED
+  $EXT_LIBRUBYARG = "$(LIBRUBYARG)"
+else
+  $EXT_LIBRUBYARG = ""
+end
 
 if $DLEXT != $OBJEXT
   $MKDLLIB = ""
   if /mswin32/ =~ RUBY_PLATFORM
     if /nmake/i =~ $make
-      $MKDLLIB << "set LIB=$(LIBPATH:/=\\);$(LIB)\n\t"
+      $MKDLLIB << "set LIB=$(LIBPATH:/=\\); $(EXT_LIBRUBYARG) $(LIB)\n\t"
     else
-      $MKDLLIB << "\tenv LIB='$(subst /,\\\\,$(LIBPATH));$(LIB)' \\\n\t"
+      $MKDLLIB << "\tenv LIB='$(subst /,\\\\,$(LIBPATH)); $(EXT_LIBRUBYARG) $(LIB)' \\\n\t"
     end
   end
-  $MKDLLIB << "$(LDSHARED) $(DLL_DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)"
+  $MKDLLIB << "$(LDSHARED) $(EXT_DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(EXT_LIBRUBYARG) $(LIBS)"
 else
   case RUBY_PLATFORM
   when "m68k-human"
     $MKDLLIB = "ar cru $(DLLIB) $(EXT_OBJS) $(LIBS)"
   else
-    $MKDLLIB = "ld $(DLL_DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)"
+    $MKDLLIB = "ld $(DLL_DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(EXT_LIBRUBYARG) $(LIBS)"
   end
 end
 
-AC_SUBST("DLL_DLDFLAGS")
+AC_SUBST("EXT_DLDFLAGS")
+AC_SUBST("EXT_LIBRUBYARG")
 AC_SUBST("MKDLLIB")
 
 AC_CONFIG_HEADER("config.h")

@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated automatically using autoconf.rb version 0.1
+# Generated automatically using autoconf.rb version 0.2
 
 require "mkmf"
 
@@ -265,8 +265,6 @@ end
 $srcdir = File.dirname($0)
 $VPATH = ""
 
-$RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
-$RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
 $arch = CONFIG["arch"]
 $ruby_version = Config::CONFIG["ruby_version"] ||
   CONFIG["MAJOR"] + "." + CONFIG["MINOR"]
@@ -286,14 +284,18 @@ $LDSHARED = CONFIG["LDSHARED"]
 $EXEEXT = CONFIG["EXEEXT"]
 $DLEXT = CONFIG["DLEXT"]
 
+$RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
+$RUBY_SHARED = (CONFIG["ENABLE_SHARED"] == "yes")
+p $RUBY_SHARED
+p CONFIG["ENABLE_SHARED"]
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
-if $LIBRUBYARG =~ /\.a$/
-  $RUBY_SHARED = false
-  $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
-else
-  $RUBY_SHARED = true
+if $RUBY_SHARED
   $LIBRUBYARG.gsub!(/-L\./, "-L$(libdir)")
+else
+  $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
 end
+$LIBRUBY_A = CONFIG["LIBRUBY_A"]
+$RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
 
 case PLATFORM
 when /-aix/
@@ -316,8 +318,6 @@ AC_SUBST("topdir")
 AC_SUBST("hdrdir")
 AC_SUBST("VPATH")
 
-AC_SUBST("RUBY_INSTALL_NAME")
-AC_SUBST("RUBY_SO_NAME")
 AC_SUBST("arch")
 AC_SUBST("ruby_version")
 AC_SUBST("prefix")
@@ -349,7 +349,10 @@ AC_SUBST("OBJEXT")
 AC_SUBST("EXEEXT")
 AC_SUBST("DLEXT")
 
+AC_SUBST("RUBY_INSTALL_NAME")
 AC_SUBST("LIBRUBYARG")
+AC_SUBST("LIBRUBY_A")
+AC_SUBST("RUBY_SO_NAME")
 
 AC_MSG_CHECKING("Ruby version")
 AC_MSG_RESULT(RUBY_VERSION)
@@ -462,28 +465,34 @@ AC_SUBST("LIBERUBY_SO")
 AC_SUBST("LIBERUBY_ALIASES")
 AC_SUBST("AROPT")
 
-$DLL_DLDFLAGS = CONFIG["DLDFLAGS"]
+$EXT_DLDFLAGS = CONFIG["DLDFLAGS"]
+if $RUBY_SHARED
+  $EXT_LIBRUBYARG = "$(LIBRUBYARG)"
+else
+  $EXT_LIBRUBYARG = ""
+end
 
 if $DLEXT != $OBJEXT
   $MKDLLIB = ""
   if /mswin32/ =~ RUBY_PLATFORM
     if /nmake/i =~ $make
-      $MKDLLIB << "set LIB=$(LIBPATH:/=\\);$(LIB)\n\t"
+      $MKDLLIB << "set LIB=$(LIBPATH:/=\\); $(EXT_LIBRUBYARG) $(LIB)\n\t"
     else
-      $MKDLLIB << "\tenv LIB='$(subst /,\\\\,$(LIBPATH));$(LIB)' \\\n\t"
+      $MKDLLIB << "\tenv LIB='$(subst /,\\\\,$(LIBPATH)); $(EXT_LIBRUBYARG) $(LIB)' \\\n\t"
     end
   end
-  $MKDLLIB << "$(LDSHARED) $(DLL_DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)"
+  $MKDLLIB << "$(LDSHARED) $(EXT_DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(EXT_LIBRUBYARG) $(LIBS)"
 else
   case RUBY_PLATFORM
   when "m68k-human"
     $MKDLLIB = "ar cru $(DLLIB) $(EXT_OBJS) $(LIBS)"
   else
-    $MKDLLIB = "ld $(DLL_DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)"
+    $MKDLLIB = "ld $(DLL_DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(EXT_LIBRUBYARG) $(LIBS)"
   end
 end
 
-AC_SUBST("DLL_DLDFLAGS")
+AC_SUBST("EXT_DLDFLAGS")
+AC_SUBST("EXT_LIBRUBYARG")
 AC_SUBST("MKDLLIB")
 
 AC_CONFIG_HEADER("config.h")

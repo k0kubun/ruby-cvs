@@ -5,9 +5,6 @@ topdir = @topdir@
 hdrdir = @hdrdir@
 VPATH = $(srcdir)
 
-RUBY_INSTALL_NAME = @RUBY_INSTALL_NAME@
-RUBY_SO_NAME = @RUBY_SO_NAME@
-RUBY = $(RUBY_INSTALL_NAME)
 arch = @arch@
 ruby_version = @ruby_version@
 
@@ -29,10 +26,11 @@ CC = @CC@
 AR = @AR@
 LD = @LD@
 RANLIB = @RANLIB@
+RUBY = $(RUBY_INSTALL_NAME)
 
 CFLAGS = @CFLAGS@ -I. -I$(hdrdir)
 LDFLAGS = @LDFLAGS@
-LIBS = $(LIBRUBYARG) @LIBS@
+LIBS = @LIBS@
 XLDFLAGS = @XLDFLAGS@
 DLDFLAGS = @DLDFLAGS@
 LDSHARED = @LDSHARED@
@@ -42,7 +40,10 @@ INSTALL_DLLIB = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
 INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
 INSTALL_DIR = $(RUBY) -r ftools -e 'File.makedirs(*ARGV)'
 
+RUBY_INSTALL_NAME = @RUBY_INSTALL_NAME@
 LIBRUBYARG = @LIBRUBYARG@
+LIBRUBY_A = @LIBRUBY_A@
+RUBY_SO_NAME = @RUBY_SO_NAME@
 
 RM = $(RUBY) -e "ARGV.each {|f|File.unlink(f) rescue Errno}"
 
@@ -118,12 +119,12 @@ $(LIBERUBY_A): $(LIBERUBY_OBJS)
 	@-$(RANLIB) $@ 2> /dev/null || true
 
 $(LIBERUBY_SO): $(LIBERUBY_OBJS)
-	$(LDSHARED) $(DLDFLAGS) $(LIBERUBY_OBJS) $(LIBS) -o $@
+	$(LDSHARED) $(DLDFLAGS) $(LIBERUBY_OBJS) $(LIBRUBYARG) $(LIBS) -o $@
 	@-$(RUBY) -e 'ARGV.each{|link| File.delete link if File.exist? link; \
 		File.symlink "$(LIBERUBY_SO)", link}' $(LIBERUBY_ALIASES)
 
 $(ERUBY): $(OBJS) $(LIBERUBY)
-	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@
 
 $(DLLIB): $(EXT_OBJS) $(LIBERUBY)
 	@MKDLLIB@
