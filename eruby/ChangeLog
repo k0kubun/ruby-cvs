@@ -1,3 +1,7 @@
+Fri Apr 13 11:35:54 2001  Nobuyoshi.Nakada <nobu.nakada@nifty.ne.jp>
+
+	* Makefile.RB: install under $(prefix).
+
 Mon Mar 26 17:48:33 2001  Nobuyoshi.Nakada <nobu.nakada@nifty.ne.jp>
 
 	* Makefile.RB: hack for mswin32.

@@ -150,6 +150,12 @@ else
   LD = "$(CC)"
 end
 
+prefix = CONFIG["prefix"]
+Prefixed = Regexp.new(Regexp.quote(prefix))
+def prefixed(name)
+  CONFIG[name].sub(Prefixed, "$(prefix)")
+end
+
 mfile = open("Makefile", "w")
 begin
   mfile.write <<EOMF
@@ -164,11 +170,11 @@ RANLIB = #{CONFIG["RANLIB"]}
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 RUBY = $(RUBY_INSTALL_NAME)
 
-prefix = #{CONFIG["prefix"]}
-bindir = $(prefix)/bin
-libdir = $(prefix)/lib
-includedir = $(prefix)/include
-mandir = #{CONFIG["mandir"]}
+prefix = #{prefix}
+bindir = #{prefixed("bindir")}
+libdir = #{prefixed("libdir")}
+includedir = #{prefixed("includedir")}
+mandir = #{prefixed("mandir")}
 
 topdir = #{$topdir}
 hdrdir = #{$hdrdir}
