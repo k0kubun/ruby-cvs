@@ -56,6 +56,8 @@ MAJOR = @MAJOR@
 MINOR = @MINOR@
 TEENY = @TEENY@
 MAJOR_MINOR = @MAJOR_MINOR@
+VERSION = $(MAJOR).$(MINOR).$(TEENY)
+TAG = release_$(MAJOR)_$(MINOR)_$(TEENY)
 
 LIBERUBY_A = @LIBERUBY_A@
 LIBERUBY_SO = @LIBERUBY_SO@
@@ -114,6 +116,14 @@ distclean: clean
 	$(RM) config.h
 	$(RM) Makefile
 	$(RM) *~
+
+tag:
+	cvs tag $(TAG)
+
+dist:
+	cvs export -r $(TAG) -d eruby-$(VERSION) eruby
+	tar zcf ../eruby-$(VERSION).tar.gz eruby-$(VERSION)
+	rm -rf eruby-$(VERSION)
 
 $(LIBERUBY_A): $(LIBERUBY_OBJS)
 	$(AR) @AROPT@ $(LIBERUBY_OBJS)
