@@ -966,14 +966,14 @@ class TestString < Rubicon::TestCase
     a = %w( cat wombat x yy)
     assert_equals(["cat","wom","x","yy"],"catwomx  yy ".unpack("A3A3A3A3"))
 
-    #assert_equals(["cat"],"cat".unpack("A*"))
-    #assert_equals(["cwx", "wx", "x", "yy"], "cwx  yy ".unpack("A3@1A3@2A3A3"))
-    #assert_equals(["cat", "wom", "x\000\000", "yy\000"],
-                  #"catwomx\000\000yy\000".unpack("a3a3a3a3"))
-    #assert_equals(["cat"],"cat".unpack("a*"))
-    #assert_equals(["ca"],"ca".unpack("a2"))
+    assert_equals(["cat"],"cat  \000\000".unpack("A*"))
+    assert_equals(["cwx", "wx", "x", "yy"], "cwx  yy ".unpack("A3@1A3@2A3A3"))
+    assert_equals(["cat", "wom", "x\000\000", "yy\000"],
+                  "catwomx\000\000yy\000".unpack("a3a3a3a3"))
+    assert_equals(["cat \000\000"],"cat \000\000".unpack("a*"))
+    assert_equals(["ca"],"catdog".unpack("a2"))
 
-    #assert_equals(["cat\000\000"],"cat\000\000".unpack("a5"))
+    assert_equals(["cat\000\000"],"cat\000\000\000\000\000dog".unpack("a5"))
 
     assert_equals(["01100001"], "\x61".unpack("B8"))
     assert_equals(["01100001"], "\x61".unpack("B*"))
