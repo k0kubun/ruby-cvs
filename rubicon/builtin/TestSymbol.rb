@@ -1,10 +1,30 @@
 require '../rubicon'
 
+class Fred
+  $f1 = :Fred
+end
+
+module Test
+  Fred = 1
+  $f2 = :Fred
+end
+
+def Fred
+end
+
+$f3 = :Fred
 
 class TestSymbol < Rubicon::TestCase
 
+  def test_00sanity
+    assert_equals($f1.id,$f2.id)
+    assert_equals($f2.id,$f3.id)
+  end
+
   def test_id2name
-    assert_fail("untested")
+    assert_equals("Fred",:Fred.id2name)
+    assert_equals("Barney",:Barney.id2name)
+    assert_equals("wilma",:wilma.id2name)
   end
 
   def test_inspect

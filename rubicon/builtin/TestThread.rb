@@ -12,6 +12,14 @@ end
 
 class TestThread < Rubicon::TestCase
 
+  def teardown
+    Thread.list.each {|t|
+      if t != Thread.main
+        t.kill
+      end
+    }
+  end
+
   def test_AREF # '[]'
     t = Thread.current
     t2 = Thread.new { sleep 60 }
@@ -176,6 +184,9 @@ class TestThread < Rubicon::TestCase
     assert_equals(true,wokeup)
   end
 
+  #
+  # Just do an exit, don't be clever.
+  #
   def test_safe_level
     result = runChild {
       $stderr.close
