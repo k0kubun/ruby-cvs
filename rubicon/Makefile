@@ -41,6 +41,7 @@ release:	clean
 			--exclude='CVS' 		\
 			--exclude='*/.*'		\
 			rubicon-$(VERSION)
+		rm ../rubicon-$(VERSION)
 
 clean:
 		rm -f $(UTILSTUFF)
