@@ -1,8 +1,3 @@
-Thu Jun 28 17:55:09 2001  Shugo Maeda <shugo@modruby.net>
-
-	* mod_ruby.c (ruby_cleanup_handler): call rb_exec_end_proc().
-	(It was called in per_request_cleanup() before.)
-
 Thu Jun 28 16:09:47 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.8.5 released.
