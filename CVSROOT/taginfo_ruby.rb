@@ -35,7 +35,7 @@ require "socket"
 $hostname = Socket.gethostbyname(Socket.gethostname)[0]
 
 # acl check:
-$:.unshift $cvsroot
+$:.unshift "#{$cvsroot}/CVSROOT"
 require "cvsacl"
 
 if File.exist?($aclfile)
