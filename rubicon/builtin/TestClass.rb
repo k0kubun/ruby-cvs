@@ -1,30 +1,84 @@
 require '../rubicon'
 
+#
+# Note - real testing of class semantics occurs in language stuff
+
 
 class TestClass < Rubicon::TestCase
 
-  def test_new
-    assert_fail("untested")
+  # ------------------
+  # Various test classes
+  # ------------------
+
+  class ClassOne
+    attr :num_args
+    @@subs = []
+    def initialize(*args)
+      @num_args = args.size
+      @args = args
+    end
+    def [](n)
+      @args[n]
+    end
+    def ClassOne.inherited(klass)
+      @@subs.push klass
+    end
+    def subs
+      @@subs
+    end
   end
 
-  def test_superclass
-    assert_fail("untested")
+  class ClassTwo < ClassOne
   end
 
-  def test_s_constants
-    assert_fail("untested")
+  class ClassThree < ClassOne
   end
+
+  class ClassFour < ClassThree
+  end
+
+  # ------------------
+  # Start of tests
+  # ------------------
 
   def test_s_inherited
-    assert_fail("untested")
-  end
-
-  def test_s_nesting
-    assert_fail("untested")
+    assert_equal([ClassTwo, ClassThree, ClassFour], ClassOne.new.subs)
   end
 
   def test_s_new
-    assert_fail("untested")
+    c = Class.new
+    assert(Class, c.type)
+    assert(Object, c.superclass)
+
+    c = Class.new(Fixnum)
+    assert(Class, c.type)
+    assert(Fixnum, c.superclass)
+  end
+
+  def test_00_new_basic
+    a = ClassOne.new
+    assert_equal(ClassOne, a.type)
+    assert_equal(0, a.num_args)
+
+    a = ClassOne.new(1, 2, 3)
+    assert_equal(3, a.num_args)
+    assert_equal(1, a[0])
+  end
+
+  def test_01_new_inherited
+    a = ClassTwo.new
+    assert_equal(ClassTwo, a.type)
+    assert_equal(0, a.num_args)
+
+    a = ClassTwo.new(1, 2, 3)
+    assert_equal(3, a.num_args)
+    assert_equal(1, a[0])
+  end
+
+  def test_superclass
+    assert_equal(ClassOne, ClassTwo.superclass)
+    assert_equal(Object,   ClassTwo.superclass.superclass)
+    assert_equal(nil,      ClassTwo.superclass.superclass.superclass)
   end
 
 end
