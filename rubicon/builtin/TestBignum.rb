@@ -67,14 +67,6 @@ class TestBignum < Rubicon::TestCase
     assert_equal(0,      @big1 - @big1)
   end
 
-  def test_MOD # '%'
-    assert_equal(1, @big1 % 10)
-    assert_equal(1, 1 % @big1)
-    assert_equal(230085376980473445764499, @big1 % @big2)
-    assert_equal(1208925819615728687383553, @big2 % @big1)
-    assert_equal(1, @big1 % -10)
-  end
-
   def test_MUL # '*'
     big3 = 2**90 + 2**50 + 2**30 + 2**20 + 2**10
     assert_equal(big3, @big2 * 1024)
@@ -204,8 +196,24 @@ class TestBignum < Rubicon::TestCase
     assert_equal(a.hash, @big1.hash)
   end
 
+  def test_MOD # '%'
+    b = 10**80
+    a = b * 9 + 7
+
+    assert_equal(7,   a % b)
+    assert_equal(7-b, a % (-b))
+    assert_equal(b-7, (-a) % b)
+    assert_equal(-7,  (-a) % (-b))
+  end
+
   def test_remainder
-    assert_fail("untested")
+    b = 10**80
+    a = b * 9 + 7
+
+    assert_equal(7,  a % b)
+    assert_equal(7,  a % (-b))
+    assert_equal(-7, (-a) % b)
+    assert_equal(-7, (-a) % (-b))
   end
 
   def test_size

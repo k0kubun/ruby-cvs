@@ -667,7 +667,6 @@ class TestArray < Rubicon::TestCase
         p & pointer to a null-terminated string\\
         S & unsigned short\\
         s & short\\
-        U & UTF-8\\
         V & long, little-endian byte order\\
         v & short, little-endian byte order\\
         X & back up a byte\\
