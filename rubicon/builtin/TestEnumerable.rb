@@ -16,7 +16,7 @@ class TestEnumerable < Rubicon::TestCase
 
     tmp = []
     @a.each { |a| tmp << a }
-    assert_equal(a, tmp)
+    assert_equal(@a, tmp)
   end
 
   def test_collect
