@@ -1,3 +1,7 @@
+Tue May 29 13:36:20 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb.in: removed -mwin32 hack.
+
 Tue May 29 10:14:39 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c: don't include config.h.

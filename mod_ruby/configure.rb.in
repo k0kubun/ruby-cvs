@@ -64,8 +64,6 @@ AC_SUBST("APACHE_SRC_UID")
 AC_SUBST("APACHE_SRC_GID")
 
 case PLATFORM
-when /-cygwin/
-  $CFLAGS.sub!(/-mwin32/, "")	# for Apache
 when /-aix/
   $DLDFLAGS = "-Wl,-bE:mod_ruby.imp -Wl,-bI:httpd.exp -Wl,-bM:SRE -Wl,-bnoentry -lc"
   open("mod_ruby.imp", "w") do |ifile|
