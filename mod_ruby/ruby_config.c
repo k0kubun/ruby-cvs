@@ -27,18 +27,6 @@
  * SUCH DAMAGE.
  */
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "http_request.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-
 #include "mod_ruby.h"
 #include "ruby_config.h"
 
@@ -185,7 +173,8 @@ const char *ruby_cmd_require(cmd_parms *cmd, void *dummy, char *arg)
 
     if (ruby_running()) {
 	if ((state = ruby_require(arg))) {
-	    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, cmd->server,
+	    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
+			 APLOG_STATUS(0) cmd->server,
 			 "mod_ruby: failed to require %s", arg);
 	    ruby_log_error(cmd->server, ruby_get_error_info(state));
 	}

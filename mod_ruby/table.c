@@ -25,18 +25,7 @@
  * SUCH DAMAGE.
  */
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "version.h"
-
+#include "mod_ruby.h"
 #include "apachelib.h"
 
 VALUE rb_cApacheTable;
@@ -79,17 +68,6 @@ static VALUE table_set(VALUE self, VALUE name, VALUE val)
     return val;
 }
 
-/*
-static VALUE table_setn(VALUE self, VALUE name, VALUE val)
-{
-    table *tbl;
-
-    Data_Get_Struct(self, table, tbl);
-    ap_table_setn(tbl, STR2CSTR(name), STR2CSTR(val));
-    return val;
-}
-*/
-
 static VALUE table_merge(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
@@ -98,17 +76,6 @@ static VALUE table_merge(VALUE self, VALUE name, VALUE val)
     ap_table_merge(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
-
-/*
-static VALUE table_mergen(VALUE self, VALUE name, VALUE val)
-{
-    table *tbl;
-
-    Data_Get_Struct(self, table, tbl);
-    ap_table_mergen(tbl, STR2CSTR(name), STR2CSTR(val));
-    return val;
-}
-*/
 
 static VALUE table_unset(VALUE self, VALUE name)
 {
@@ -128,22 +95,11 @@ static VALUE table_add(VALUE self, VALUE name, VALUE val)
     return val;
 }
 
-/*
-static VALUE table_addn(VALUE self, VALUE name, VALUE val)
-{
-    table *tbl;
-
-    Data_Get_Struct(self, table, tbl);
-    ap_table_addn(tbl, STR2CSTR(name), STR2CSTR(val));
-    return val;
-}
-*/
-
 static VALUE table_each(VALUE self)
 {
     VALUE key, val, assoc;
     table *tbl;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -164,7 +120,7 @@ static VALUE table_each(VALUE self)
 static VALUE table_each_key(VALUE self)
 {
     table *tbl;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -182,7 +138,7 @@ static VALUE table_each_key(VALUE self)
 static VALUE table_each_value(VALUE self)
 {
     table *tbl;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -218,7 +174,7 @@ static VALUE restricted_table_each(VALUE self)
 {
     VALUE assoc;
     table *tbl;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -241,7 +197,7 @@ static VALUE restricted_table_each(VALUE self)
 static VALUE restricted_table_each_key(VALUE self)
 {
     table *tbl;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -262,7 +218,7 @@ static VALUE restricted_table_each_key(VALUE self)
 static VALUE restricted_table_each_value(VALUE self)
 {
     table *tbl;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -290,12 +246,9 @@ void rb_init_apache_table()
     rb_define_method(rb_cApacheTable, "[]", table_get, 1);
     rb_define_method(rb_cApacheTable, "set", table_set, 2);
     rb_define_method(rb_cApacheTable, "[]=", table_set, 2);
-    /* rb_define_method(rb_cApacheTable, "setn", table_setn, 2); */
     rb_define_method(rb_cApacheTable, "merge", table_merge, 2);
-    /* rb_define_method(rb_cApacheTable, "mergen", table_mergen, 2); */
     rb_define_method(rb_cApacheTable, "unset", table_unset, 1);
     rb_define_method(rb_cApacheTable, "add", table_add, 2);
-    /* rb_define_method(rb_cApacheTable, "addn", table_addn, 2); */
     rb_define_method(rb_cApacheTable, "each", table_each, 0);
     rb_define_method(rb_cApacheTable, "each_key", table_each_key, 0);
     rb_define_method(rb_cApacheTable, "each_value", table_each_value, 0);

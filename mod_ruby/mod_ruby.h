@@ -30,6 +30,47 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
+#include "httpd.h"
+#include "http_config.h"
+#include "http_core.h"
+#include "http_log.h"
+#include "http_main.h"
+#include "http_protocol.h"
+#include "http_request.h"
+#include "util_script.h"
+
+#include "ruby.h"
+#include "version.h"
+#include "util.h"
+
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+
+#include "ap_compat.h"
+#include "apr_pools.h"
+#include "apr_strings.h"
+#include "apr_tables.h"
+
+typedef apr_pool_t pool;
+typedef apr_array_header_t array_header;
+typedef apr_table_t table;
+typedef apr_table_entry_t table_entry;
+#define APR_CLEANUP_RETURN_TYPE apr_status_t
+#define APR_CLEANUP_RETURN_SUCCESS() { \
+    return APR_SUCCESS; \
+}
+#define APLOG_STATUS(n) n,
+#define ap_soft_timeout(s, r) ;
+#define ap_hard_timeout(s, r) ;
+#define ap_kill_timeout(r) ;
+
+#else /* Apache 1.x */
+
+#define APLOG_STATUS(n)
+#define APR_CLEANUP_RETURN_TYPE void
+#define APR_CLEANUP_RETURN_SUCCESS() return
+
+#endif
+
 #define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.8"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 

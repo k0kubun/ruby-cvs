@@ -27,17 +27,8 @@
  * SUCH DAMAGE.
  */
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "version.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "mod_ruby.h"
 #include "apachelib.h"
@@ -99,19 +90,20 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->exception);
 }
 
-static void cleanup_request_object(void *data)
+static APR_CLEANUP_RETURN_TYPE cleanup_request_object(void *data)
 {
     request_rec *r = (request_rec *) data;
     VALUE reqobj;
 
     reqobj = (VALUE) ap_get_module_config(r->request_config, &ruby_module);
-    if (reqobj == 0) return;
+    if (reqobj == 0) APR_CLEANUP_RETURN_SUCCESS();
     if (TYPE(reqobj) == T_DATA) {
 	free(RDATA(reqobj)->data);
 	RDATA(reqobj)->data = NULL;
     }
     ap_set_module_config(r->request_config, &ruby_module, 0);
     rb_apache_unregister_object(reqobj);
+    APR_CLEANUP_RETURN_SUCCESS();
 }
 
 static VALUE apache_request_new(request_rec *r)
@@ -703,7 +695,23 @@ static VALUE request_finfo(VALUE self)
     if (NIL_P(data->finfo)) {
 	cStat = rb_const_get(rb_cFile, rb_intern("Stat"));
 	data->finfo = Data_Make_Struct(cStat, struct stat, NULL, free, st);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+	memset(st, 0, sizeof(struct stat));
+	if (data->request->finfo.filetype != 0) {
+	    st->st_dev = data->request->finfo.device;
+	    st->st_ino = data->request->finfo.inode;
+	    st->st_nlink = data->request->finfo.nlink;
+	    st->st_mode = data->request->finfo.protection;
+	    st->st_uid = data->request->finfo.user;
+	    st->st_gid = data->request->finfo.group;
+	    st->st_size = data->request->finfo.size;
+	    st->st_atime = data->request->finfo.atime;
+	    st->st_mtime = data->request->finfo.mtime;
+	    st->st_ctime = data->request->finfo.ctime;
+	}
+#else /* Apache 1.x */
 	*st = data->request->finfo;
+#endif
     }
     return data->finfo;
 }
@@ -746,7 +754,7 @@ static VALUE request_aset(VALUE self, VALUE key, VALUE val)
 static VALUE request_each_header(VALUE self)
 {
     request_data *data;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
     VALUE assoc;
@@ -771,7 +779,7 @@ static VALUE request_each_header(VALUE self)
 static VALUE request_each_key(VALUE self)
 {
     request_data *data;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -793,7 +801,7 @@ static VALUE request_each_key(VALUE self)
 static VALUE request_each_value(VALUE self)
 {
     request_data *data;
-    array_header *hdrs_arr;
+    const array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
 
@@ -961,9 +969,15 @@ static VALUE request_remote_host(VALUE self)
     const char *host;
 
     data = get_request_data(self);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+    host = ap_get_remote_host(data->request->connection,
+			      data->request->per_dir_config,
+			      REMOTE_HOST, NULL);
+#else /* Apache 1.x */
     host = ap_get_remote_host(data->request->connection,
 			      data->request->per_dir_config,
 			      REMOTE_HOST);
+#endif
     return host ? rb_str_new2(host) : Qnil;
 }
 
@@ -1076,20 +1090,28 @@ static VALUE request_signature(VALUE self)
 
 static VALUE request_reset_timeout(VALUE self)
 {
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+    rb_notimplement();
+#else /* Apache 1.x */
     request_data *data;
 
     data = get_request_data(self);
     ap_reset_timeout(data->request);
+#endif
     return Qnil;
 }
 
 static VALUE request_hard_timeout(VALUE self, VALUE name)
 {
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+    rb_notimplement();
+#else /* Apache 1.x */
     request_data *data;
 
     data = get_request_data(self);
     ap_hard_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
 		    data->request);
+#endif
     return Qnil;
 }
 
@@ -1187,17 +1209,25 @@ static VALUE request_setup_cgi_env(VALUE self)
 static VALUE request_log_reason(VALUE self, VALUE msg, VALUE file)
 {
     request_data *data;
+    const char *host;
 
     Check_Type(msg, T_STRING);
     Check_Type(file, T_STRING);
     data = get_request_data(self);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+    host = ap_get_remote_host(data->request->connection,
+			      data->request->per_dir_config,
+			      REMOTE_HOST, NULL);
+#else /* Apache 1.x */
+    host = ap_get_remote_host(data->request->connection,
+			      data->request->per_dir_config,
+			      REMOTE_HOST);
+#endif
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
-		 data->request->server,
+		 APLOG_STATUS(0) data->request->server,
 		 "access to %s failed for %s, reason: %s",
 		 STR2CSTR(file),
-		 ap_get_remote_host(data->request->connection,
-				    data->request->per_dir_config,
-				    REMOTE_NAME),
+		 host,
 		 STR2CSTR(msg));
     return Qnil;
 }
@@ -1226,6 +1256,18 @@ static VALUE request_exception(VALUE self)
     data = get_request_data(self);
     return data->exception;
 }
+
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+REQUEST_STRING_ATTR_READER(request_user, user);
+#else /* Apache 1.x */
+static VALUE request_user(VALUE self)
+{
+    VALUE conn;
+
+    conn = request_connection(self);
+    return rb_funcall(conn, rb_intern("user"), 0);
+}
+#endif
 
 void rb_init_apache_request()
 {
@@ -1381,4 +1423,6 @@ void rb_init_apache_request()
 		     request_error_message, 0);
     rb_define_method(rb_cApacheRequest, "exception",
 		     request_exception, 0);
+    rb_define_method(rb_cApacheRequest, "user",
+		     request_user, 0);
 }

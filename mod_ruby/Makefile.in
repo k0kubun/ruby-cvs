@@ -148,9 +148,9 @@ mod_ruby.so: $(OBJS)
 
 mod_ruby.@OBJEXT@: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h
 ruby_config.@OBJEXT@: ruby_config.c mod_ruby.h ruby_config.h
-apachelib.@OBJEXT@: apachelib.c apachelib.h
-array_header.@OBJEXT@: array_header.c apachelib.h
-table.@OBJEXT@: table.c apachelib.h
-connection.@OBJEXT@: connection.c apachelib.h
-server.@OBJEXT@: server.c apachelib.h
-request.@OBJEXT@: request.c apachelib.h
+apachelib.@OBJEXT@: apachelib.c mod_ruby.h apachelib.h
+array_header.@OBJEXT@: array_header.c mod_ruby.h apachelib.h
+table.@OBJEXT@: table.c mod_ruby.h apachelib.h
+connection.@OBJEXT@: connection.c mod_ruby.h apachelib.h
+server.@OBJEXT@: server.c mod_ruby.h apachelib.h
+request.@OBJEXT@: request.c mod_ruby.h apachelib.h

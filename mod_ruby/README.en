@@ -14,6 +14,15 @@ start up much faster than without mod_ruby.
   (Recommends version 1.6.4 or later.)
 * Apache version 1.3.3 or later.
 
+You can use Apache 2.0 also, but there are some restrictions.
+
+* You should build mod_ruby as a DSO module. (Please use --with-apxs
+  option instead of --with-apache option when running configure.rb.)
+* mod_ruby only supports prefork MPM. You can't use threaded MPM.
+* Some methods are not implemented for Apache 2.0 because Apache 2.0
+  API is different from Apache 1.x API. (mod_ruby 1.1 series will
+  support only Apache 2.0 and will provide new API.)
+
 == Installation
 
 (1) Type `./configure.rb' to create Makefile.

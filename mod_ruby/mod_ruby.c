@@ -29,34 +29,39 @@
 
 #include <stdarg.h>
 #include <signal.h>
-#ifdef WIN32
-#include <windows.h>
-#endif
-
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "http_request.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "rubyio.h"
-#define regoff_t ruby_regoff_t
-#define regex_t ruby_regex_t
-#define regmatch_t ruby_regmatch_t
-#include "re.h"
-#include "util.h"
-#include "version.h"
 
 #include "mod_ruby.h"
 #include "ruby_config.h"
 #include "apachelib.h"
-#ifdef USE_ERUBY
-#include "eruby.h"
+
+#if defined(HAVE_DLOPEN) && !defined(USE_DLN_A_OUT) && !defined(_AIX)
+/* dynamic load with dlopen() */
+# define USE_DLN_DLOPEN
+#endif
+
+#ifdef USE_DLN_DLOPEN
+# ifdef __NetBSD__
+#  include <nlist.h>
+#  include <link.h>
+# else
+#  include <dlfcn.h>
+# endif
+#endif
+
+#ifdef __hpux
+#include <errno.h>
+#include "dl.h"
+#endif
+
+#ifdef NeXT
+#if NS_TARGET_MAJOR < 4
+#include <mach-o/rld.h>
+#else
+#include <mach-o/dyld.h>
+#endif
+#endif
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
 #endif
 
 #ifndef WIN32
@@ -92,13 +97,10 @@ static int ruby_access_handler(request_rec *r);
 static int ruby_type_handler(request_rec *r);
 static int ruby_fixup_handler(request_rec *r);
 static int ruby_log_handler(request_rec *r);
+#ifndef STANDARD20_MODULE_STUFF /* Apache 1.x */
 static int ruby_header_parser_handler(request_rec *r);
-static int ruby_post_read_request_handler(request_rec *r);
-
-static int ruby_script_handler(request_rec *r);
-#ifdef USE_ERUBY
-static int eruby_script_handler(request_rec *r);
 #endif
+static int ruby_post_read_request_handler(request_rec *r);
 
 static const command_rec ruby_cmds[] =
 {
@@ -149,18 +151,53 @@ static const command_rec ruby_cmds[] =
     {NULL}
 };
 
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static int ruby_startup(pool*, pool*, pool*, server_rec*);
+#else /* Apache 1.x */
+static void ruby_startup(server_rec*, pool*);
+#endif
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static void ruby_child_init(pool*, server_rec*);
+#else /* Apache 1.x */
+static void ruby_child_init(server_rec*, pool*);
+#endif
+
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+
+static void ruby_register_hooks(pool *p)
+{
+    ap_hook_post_config(ruby_startup, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_handler(ruby_object_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_translate_name(ruby_trans_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_check_user_id(ruby_authen_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_auth_checker(ruby_authz_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_access_checker(ruby_access_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_type_checker(ruby_type_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_fixups(ruby_fixup_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_log_transaction(ruby_log_handler, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_child_init(ruby_child_init, NULL, NULL, APR_HOOK_MIDDLE);
+    ap_hook_post_read_request(ruby_post_read_request_handler,
+			      NULL, NULL, APR_HOOK_MIDDLE);
+}
+
+module AP_MODULE_DECLARE_DATA ruby_module =
+{
+    STANDARD20_MODULE_STUFF,
+    ruby_create_dir_config,	/* dir config creater */
+    ruby_merge_dir_config,	/* dir merger --- default is to override */
+    ruby_create_server_config,	/* create per-server config structure */
+    NULL,			/* merge server config */
+    ruby_cmds,			/* command apr_table_t */
+    ruby_register_hooks		/* register hooks */
+};
+
+#else /* Apache 1.x */
+
 static const handler_rec ruby_handlers[] =
 {
     {"ruby-object", ruby_object_handler},
-    {"ruby-script", ruby_script_handler},
-#ifdef USE_ERUBY
-    {ERUBY_MIME_TYPE, eruby_script_handler},
-#endif
     {NULL}
 };
-
-static void ruby_startup(server_rec*, pool*);
-static void ruby_child_init(server_rec*, pool*);
 
 MODULE_VAR_EXPORT module ruby_module =
 {
@@ -191,6 +228,7 @@ MODULE_VAR_EXPORT module ruby_module =
     NULL			/* close_connection */
 #endif /* EAPI */
 };
+#endif
 
 /* copied from eval.c */
 #define TAG_RETURN	0x1
@@ -401,37 +439,13 @@ VALUE ruby_get_error_info(int state)
     return errmsg;
 }
 
-static void ruby_print_error(request_rec *r, int state)
-{
-    VALUE errmsg, logmsg;
-
-    r->content_type = "text/html";
-    ap_send_http_header(r);
-    ap_rputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n", r);
-    ap_rputs("<html>\n", r);
-    ap_rputs("<head><title>Error</title></head>\n", r);
-    ap_rputs("<body>\n", r);
-    ap_rputs("<pre>\n", r);
-
-    errmsg = ruby_get_error_info(state);
-    ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
-    logmsg = STRING_LITERAL("mod_ruby: error in ruby\n");
-    rb_str_concat(logmsg, errmsg);
-    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
-		 "%s", STR2CSTR(logmsg));
-
-    ap_rputs("</pre>\n", r);
-    ap_rputs("</body>\n", r);
-    ap_rputs("</html>\n", r);
-}
-
 void ruby_log_error(server_rec *s, VALUE errmsg)
 {
     VALUE logmsg;
 
     logmsg = STRING_LITERAL("mod_ruby: error in ruby\n");
     rb_str_concat(logmsg, errmsg);
-    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
+    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, APLOG_STATUS(0) s,
 		 "%s", STR2CSTR(logmsg));
 }
 
@@ -481,16 +495,28 @@ void ruby_add_path(const char *path)
     rb_ary_push(default_load_path, rb_str_new2(path));
 }
 
+static void dso_unload(void *handle)
+{
+#if defined(HPUX) || defined(HPUX10) || defined(HPUX11)
+    shl_unload((shl_t) handle);
+#elif defined(HAVE_DYLD)
+    NSUnLinkModule(handle, FALSE);
+#else
+    dlclose(handle);
+#endif
+}
+
 #if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
-static void ruby_cleanup(void *data)
+static APR_CLEANUP_RETURN_TYPE ruby_cleanup(void *data)
 {
     EXTERN VALUE ruby_dln_librefs;
     int i;
 
     ruby_finalize();
     for (i = 0; i < RARRAY(ruby_dln_librefs)->len; i++) {
-	ap_os_dso_unload((void *) NUM2LONG(RARRAY(ruby_dln_librefs)->ptr[i]));
+	dso_unload((void *) NUM2LONG(RARRAY(ruby_dln_librefs)->ptr[i]));
     }
+    APR_CLEANUP_RETURN_SUCCESS();
 }
 #endif
 
@@ -500,7 +526,11 @@ static void ruby_cleanup(void *data)
 #define ruby_signal(sig,handle) signal((sig),(handle))
 #endif
 
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static int ruby_startup(pool *p, pool *plog, pool *ptemp, server_rec *s)
+#else /* Apache 1.x */
 static void ruby_startup(server_rec *s, pool *p)
+#endif
 {
     VALUE stack_start;
     ruby_server_config *conf = get_server_config(s);
@@ -544,9 +574,6 @@ static void ruby_startup(server_rec *s, pool *p)
 
 	Init_stack(&stack_start);
 	rb_init_apache();
-#ifdef USE_ERUBY
-	eruby_init();
-#endif
 
 	rb_define_global_const("MOD_RUBY",
 			       STRING_LITERAL(MOD_RUBY_STRING_VERSION));
@@ -575,7 +602,8 @@ static void ruby_startup(server_rec *s, pool *p)
 	    n = ruby_required_libraries->nelts;
 	    for (i = 0; i < n; i++) {
 		if ((state = ruby_require(list[i]))) {
-		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
+		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
+				 APLOG_STATUS(0) s,
 				 "mod_ruby: failed to require %s", list[i]);
 		    ruby_log_error(s, ruby_get_error_info(state));
 		}
@@ -590,10 +618,18 @@ static void ruby_startup(server_rec *s, pool *p)
 	static char buf[BUFSIZ];
 	VALUE v;
 
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+	ap_add_version_component(p, MOD_RUBY_STRING_VERSION);
+#else /* Apache 1.x */
 	ap_add_version_component(MOD_RUBY_STRING_VERSION);
+#endif
 	v = rb_const_get(rb_cObject, rb_intern("RUBY_VERSION"));
 	snprintf(buf, BUFSIZ, "Ruby/%s", STR2CSTR(v));
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+	ap_add_version_component(p, buf);
+#else /* Apache 1.x */
 	ap_add_version_component(buf);
+#endif
     }
 #endif
 
@@ -601,14 +637,22 @@ static void ruby_startup(server_rec *s, pool *p)
     if (ruby_module.dynamic_load_handle) 
 	ap_register_cleanup(p, NULL, ruby_cleanup, ap_null_cleanup);
 #endif
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+    return OK;
+#endif
 }
 
-static void ruby_child_cleanup(void *data)
+static APR_CLEANUP_RETURN_TYPE ruby_child_cleanup(void *data)
 {
     ruby_finalize();
+    APR_CLEANUP_RETURN_SUCCESS();
 }
 
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static void ruby_child_init(pool *p, server_rec *s)
+#else /* Apache 1.x */
 static void ruby_child_init(server_rec *s, pool *p)
+#endif
 {
     ap_register_cleanup(p, NULL, ruby_child_cleanup, ap_null_cleanup);
 }
@@ -666,7 +710,7 @@ static void mod_ruby_setenv(const char *name, const char *value)
 
 static void setenv_from_table(table *tbl)
 {
-    array_header *env_arr;
+    const array_header *env_arr;
     table_entry *env;
     int i;
 
@@ -853,17 +897,18 @@ static VALUE ruby_handler_0(void *arg)
 	}
 	else {
 	    handle_error(r, state);
-	    return INT2NUM(SERVER_ERROR);
+	    return INT2NUM(HTTP_INTERNAL_SERVER_ERROR);
 	}
     }
     if (FIXNUM_P(ret)) {
 	return ret;
     }
     else {
-	ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
+	ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
+		     APLOG_STATUS(0) r->server,
 		     "mod_ruby: %s.%s: handler should return Integer",
 		     handler, rb_id2name(mid));
-	return INT2NUM(SERVER_ERROR);
+	return INT2NUM(HTTP_INTERNAL_SERVER_ERROR);
     }
 }
 
@@ -903,7 +948,7 @@ static int ruby_handler(request_rec *r,
 	}
 	else {
 	    handle_error(r, state);
-	    retval = SERVER_ERROR;
+	    retval = HTTP_INTERNAL_SERVER_ERROR;
 	}
 	ap_kill_timeout(r);
 	if (retval != DECLINED && (!run_all || retval != OK))
@@ -988,6 +1033,7 @@ static int ruby_log_handler(request_rec *r)
 			rb_intern("log_transaction"), 1, 0);
 }
 
+#ifndef STANDARD20_MODULE_STUFF /* Apache 1.x */
 static int ruby_header_parser_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
@@ -1004,14 +1050,16 @@ static int ruby_header_parser_handler(request_rec *r)
     return ruby_handler(r, dconf->ruby_header_parser_handler,
 			rb_intern("header_parse"), 1, 0);
 }
+#endif
 
-static void ruby_cleanup_handler(void *data)
+static APR_CLEANUP_RETURN_TYPE ruby_cleanup_handler(void *data)
 {
     request_rec *r = (request_rec *) data;
     ruby_dir_config *dconf = get_dir_config(r);
 
     ruby_handler(r, dconf->ruby_cleanup_handler,
 		 rb_intern("cleanup"), 1, 0);
+    APR_CLEANUP_RETURN_SUCCESS();
 }
 
 static int ruby_post_read_request_handler(request_rec *r)
@@ -1032,119 +1080,6 @@ static int ruby_post_read_request_handler(request_rec *r)
     return ruby_handler(r, dconf->ruby_post_read_request_handler,
 			rb_intern("post_read_request"), 1, 0);
 }
-
-static int script_handler(VALUE (*func)(void*), request_rec *r)
-{
-    ruby_server_config *sconf = get_server_config(r->server);
-    ruby_dir_config *dconf = get_dir_config(r);
-    int safe_level = dconf->safe_level;
-    VALUE ret;
-    int retval;
-
-    if (r->finfo.st_mode == 0)
-	return NOT_FOUND;
-    if (S_ISDIR(r->finfo.st_mode))
-	return FORBIDDEN;
-
-    per_request_init(r);
-    rb_setup_cgi_env(r);
-    if (r->filename)
-	ap_chdir_file(r->filename);
-
-    ap_soft_timeout("load ruby script", r);
-    if (run_safely(safe_level, sconf->timeout, func, r, &ret) == 0) {
-	retval = NUM2INT(ret);
-    }
-    else {
-	retval = SERVER_ERROR;
-    }
-    ap_kill_timeout(r);
-
-    per_request_cleanup(r, retval == OK);
-
-    return retval;
-}
-
-static VALUE load_ruby_script(void *arg)
-{
-    request_rec *r = (request_rec *) arg;
-    int state;
-    VALUE ret;
-
-    rb_load_protect(rb_str_new2(r->filename), 1, &state);
-    rb_exec_end_proc();
-    if (state) {
-	if (state == TAG_RAISE &&
-	    rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
-	    ret = rb_iv_get(ruby_errinfo, "status");
-	}
-	else {
-	    ruby_print_error(r, state);
-	    return INT2NUM(OK);
-	}
-    }
-    else {
-	ret = INT2NUM(OK);
-    }
-    return ret;
-}
-
-static int ruby_script_handler(request_rec *r)
-{
-    return script_handler(load_ruby_script, r);
-}
-
-#ifdef USE_ERUBY
-static VALUE load_eruby_script(void *arg)
-{
-    request_rec *r = (request_rec *) arg;
-    int state;
-    VALUE ret;
-
-    eruby_noheader = 0;
-    eruby_charset = eruby_default_charset;
-#if defined(ERUBY_VERSION_CODE) && ERUBY_VERSION_CODE >= 90
-    eruby_load(r->filename, 0, &state);
-#else
-    {
-	VALUE script;
-	script = eruby_load(r->filename, 0, &state);
-	if (!NIL_P(script)) unlink(STR2CSTR(script));
-    }
-#endif
-    rb_exec_end_proc();
-    if (state) {
-	if (state == TAG_RAISE &&
-	    rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
-	    ret = rb_iv_get(ruby_errinfo, "status");
-	}
-	else {
-	    ruby_print_error(r, state);
-	    return INT2NUM(OK);
-	}
-    }
-    else {
-	ret = INT2NUM(OK);
-    }
-    if (!eruby_noheader) {
-	long len = rb_apache_request_length(rb_request);
-	
-	if (strcmp(r->content_type, "text/html") == 0) {
-	    r->content_type = ap_psprintf(r->pool,
-					  "text/html; charset=%s",
-					  ERUBY_CHARSET);
-	}
-	ap_set_content_length(r, len);
-	rb_apache_request_send_http_header(rb_request);
-    }
-    return ret;
-}
-
-static int eruby_script_handler(request_rec *r)
-{
-    return script_handler(load_eruby_script, r);
-}
-#endif
 
 /*
  * Local variables:

@@ -25,18 +25,7 @@
  * SUCH DAMAGE.
  */
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "version.h"
-
+#include "mod_ruby.h"
 #include "apachelib.h"
 
 VALUE rb_cApacheConnection;
@@ -50,8 +39,22 @@ DEFINE_BOOL_ATTR_READER(connection_aborted, conn_rec, aborted);
 DEFINE_STRING_ATTR_READER(connection_remote_ip, conn_rec, remote_ip);
 DEFINE_STRING_ATTR_READER(connection_remote_host, conn_rec, remote_host);
 DEFINE_STRING_ATTR_READER(connection_remote_logname, conn_rec, remote_logname);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static VALUE connection_user(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE connection_auth_type(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+#else /* Apache 1.x */
 DEFINE_STRING_ATTR_READER(connection_user, conn_rec, user);
 DEFINE_STRING_ATTR_READER(connection_auth_type, conn_rec, ap_auth_type);
+#endif
 DEFINE_STRING_ATTR_READER(connection_local_ip, conn_rec, local_ip);
 DEFINE_STRING_ATTR_READER(connection_local_host, conn_rec, local_host);
 

@@ -28,18 +28,7 @@
 /* for core_module */
 #define CORE_PRIVATE
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "version.h"
-
+#include "mod_ruby.h"
 #include "apachelib.h"
 
 VALUE rb_cApacheServer;
@@ -51,8 +40,22 @@ VALUE rb_apache_server_new(server_rec *server)
 
 DEFINE_STRING_ATTR_READER(server_defn_name, server_rec, defn_name);
 DEFINE_UINT_ATTR_READER(server_defn_line_number, server_rec, defn_line_number);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static VALUE server_srm_confname(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE server_access_confname(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+#else /* Apache 1.x */
 DEFINE_STRING_ATTR_READER(server_srm_confname, server_rec, srm_confname);
 DEFINE_STRING_ATTR_READER(server_access_confname, server_rec, access_confname);
+#endif
 DEFINE_STRING_ATTR_READER(server_admin, server_rec, server_admin);
 DEFINE_STRING_ATTR_READER(server_hostname, server_rec, server_hostname);
 DEFINE_UINT_ATTR_READER(server_port, server_rec, port);
@@ -64,10 +67,32 @@ DEFINE_INT_ATTR_READER(server_keep_alive_timeout, server_rec,
 		       keep_alive_timeout);
 DEFINE_INT_ATTR_READER(server_keep_alive_max, server_rec, keep_alive_max);
 DEFINE_BOOL_ATTR_READER(server_keep_alive, server_rec, keep_alive);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static VALUE server_send_buffer_size(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+#else /* Apache 1.x */
 DEFINE_INT_ATTR_READER(server_send_buffer_size, server_rec, send_buffer_size);
+#endif
 DEFINE_STRING_ATTR_READER(server_path, server_rec, path);
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static VALUE server_uid(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+
+static VALUE server_gid(VALUE self)
+{
+    rb_notimplement();
+    return Qnil;
+}
+#else /* Apache 1.x */
 DEFINE_INT_ATTR_READER(server_uid, server_rec, server_uid);
 DEFINE_INT_ATTR_READER(server_gid, server_rec, server_gid);
+#endif
 DEFINE_INT_ATTR_READER(server_limit_req_line, server_rec, limit_req_line);
 DEFINE_INT_ATTR_READER(server_limit_req_fieldsize, server_rec,
 		       limit_req_fieldsize);
@@ -106,7 +131,7 @@ static VALUE server_log(int type, int argc, VALUE *argv, VALUE self)
 
     Data_Get_Struct(self, server_rec, server);
     s = rb_f_sprintf(argc, argv);
-    ap_log_error(APLOG_MARK, type | APLOG_NOERRNO, server,
+    ap_log_error(APLOG_MARK, type | APLOG_NOERRNO, APLOG_STATUS(0) server,
 		 "%s", STR2CSTR(s));
     return Qnil;
 }

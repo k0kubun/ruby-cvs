@@ -27,17 +27,7 @@
  * SUCH DAMAGE.
  */
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "version.h"
+#include <unistd.h>
 
 #include "mod_ruby.h"
 #include "apachelib.h"
@@ -102,11 +92,19 @@ static VALUE apache_server_version(VALUE self)
     return rb_str_new2(ap_get_server_version());
 }
 
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static VALUE apache_add_version_component(VALUE self, VALUE component)
+{
+    rb_notimplement();
+    return Qnil;
+}
+#else /* Apache 1.x */
 static VALUE apache_add_version_component(VALUE self, VALUE component)
 {
     ap_add_version_component(STR2CSTR(component));
     return Qnil;
 }
+#endif
 
 static VALUE apache_server_built(VALUE self)
 {
@@ -129,6 +127,24 @@ static VALUE apache_unescape_url(VALUE self, VALUE url)
     ap_unescape_url(buf);
     return rb_str_new2(buf);
 }
+
+#ifdef STANDARD20_MODULE_STUFF /* Apache 2.x */
+static void ap_chdir_file(const char *file)
+{
+    const char *x;
+    char buf[HUGE_STRING_LEN];
+
+    x = strrchr(file, '/');
+    if (x == NULL) {
+	chdir(file);
+    }
+    else if (x - file < sizeof(buf) - 1) {
+	memcpy(buf, file, x - file);
+	buf[x - file] = '\0';
+	chdir(buf);
+    }
+}
+#endif
 
 static VALUE apache_chdir_file(VALUE self, VALUE file)
 {
@@ -265,41 +281,41 @@ void rb_init_apache()
 		    INT2NUM(HTTP_NOT_EXTENDED));
 
     rb_define_const(rb_mApache, "DOCUMENT_FOLLOWS",
-		    INT2NUM(DOCUMENT_FOLLOWS));
+		    INT2NUM(HTTP_OK));
     rb_define_const(rb_mApache, "PARTIAL_CONTENT",
-		    INT2NUM(PARTIAL_CONTENT));
+		    INT2NUM(HTTP_PARTIAL_CONTENT));
     rb_define_const(rb_mApache, "MULTIPLE_CHOICES",
-		    INT2NUM(MULTIPLE_CHOICES));
+		    INT2NUM(HTTP_MULTIPLE_CHOICES));
     rb_define_const(rb_mApache, "MOVED",
-		    INT2NUM(MOVED));
+		    INT2NUM(HTTP_MOVED_PERMANENTLY));
     rb_define_const(rb_mApache, "REDIRECT",
-		    INT2NUM(REDIRECT));
+		    INT2NUM(HTTP_MOVED_TEMPORARILY));
     rb_define_const(rb_mApache, "USE_LOCAL_COPY",
-		    INT2NUM(USE_LOCAL_COPY));
+		    INT2NUM(HTTP_NOT_MODIFIED));
     rb_define_const(rb_mApache, "BAD_REQUEST",
-		    INT2NUM(BAD_REQUEST));
+		    INT2NUM(HTTP_BAD_REQUEST));
     rb_define_const(rb_mApache, "AUTH_REQUIRED",
-		    INT2NUM(AUTH_REQUIRED));
+		    INT2NUM(HTTP_UNAUTHORIZED));
     rb_define_const(rb_mApache, "FORBIDDEN",
-		    INT2NUM(FORBIDDEN));
+		    INT2NUM(HTTP_FORBIDDEN));
     rb_define_const(rb_mApache, "NOT_FOUND",
-		    INT2NUM(NOT_FOUND));
+		    INT2NUM(HTTP_NOT_FOUND));
     rb_define_const(rb_mApache, "METHOD_NOT_ALLOWED",
-		    INT2NUM(METHOD_NOT_ALLOWED));
+		    INT2NUM(HTTP_METHOD_NOT_ALLOWED));
     rb_define_const(rb_mApache, "NOT_ACCEPTABLE",
-		    INT2NUM(NOT_ACCEPTABLE));
+		    INT2NUM(HTTP_NOT_ACCEPTABLE));
     rb_define_const(rb_mApache, "LENGTH_REQUIRED",
-		    INT2NUM(LENGTH_REQUIRED));
+		    INT2NUM(HTTP_LENGTH_REQUIRED));
     rb_define_const(rb_mApache, "PRECONDITION_FAILED",
-		    INT2NUM(PRECONDITION_FAILED));
+		    INT2NUM(HTTP_PRECONDITION_FAILED));
     rb_define_const(rb_mApache, "SERVER_ERROR",
-		    INT2NUM(SERVER_ERROR));
+		    INT2NUM(HTTP_INTERNAL_SERVER_ERROR));
     rb_define_const(rb_mApache, "NOT_IMPLEMENTED",
-		    INT2NUM(NOT_IMPLEMENTED));
+		    INT2NUM(HTTP_NOT_IMPLEMENTED));
     rb_define_const(rb_mApache, "BAD_GATEWAY",
-		    INT2NUM(BAD_GATEWAY));
+		    INT2NUM(HTTP_BAD_GATEWAY));
     rb_define_const(rb_mApache, "VARIANT_ALSO_VARIES",
-		    INT2NUM(VARIANT_ALSO_VARIES));
+		    INT2NUM(HTTP_VARIANT_ALSO_VARIES));
 
     rb_define_const(rb_mApache, "M_GET", INT2NUM(M_GET));
     rb_define_const(rb_mApache, "M_PUT", INT2NUM(M_PUT));

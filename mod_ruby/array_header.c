@@ -25,18 +25,7 @@
  * SUCH DAMAGE.
  */
 
-#include "httpd.h"
-#include "http_config.h"
-#include "http_core.h"
-#include "http_log.h"
-#include "http_main.h"
-#include "http_protocol.h"
-#include "util_script.h"
-#include "multithread.h"
-
-#include "ruby.h"
-#include "version.h"
-
+#include "mod_ruby.h"
 #include "apachelib.h"
 
 VALUE rb_cApacheArrayHeader;
