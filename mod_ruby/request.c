@@ -516,7 +516,8 @@ REQUEST_STRING_ATTR_READER(request_request_method, method);
 REQUEST_INT_ATTR_READER(request_method_number, method_number);
 REQUEST_INT_ATTR_READER(request_get_allowed, allowed);
 REQUEST_INT_ATTR_WRITER(request_set_allowed, allowed);
-REQUEST_STRING_ATTR_READER(request_args, args);
+REQUEST_STRING_ATTR_READER(request_get_args, args);
+REQUEST_STRING_ATTR_WRITER(request_set_args, args);
 REQUEST_STRING_ATTR_READER(request_get_content_type, content_type);
 REQUEST_STRING_ATTR_READER(request_get_content_encoding, content_encoding);
 REQUEST_STRING_ATTR_READER(request_get_dispatch_handler, handler);
@@ -1686,7 +1687,8 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "the_request",
 		     request_the_request, 0);
     rb_define_method(rb_cApacheRequest, "header_only?", request_header_only, 0);
-    rb_define_method(rb_cApacheRequest, "args", request_args, 0);
+    rb_define_method(rb_cApacheRequest, "args", request_get_args, 0);
+    rb_define_method(rb_cApacheRequest, "args=", request_set_args, 1);
     rb_define_method(rb_cApacheRequest, "content_length",
 		     request_content_length, 0);
     rb_define_method(rb_cApacheRequest, "content_type",
