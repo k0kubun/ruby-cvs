@@ -3,6 +3,9 @@ module Rubicon
   require 'runit/testcase'
   require 'runit/cui/testrunner'
 
+  class TestRunner < RUNIT::CUI::TestRunner
+  end
+
   class TestSuite < RUNIT::TestSuite
   end
 
@@ -33,9 +36,24 @@ module Rubicon
         caller[0] =~ /`(.*)'/ #`
         from = $1
       end
-      $stderr.puts "\nSkipping: #{from} - #{info}"
+      if true
+        $stderr.print "S"
+      else
+        $stderr.puts "\nSkipping: #{from} - #{info}"
+      end
     end
 
+    #
+    # Handle broken exception handling
+    #
+    def assert_exception(ex, &code)
+      begin
+        super
+      rescue ex
+        $stderr.puts "\nThis RubyUnit does not trap #{ex}. This error can\n" +
+                     "safely be ignored"
+      end
+    end
     #
     # Skip a test if not super user
     #
@@ -98,8 +116,8 @@ module Rubicon
 
     
   def handleTests(testClass)
-    testrunner = RUNIT::CUI::TestRunner.new
-    RUNIT::CUI::TestRunner.quiet_mode = true
+    testrunner = TestRunner.new
+    TestRunner.quiet_mode = true
     if ARGV.size == 0
       suite = testClass.suite
     else
@@ -108,7 +126,7 @@ module Rubicon
         suite.add_test(testClass.new(testmethod))
       end
     end
-    testrunner.run(suite)
+    results = testrunner.run(suite)
   end
   module_function :handleTests
 end

@@ -30,8 +30,8 @@ class TestStruct < Rubicon::TestCase
     assert_equals(112,t[1])
     assert_equals(112,t[-1])
     assert_equals(t["alpha"],t[:alpha])
-    $stderr.puts "Can't catch nameError with this RubyUnit"
-    #assert_exception(NameError) { p t["gamma"] }
+  
+    assert_exception(NameError) { p t["gamma"] }
     assert_exception(IndexError) { p t[2] }
   end
 
@@ -40,8 +40,7 @@ class TestStruct < Rubicon::TestCase
     t.alpha = 64
     assert_equals(64,t["alpha"])
     assert_equals(t["alpha"],t[:alpha])
-    $stderr.puts "Can't catch nameError with this RubyUnit"
-    #assert_exception(NameError) { t["gamma"]=1 }
+    assert_exception(NameError) { t["gamma"]=1 }
     assert_exception(IndexError) { t[2]=1 }
   end
 
