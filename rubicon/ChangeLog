@@ -1,3 +1,8 @@
+2001-01-17  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestKernel.rb: replace NotImplementError by
+	  NotImplementedError. 
+
 2001-01-13  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/many: Old tests had a bug where they'd try to taint

@@ -836,7 +836,7 @@ class TestKernel < Rubicon::TestCase
       assert_fail("Wrong exception raised")
     end
 
-    assert_exception(NotImplementError) { fail NotImplementError }
+    assert_exception(NotImplementedError) { fail NotImplementedError }
 
     begin
       fail "Wombat"
@@ -848,9 +848,9 @@ class TestKernel < Rubicon::TestCase
     end
 
     begin
-      fail NotImplementError, "Wombat"
+      fail NotImplementedError, "Wombat"
       assert_fail("No exception")
-    rescue NotImplementError => detail
+    rescue NotImplementedError => detail
       assert_equal("Wombat", detail.message)
     rescue Exception
       assert_fail("Wrong exception raised")
@@ -858,9 +858,9 @@ class TestKernel < Rubicon::TestCase
 
     bt = %w(one two three)
     begin
-      fail NotImplementError, "Wombat", bt
+      fail NotImplementedError, "Wombat", bt
       assert_fail("No exception")
-    rescue NotImplementError => detail
+    rescue NotImplementedError => detail
       assert_equal("Wombat", detail.message)
       assert_equal(bt, detail.backtrace)
     rescue Exception
@@ -1499,7 +1499,7 @@ class TestKernel < Rubicon::TestCase
       assert_fail("Wrong exception raised")
     end
 
-    assert_exception(NotImplementError) { raise NotImplementError }
+    assert_exception(NotImplementedError) { raise NotImplementedError }
 
     begin
       raise "Wombat"
@@ -1511,9 +1511,9 @@ class TestKernel < Rubicon::TestCase
     end
 
     begin
-      raise NotImplementError, "Wombat"
+      raise NotImplementedError, "Wombat"
       assert_fail("No exception")
-    rescue NotImplementError => detail
+    rescue NotImplementedError => detail
       assert_equal("Wombat", detail.message)
     rescue Exception
       raise
@@ -1522,9 +1522,9 @@ class TestKernel < Rubicon::TestCase
     bt = %w(one two three)
     begin
 
-      raise NotImplementError, "Wombat", bt
+      raise NotImplementedError, "Wombat", bt
       assert_fail("No exception")
-    rescue NotImplementError => detail
+    rescue NotImplementedError => detail
       assert_equal("Wombat", detail.message)
       assert_equal(bt, detail.backtrace)
     rescue Exception
