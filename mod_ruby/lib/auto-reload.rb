@@ -56,6 +56,7 @@ module AutoReload
     end
     deps = LIBRARY_DEPS[file] ||= {}
     PROCESSING_FILE.each do |f|
+      return false if f == file
       LIBRARY_DEPS[f][file] = 1
     end
     PROCESSING_FILE.push file
