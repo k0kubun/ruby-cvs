@@ -43,10 +43,6 @@
 #include "util.h"
 #include "version.h"
 
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-
 #include "mod_ruby.h"
 #include "ruby_config.h"
 #include "apachelib.h"
@@ -459,7 +455,7 @@ static void get_exception_info(VALUE str)
 	    }
 	    if (i == TRACE_HEAD && ep->len > TRACE_MAX) {
 		char buff[BUFSIZ];
-		snprintf(buff, BUFSIZ, "\t ... %d levels...\n",
+		snprintf(buff, BUFSIZ, "\t ... %ld levels...\n",
 			 ep->len - TRACE_HEAD - TRACE_TAIL);
 		rb_str_cat(str, buff, strlen(buff));
 		i = ep->len - TRACE_TAIL;
@@ -519,7 +515,8 @@ static void ruby_error_print(request_rec *r, int state, int sync)
     ap_rputs(ap_escape_html(r->pool, RSTRING(errmsg)->ptr), r);
     logmsg = STRING_LITERAL("ruby script error\n");
     rb_str_concat(logmsg, errmsg);
-    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server, RSTRING(logmsg)->ptr);
+    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
+		 "%s", RSTRING(logmsg)->ptr);
 
     ap_rputs("</pre>\n", r);
     if (!sync) {
@@ -754,6 +751,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     if (kcode_orig) rb_set_kcode(kcode_orig);
     (void) ap_release_mutex(mod_ruby_mutex);
 
+    load_thread = Qnil;
 #if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
     rb_exec_end_proc();
 #endif

@@ -104,18 +104,18 @@ int eruby_compile(FILE *in, FILE *out)
 		    continue;
 		}
 		else if (c == eruby_comment_char) {
-		    if (err = compile_embedded_string(in, out, EMBEDDED_COMMENT))
-			return err;
+		    err = compile_embedded_string(in, out, EMBEDDED_COMMENT);
+		    if (err) return err;
 		}
 		else if (c == eruby_expr_char) {
-		    if (err = compile_embedded_string(in, out, EMBEDDED_EXPR))
-			return err;
+		    err = compile_embedded_string(in, out, EMBEDDED_EXPR);
+		    if (err) return err;
 		}
 		else {
 		    if (ungetc(c, in) == EOF)
 			return SYSTEM_ERROR;
-		    if (err = compile_embedded_string(in, out, EMBEDDED_STMT))
-			return err;
+		    err = compile_embedded_string(in, out, EMBEDDED_STMT);
+		    if (err) return err;
 		}
 		prevc = EOF;
 	    } else {
