@@ -22,10 +22,11 @@ class TestThreadGroup < Rubicon::TestCase
   def test_list
     tg = ThreadGroup.new
     10.times do
-      t = Thread.new { sleep 60 }
+      t = Thread.new { Thread.stop }
       tg.add(t)
     end
-    assert_equals(tg.list.length, 10)
+    assert_equals(10, tg.list.length)
+    tg.list.each {|t| t.wakeup; t.join }
   end
 
   def test_s_new

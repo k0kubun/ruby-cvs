@@ -78,6 +78,7 @@ class TestIO < Rubicon::TestCase
 
     f = File.open(@file)
     io = IO.new(f.fileno, "r")
+
     begin
       f.close
       assert_exception(Errno::EBADF) { io.gets }
