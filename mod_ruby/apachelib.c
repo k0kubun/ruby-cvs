@@ -466,11 +466,15 @@ static VALUE request_set_content_languages(VALUE self, VALUE ary)
     return ary;
 }
 
-static VALUE request_aref(VALUE self, VALUE key)
+static VALUE request_aref(VALUE self, VALUE vkey)
 {
     request_data *data;
+    char *key = STR2CSTR(vkey);
     const char *val;
 
+    if (strcasecmp(key, "authorization") == 0 ||
+	strcasecmp(key, "proxy-authorization") == 0)
+	return Qnil;
     Data_Get_Struct(self, request_data, data);
     val = ap_table_get(data->request->headers_in, STR2CSTR(key));
     return val ? rb_str_new2(val) : Qnil;
@@ -509,6 +513,9 @@ static VALUE request_each_header(VALUE self)
     for (i = 0; i < hdrs_arr->nelts; i++) {
 	if (hdrs[i].key == NULL)
 	    continue;
+	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
+	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
+	    continue;
 	assoc = rb_assoc_new(rb_str_new2(hdrs[i].key),
 			     hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
 	rb_yield(assoc);
@@ -529,6 +536,9 @@ static VALUE request_each_key(VALUE self)
     for (i = 0; i < hdrs_arr->nelts; i++) {
 	if (hdrs[i].key == NULL)
 	    continue;
+	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
+	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
+	    continue;
 	rb_yield(rb_str_new2(hdrs[i].key));
     }
     return Qnil;
@@ -546,6 +556,9 @@ static VALUE request_each_value(VALUE self)
     hdrs = (table_entry *) hdrs_arr->elts;
     for (i = 0; i < hdrs_arr->nelts; i++) {
 	if (hdrs[i].key == NULL)
+	    continue;
+	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
+	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
 	    continue;
 	rb_yield(hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
     }

@@ -1,3 +1,18 @@
+Thu Mar 30 17:07:30 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.6 released.
+
+Thu Mar 30 17:04:29 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (setup_env): use ap_add_common_vars() and
+	ap_add_cgi_vars().
+
+	* mod_ruby.c (get_charset): UTF8 -> UTF-8.
+
+	* Makefile.RB: new option --apxs.
+
+	* apachelib.c (request_aref): return nil if key =~ /authorization/i.
+
 Tue Mar 28 14:41:12 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.1.5 released.

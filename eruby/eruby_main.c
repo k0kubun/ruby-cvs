@@ -49,7 +49,7 @@ static char *get_charset()
     case MBCTYPE_SJIS:
 	return "SHIFT_JIS";
     case MBCTYPE_UTF8:
-	return "UTF8";
+	return "UTF-8";
     case MBCTYPE_ASCII:
     default:
 	return "US-ASCII";
