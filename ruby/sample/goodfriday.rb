@@ -1,6 +1,6 @@
-#! /usr/local/bin/ruby
+#! /usr/bin/env ruby
 
-# goodfriday.rb: Written by Tadayoshi Funaba 1998
+# goodfriday.rb: Written by Tadayoshi Funaba 1998, 2000
 # $Id$
 
 require 'date2'
@@ -19,7 +19,7 @@ def easter(y)
   if n <= 31 then [y, 3, n] else [y, 4, n - 31] end
 end
 
-es = Date.new3(*easter(Time.now.year))
+es = Date.new(*easter(Time.now.year))
 [[-9*7, 'Septuagesima Sunday'],
  [-8*7, 'Sexagesima Sunday'],
  [-7*7, 'Quinquagesima Sunday (Shrove Sunday)'],
