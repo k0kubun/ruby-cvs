@@ -50,6 +50,20 @@ class TestSymbol < Rubicon::TestCase
     assert_equals(Symbol, :fubar.type)
   end
 
+  def test_taint
+    assert_same(:Fred, :Fred.taint)
+    assert(! :Fred.tainted?)
+  end
+
+  def test_freeze
+    assert_same(:Fred, :Fred.freeze)
+    assert(! :Fred.frozen?)
+  end
+
+  def test_dup
+    assert_exception(TypeError) { :Fred.clone }
+    assert_exception(TypeError) { :Fred.dup }
+  end
 end
 
 Rubicon::handleTests(TestSymbol) if $0 == __FILE__
