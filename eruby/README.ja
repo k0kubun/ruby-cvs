@@ -54,6 +54,15 @@ eRubyとは?
     $ eruby baz
     こんにちは、みなさん!
 
+  `%'で始まる行は、Rubyプログラムとして評価されます。eRubyはその行を出
+  力結果で置き換えます。
+
+  例4).
+    $ cat quux
+    % x = 1 + 1
+    1 + 1 = <%= x %>
+    $ eruby quux
+    1 + 1 = 2
 
 Local variables:
 mode: indented-text

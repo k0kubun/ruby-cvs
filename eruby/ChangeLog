@@ -1,3 +1,7 @@
+Wed Oct 11 14:13:05 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby.c: new macro ERUBY_BEGIN_DELIMITER etc.
+
 Fri Sep 29 11:03:35 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* Makefile.RB: replaced rm with ruby.

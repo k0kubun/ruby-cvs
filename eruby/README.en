@@ -53,6 +53,15 @@ Syntax
     $ eruby baz
     Hello, World!
 
+  If a line starts with '%', eRuby evaluates the line as a Ruby
+  program and replaces the line with its output.
+
+  ex4).
+    $ cat quux
+    % x = 1 + 1
+    1 + 1 = <%= x %>
+    $ eruby quux
+    1 + 1 = 2
 
 Local variables:
 mode: indented-text

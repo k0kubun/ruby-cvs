@@ -27,11 +27,11 @@ int eruby_noheader = 0;
 VALUE eruby_charset;
 VALUE eruby_default_charset;
 
-static char eruby_begin_delimiter[] = "<%";
-static char eruby_end_delimiter[] = "%>";
-static char eruby_expr_char = '=';
-static char eruby_comment_char = '#';
-static char eruby_line_beg_char = '%';
+#define ERUBY_BEGIN_DELIMITER "<%"
+#define ERUBY_END_DELIMITER "%>"
+#define ERUBY_EXPR_CHAR '='
+#define ERUBY_COMMENT_CHAR '#'
+#define ERUBY_LINE_BEG_CHAR '%'
 
 enum embedded_program_type {
     EMBEDDED_STMT,
@@ -244,13 +244,13 @@ static int parse_embedded_program(FILE *in, FILE *out,
     for (;;) {
 	c = getc(in);
       again:
-	if (c == eruby_end_delimiter[0]) {
+	if (c == ERUBY_END_DELIMITER[0]) {
 	    c = getc(in);
-	    if (c == eruby_end_delimiter[1]) {
-		if (prevc == eruby_end_delimiter[0]) {
+	    if (c == ERUBY_END_DELIMITER[1]) {
+		if (prevc == ERUBY_END_DELIMITER[0]) {
 		    if (type != EMBEDDED_COMMENT)
-			putc(eruby_end_delimiter[1], out);
-		    prevc = eruby_end_delimiter[1];
+			putc(ERUBY_END_DELIMITER[1], out);
+		    prevc = ERUBY_END_DELIMITER[1];
 		    continue;
 		}
 		if (type == EMBEDDED_EXPR)
@@ -267,8 +267,8 @@ static int parse_embedded_program(FILE *in, FILE *out,
 	    }
 	    else {
 		if (type != EMBEDDED_COMMENT)
-		    putc(eruby_end_delimiter[0], out);
-		prevc = eruby_end_delimiter[0];
+		    putc(ERUBY_END_DELIMITER[0], out);
+		prevc = ERUBY_END_DELIMITER[0];
 		goto again;
 	    }
 	}
@@ -366,26 +366,26 @@ int eruby_compile(FILE *in, FILE *out)
     for (;;) {
 	c = getc(in);
       again:
-	if (c == eruby_begin_delimiter[0]) {
+	if (c == ERUBY_BEGIN_DELIMITER[0]) {
 	    c = getc(in);
-	    if (c == eruby_begin_delimiter[1]) {
+	    if (c == ERUBY_BEGIN_DELIMITER[1]) {
 		c = getc(in);
 		if (c == EOF) {
 		    return ERUBY_MISSING_END_DELIMITER;
 		}
-		else if (c == eruby_begin_delimiter[1]) { /* <%% => <% */
+		else if (c == ERUBY_BEGIN_DELIMITER[1]) { /* <%% => <% */
 		    if (prevc < 0) fputs("print \"", out);
-		    fwrite(eruby_begin_delimiter, 1, 2, out);
-		    prevc = eruby_begin_delimiter[1];
+		    fwrite(ERUBY_BEGIN_DELIMITER, 1, 2, out);
+		    prevc = ERUBY_BEGIN_DELIMITER[1];
 		    continue;
 		}
 		else {
 		    if (prevc >= 0)
 			fputs("\"; ", out);
-		    if (c == eruby_comment_char) {
+		    if (c == ERUBY_COMMENT_CHAR) {
 			err = parse_embedded_program(in, out, EMBEDDED_COMMENT);
 		    }
-		    else if (c == eruby_expr_char) {
+		    else if (c == ERUBY_EXPR_CHAR) {
 			err = parse_embedded_program(in, out, EMBEDDED_EXPR);
 		    }
 		    else {
@@ -398,17 +398,17 @@ int eruby_compile(FILE *in, FILE *out)
 		}
 	    } else {
 		if (prevc < 0) fputs("print \"", out);
-		putc(eruby_begin_delimiter[0], out);
-		prevc = eruby_begin_delimiter[0];
+		putc(ERUBY_BEGIN_DELIMITER[0], out);
+		prevc = ERUBY_BEGIN_DELIMITER[0];
 		goto again;
 	    }
 	}
-	else if (c == eruby_line_beg_char && prevc == EOF) {
+	else if (c == ERUBY_LINE_BEG_CHAR && prevc == EOF) {
 	    c = getc(in);
 	    if (c == EOF) {
 		return ERUBY_MISSING_END_DELIMITER;
 	    }
-	    else if (c == eruby_line_beg_char) { /* %% => % */
+	    else if (c == ERUBY_LINE_BEG_CHAR) { /* %% => % */
 		if (prevc < 0) fputs("print \"", out);
 		fputc(c, out);
 		prevc = c;
