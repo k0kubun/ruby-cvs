@@ -45,6 +45,7 @@ group:cvsmailer:knu
 group:rwiki:seki,nahi
 group:interbase:matz,bizenn
 group:irc:iga,knu
+group:metaruby:matju
 
 group:www:@all
 
@@ -79,6 +80,7 @@ grant:@cvsmailer:app/cvsmailer
 grant:@rwiki:app/rwiki
 grant:@interbase:lib/interbase
 grant:@irc:lib/irc
+grant:@metaruby:lib/metaruby
 
 grant:@www:www
 
