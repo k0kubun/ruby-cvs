@@ -55,8 +55,8 @@ class TestFile__Stat < Rubicon::TestCase
   end
 
   def test_blksize
-    blksize = `perl -e "print((stat('.'))[11], '\n')"`.to_i
-    if $? != 0
+    blksize = `perl -e "print((stat('.'))[11])"`.to_i
+    if $? != 0 || blksize == 0
       skipping("Couldn't find block size")
     else
       assert_equal(blksize, File.stat('.').blksize)

@@ -1,5 +1,5 @@
 require '../rubicon'
-
+require 'stat'
 
 class TestFile < Rubicon::TestCase
 
@@ -9,9 +9,8 @@ class TestFile < Rubicon::TestCase
     @file = "_test/_touched"
 
     sys("touch  #@file")
-    ctime = `perl -e "print((stat('.'))[10], '\n')"`.to_i
-    # Yes - there's a race condition here...
-    @cTime = Time.at(ctime)
+    xxxx = RubiconStat::ctime(@file)
+    @cTime = Time.at(xxxx)
 
     sys("touch -a -t 122512341999 #@file")
     @aTime = Time.local(1999, 12, 25, 12, 34, 00)
@@ -21,6 +20,7 @@ class TestFile < Rubicon::TestCase
   end
 
   def teardown
+    puts "!!!!"
     File.delete @file if File.exist?(@file)
     teardownTestDir
   end
