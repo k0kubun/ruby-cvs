@@ -41,7 +41,7 @@ group:ruby:matz,shugo,aamine,wakou,eban,knu,komatsu,usa,keiju,nobu,ts,ttate,naga
 group:rough:@all
 group:eruby:shugo
 group:mod_ruby:shugo
-group:rubicon:dave,andy,aleksi
+group:rubicon:dave,andy,aleksi,chad
 group:pocketruby:li-te_cheng,jack_kwok,ned
 group:cvsmailer:knu
 group:div:seki
