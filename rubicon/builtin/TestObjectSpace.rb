@@ -3,6 +3,8 @@ require '../rubicon'
 
 class TestObjectSpace < Rubicon::TestCase
 
+  WORKED = "It Worked!\n"
+
   def test_s__id2ref
     s = "hello"
     t = ObjectSpace._id2ref(s.id)
@@ -10,9 +12,24 @@ class TestObjectSpace < Rubicon::TestCase
     assert_equal(s.id, t.id)
   end
 
+  class CollectMe
+    def initialize(f)
+      ObjectSpace.define_finalizer(self) { f.puts(WORKED) }
+    end
+  end
+
   # finalizer manipulation
   def test_s_finalizers
-    skipping("How to test")
+    pipe = File.pipe
+    Process.fork {
+      CollectMe.new(pipe[1])
+      exit
+    }
+    begin
+      Process.wait
+    rescue Exception
+    end
+    assert_equal(WORKED, pipe[0].gets)
   end
 
   class A;      end

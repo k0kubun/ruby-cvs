@@ -212,14 +212,9 @@ class TestTime < Rubicon::TestCase
     # This code is problematic: how do I find out the exact
     # date and time of the dst switch for all the possible
     # timezones in which this code runs? For now, I'll just check
-    # midvalues, and add boundary checks for the US. I know theis won't 
+    # midvalues, and add boundary checks for the US. I know this won't 
     # work in some parts of the US, even, so I'm looking for
     # better ideas
-
-    dtest = [ 
-      [false, 2000, 1, 1],
-      [true,  2000, 7, 1],
-    ]
 
     zone = Time.now.zone
 
@@ -230,6 +225,11 @@ class TestTime < Rubicon::TestCase
         "MST", "MDT",
         "PST", "PDT"].include? zone
 
+      dtest = [ 
+        [false,     2000, 1, 1],
+        [true,  2000, 7, 1],
+      ]
+
       dtest.push(
                  [true,  2000, 4, 2, 4],
                  [false, 2000, 10, 29, 4],
@@ -238,14 +238,15 @@ class TestTime < Rubicon::TestCase
                  [true,  2000, 10,29,1,59], # Fall back
                  [false, 2000, 10,29,2,0]
                  )
-    end
 
-    dtest.each do |x|
-      result = x.shift
-      assert_equal(result, Time.local(*x).isdst,
-                   "\nExpected #{x.join(',')} to be dst=#{result}")
+      dtest.each do |x|
+        result = x.shift
+        assert_equal(result, Time.local(*x).isdst,
+                     "\nExpected #{x.join(',')} to be dst=#{result}")
+      end
+    else
+      skipping("Don't know how to do timezones");
     end
-
   end
 
   def test_localtime

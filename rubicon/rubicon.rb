@@ -3,7 +3,7 @@
 # statsistics and report them at the end.
 #
 
-RUBICON_VERSION = "V0.1.3"
+RUBICON_VERSION = "V0.1.4"
 
 
 #
@@ -292,16 +292,16 @@ module Rubicon
       @results[klass.name] = resultSet
     end
     
-    def report
-      puts
-      puts LINE
+    def reportOn(op)
+      op.puts
+      op.puts LINE
       title = "Test Results".center(LINE_LENGTH)
       title[0, @name.length] = @name
       title[-RUBICON_VERSION.length, RUBICON_VERSION.length] = RUBICON_VERSION
-      puts title
-      puts LINE
-      puts "            Name   OK?   Tests  Asserts      Failures   Errors"
-      puts Line
+      op.puts title
+      op.puts LINE
+      op.puts "            Name   OK?   Tests  Asserts      Failures   Errors"
+      op.puts Line
 
       total_classes = 0
       total_tests   = 0
@@ -325,89 +325,89 @@ module Rubicon
         total_errors  += res.error_size
         total_bad     += 1 unless res.succeed?
 
-        printf format,
+        op.printf format,
           name.sub(/^Test/, ''),
           res.succeed? ? "    " : "FAIL",
           res.run_tests, res.run_asserts, 
           fails.to_s, errors
       end
 
-      puts LINE
+      op.puts LINE
       if total_classes > 1
-        printf format, 
+        op.printf format, 
           sprintf("All %d files", total_classes),
           total_bad > 0 ? "FAIL" : "    ",
           total_tests, total_asserts,
           total_fails, total_errors
-        puts LINE
+        op.puts LINE
       end
 
       if total_fails > 0
-        puts
-        puts "Failure Report".center(LINE_LENGTH)
-        puts LINE
+        op.puts
+        op.puts "Failure Report".center(LINE_LENGTH)
+        op.puts LINE
         left = total_fails
 
         for name in names
           res = @results[name]
           if res.failure_size > 0
-            puts
-            puts name + ":"
-            puts "-" * name.length.succ
+            op.puts
+            op.puts name + ":"
+            op.puts "-" * name.length.succ
 
             res.failures.each do |f|
               f.at.each do |at|
                 break if at =~ /rubicon/
-                print "    ", at, "\n"
+                op.print "    ", at, "\n"
               end
               err = f.err.to_s
 
               if err =~ /expected:(.*)but was:(.*)/m
                 exp = $1.dump
                 was = $2.dump
-                print "    ....Expected: #{exp}\n"
-                print "    ....But was:  #{was}\n"
+                op.print "    ....Expected: #{exp}\n"
+                op.print "    ....But was:  #{was}\n"
               else
-                print "    ....#{err}\n"
+                op.print "    ....#{err}\n"
               end
             end
 
             left -= res.failure_size
-            puts
-            puts Line if left > 0
+            op.puts
+            op.puts Line if left > 0
           end
         end
-        puts LINE
+        op.puts LINE
       end
 
       if total_errors > 0
-        puts
-        puts "Error Report".center(LINE_LENGTH)
-        puts LINE
+        op.puts
+        op.puts "Error Report".center(LINE_LENGTH)
+        op.puts LINE
         left = total_errors
 
         for name in names
           res = @results[name]
           if res.error_size > 0
-            puts
-            puts name + ":"
-            puts "-" * name.length.succ
+            op.puts
+            op.puts name + ":"
+            op.puts "-" * name.length.succ
 
             res.errors.each do |f|
               f.at.each do |at|
                 break if at =~ /rubicon/
-                print "    ", at, "\n"
+                op.print "    ", at, "\n"
               end
               err = f.err.to_s
-              print "    ....#{err}\n"
+              op.print "    ....#{err}\n"
             end
 
             left -= res.error_size
-            puts
-            puts Line if left > 0
+            op.puts
+            op.puts Line if left > 0
           end
         end
-        puts LINE
+        op.puts LINE
       end
 
     end
@@ -443,7 +443,7 @@ module Rubicon
         @results.add(klass, runner.run(klass.suite))
       end
 
-      @results.report
+      @results.reportOn $stderr
     end
 
   end

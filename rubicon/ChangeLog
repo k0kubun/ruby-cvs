@@ -1,3 +1,17 @@
+2000-11-16  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestTime.rb: (test_isdst) Don't do isdst check unless in the US
+	(anyone got any ideas on how to test this globally)?
+
+2000-11-16  Yukihiro Matsumoto <matz@zetabits.com>
+
+	* builtin/TestThread.rb: (test_run) Fixed a timing problem.
+
+2000-10-28  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestObjectSpace.rb: (test_s_finalizers) Brian Feldman
+	added test.
+
 2000-10-23  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestKernel.rb (test_s_trap): Fix a race condition.
