@@ -33,7 +33,7 @@ release:	clean stamp tar
 stamp:
 		ruby -i -pe 'sub!(/V\d+(\.\d+)+/, "V$(VERSION)") if /VERSION =/' rubicon.rb
 		cvs commit
-		cvs rtag `echo V$(VERSION) | sed s/\\\\./_/` rubicon
+		cvs rtag `echo V$(VERSION) | sed s/\\\\./_/g` rubicon
 
 tar:
 		ln -fs rubicon ../rubicon-$(VERSION)
