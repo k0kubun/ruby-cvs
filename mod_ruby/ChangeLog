@@ -1,3 +1,20 @@
+Tue Feb 12 13:00:01 2002  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.7 released.
+
+Tue Feb 12 12:59:21 2002  Shugo Maeda <shugo@modruby.net>
+
+	* lib/aapche/ruby-run.rb (handler): return DECLINED for OPTIONS
+	requests.
+
+	* lib/aapche/eruby-run.rb (handler): ditto.
+
+	* lib/aapche/erb-run.rb (handler): ditto.
+
+	* lib/aapche/ruby-debug.rb (handler): ditto.
+
+	* lib/aapche/rd2html.rb (handler): ditto.
+
 Wed Jan 30 17:41:47 2002  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.6 released.

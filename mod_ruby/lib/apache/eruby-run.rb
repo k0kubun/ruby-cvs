@@ -61,6 +61,11 @@ module Apache
     include Singleton
 
     def handler(r)
+      if r.method_number == M_OPTIONS
+	r.allowed |= (1 << M_GET)
+	r.allowed |= (1 << M_POST)
+	return DECLINED
+      end
       if r.finfo.mode == 0
 	return NOT_FOUND
       end
