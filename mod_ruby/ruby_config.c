@@ -30,7 +30,7 @@
 #include "util_script.h"
 #include "multithread.h"
 
-#include "ruby_module.h"
+#include "mod_ruby.h"
 #include "ruby_config.h"
 
 #define MR_DEFAULT_TIMEOUT 299

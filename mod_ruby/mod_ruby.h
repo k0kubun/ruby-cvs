@@ -20,10 +20,10 @@
  * 02111-1307, USA
  */
 
-#ifndef RUBY_MODULE_H
-#define RUBY_MODULE_H
+#ifndef MOD_RUBY_H
+#define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.1.0"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.1.2"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
@@ -41,7 +41,7 @@ extern MODULE_VAR_EXPORT module ruby_module;
 int ruby_running();
 int ruby_require(char*);
 
-#endif /* !RUBY_MODULE_H */
+#endif /* !MOD_RUBY_H */
 
 /*
  * Local variables:

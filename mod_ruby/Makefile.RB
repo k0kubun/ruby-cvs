@@ -6,35 +6,6 @@ require "getoptlong"
 ENV["PATH"] += ":/sbin:/usr/sbin:/usr/local/sbin:\
 /usr/apache/bin:/usr/local/apache/bin"
 
-$USE_ERUBY = false
-$ERUBY_INCLUDEDIR = "../eruby"
-
-opts = GetoptLong.new(["--enable-eruby", GetoptLong::NO_ARGUMENT],
-		      ["--eruby-include-dir", GetoptLong::REQUIRED_ARGUMENT],
-		      ["--help", GetoptLong::NO_ARGUMENT],)
-begin
-  for name, arg in opts
-    case name
-    when "--enable-eruby"
-      $USE_ERUBY = true
-    when "--eruby-include-dir"
-      $ERUBY_INCLUDEDIR = arg
-    when "--help"
-      $stderr.print <<EOF
-Usage: #{$0} [options]
-Configuration:
-  --help			print this message
-
-  --enable-eruby		enable eruby
-  --eruby-include-dir=DIR	eruby in DIR
-EOF
-      exit 1
-    end
-  end
-rescue
-  exit 1
-end
-
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $LIBRUBYARG =~ /\.a$/
   $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
@@ -56,11 +27,8 @@ begin
 
 CC = #{CONFIG["CC"]}
 
-ERUBY_INCLUDEDIR = #{$ERUBY_INCLUDEDIR}
-LIBERUBY = #{ $USE_ERUBY ? "-leruby" : "" }
-
 CFLAGS = #{CONFIG["CCDLFLAGS"]} -I#{$hdrdir} -I#{$APACHE_INCLUDEDIR} \\
-	 #{$CFLAGS} #{ $USE_ERUBY ? "-I$(ERUBY_INCLUDEDIR) -DUSE_ERUBY" : "" }
+	 #{$CFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
 DLDFLAGS = #{CONFIG["DLDFLAGS"]}
 INSTALL = #{CONFIG["INSTALL"]}
@@ -68,8 +36,8 @@ INSTALL_DATA = #{CONFIG["INSTALL_DATA"]}
 
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 LIBRUBYARG = #$LIBRUBYARG
-OBJS = ruby_module.o ruby_config.o apachelib.o
-TARGET = mod_ruby.#{CONFIG["DLEXT"]}
+OBJS = mod_ruby.o ruby_config.o apachelib.o eruby.o
+TARGET = mod_ruby.so
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -86,11 +54,12 @@ distclean: clean
 	rm -f Makefile
 
 $(TARGET): $(OBJS)
-	$(LDSHARED) $(DLDFLAGS) -o $(TARGET) $(OBJS) $(LIBERUBY) $(LIBRUBYARG)
+	$(LDSHARED) $(DLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG)
 
-ruby_module.o: ruby_module.c ruby_module.h ruby_config.h apachelib.h
-ruby_config.o: ruby_config.c ruby_module.h ruby_config.h
+mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h eruby.h
+ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h
 apachelib.o: apachelib.c apachelib.h
+eruby.o: eruby.c eruby.h
 EOMF
 ensure
   mfile.close
