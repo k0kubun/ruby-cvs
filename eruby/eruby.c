@@ -134,7 +134,7 @@ int eruby_parse_options(int argc, char **argv)
 	    break;
 	}
 	s = argv[i];
-    again:
+      again:
 	while (isspace(*s))
 	    s++;
 	if (*s == '-') s++;
@@ -243,7 +243,7 @@ static int parse_embedded_program(FILE *in, FILE *out,
 	fputs("print((", out);
     for (;;) {
 	c = getc(in);
-    again:
+      again:
 	if (c == eruby_end_delimiter[0]) {
 	    c = getc(in);
 	    if (c == eruby_end_delimiter[1]) {
@@ -365,7 +365,7 @@ int eruby_compile(FILE *in, FILE *out)
 
     for (;;) {
 	c = getc(in);
-    again:
+      again:
 	if (c == eruby_begin_delimiter[0]) {
 	    c = getc(in);
 	    if (c == eruby_begin_delimiter[1]) {
@@ -451,7 +451,7 @@ int eruby_compile(FILE *in, FILE *out)
 	    }
 	}
     }
- end:
+  end:
     if (ferror(in))
 	return ERUBY_SYSTEM_ERROR;
     if (prevc != EOF) {
@@ -515,7 +515,7 @@ VALUE eruby_compile_file(char *filename)
 	if ((in = fopen(filename, "r")) == NULL)
 	    rb_sys_fail(filename);
     }
- retry:
+  retry:
     if ((tmp = eruby_mktemp(filename)) == NULL)
 	rb_fatal("can't mktemp");
     fd = open(tmp, O_CREAT | O_EXCL | O_WRONLY, 0600);
