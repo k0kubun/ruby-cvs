@@ -28,10 +28,14 @@ test:		$(UTILSTUFF)
 #    make VERSION=0.1 release
 #
 
-release:	clean
+release:	clean stamp tar
+
+stamp:
 		ruby -i -pe 'sub!(/V\d+(\.\d+)+/, "V$(VERSION)") if /VERSION =/' rubicon.rb
 		cvs commit
 		cvs rtag `echo V$(VERSION) | sed s/\\\\./_/` rubicon
+
+tar:
 		ln -fs rubicon ../rubicon-$(VERSION)
 		tar 	--directory=..			\
 			--create			\
@@ -47,3 +51,4 @@ clean:
 		rm -f $(UTILSTUFF)
 		rm -f rubicon*.tgz
 		find . -name \*~ -print | xargs rm -f
+		find . -name core -print | xargs rm -f

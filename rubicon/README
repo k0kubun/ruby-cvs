@@ -1,0 +1,106 @@
+This is 'rubicon', a test suite for Ruby and it's libraries.
+
+
+Warning:
+========
+
+This software is pre-alpha. It works on my box, and that's all I
+know ;-)  Be warning that you're entering the unknown here.
+
+
+Prerequisites:
+==============
+
+  1. These tests were written for Ruby 1.6 and later.
+
+  2. You'll need RubyUnit installed. You need 0.2.2 as a minimum.
+     RubyUnit is available from the RAA, or directly at
+
+         http://homepage1.nifty.com/markey/ruby/rubyunit/rubyunit_e.html
+
+  3. I suspect these tests will currently run only on Linux boxes (as
+     they rely on 'touch' being available).
+
+
+Installation:
+=============
+
+  You're done it. Simply untar the files into a convenient directory.
+
+
+Structure:
+==========
+
+   Eventually, rubicon will test all of Ruby: the core interpreter,
+   the libraries, and various add on modules.  For now, though, we
+   have tests for the built-in libraries, and stubs for the language
+   features. The tests for the builtins are in the subdirectory
+   'builtin', and those for the language are in 'language'. Over time, 
+   different directories will be added with additional sets of tests
+   (networking, for example).
+
+   In order to run the tests, we need a small amount of support code,
+   written in C. This is in the 'util' directory.
+
+Running:
+========
+
+   To run all the tests, simply issue:
+
+      make
+
+   at the top level.
+
+
+   To run all the builtin tests, cd to the 'builtin' directory and
+   issue:
+
+      ruby AllBuiltinTests.rb
+
+   To run the tests for a particular builtin class, go to the builtin
+   directory and issue:
+
+      ruby Test<classname>.rb
+
+   for example
+
+      ruby TestBignum.rb
+
+
+   To run an individual test for a particular class, put its name as a 
+   parameter
+
+       ruby TestBignum.rb test_OR
+
+
+Changing:
+=========
+
+    Feel free to add tests and strengthen existing ones. I'd
+    appreciate context diffs of the changes. All I'd ask is that you
+    not add any version of system specific stuff without dropping me a 
+    line first: I've got some ideas of how to integrate this cleanly
+    which I'd like to talk through with folks.
+
+
+
+Contacts:
+=========
+
+    Rubicon is available from
+
+       http://www.pragmaticprogrammer.com/ruby/downloads/rubicon
+
+    Drop me an e-mail at  dave@pragmaticprogrammer.com.
+
+
+
+Regards
+
+
+Dave Thomas & Andy Hunt
+The Pragmatic Programmers, LLC
+
+      
+
+  
