@@ -620,10 +620,10 @@ class TestIO < Rubicon::TestCase
   def test_pid
     assert_nil($stdin.pid)
     pipe = nil
-    Solaris.only do
+    Unix.or_variant do
       pipe = IO.popen("exec #$interpreter -e 'p $$'", "r")
     end
-    Solaris.dont do
+    Unix.dont do
       pipe = IO.popen("#$interpreter -e 'p $$'", "r")
     end
 

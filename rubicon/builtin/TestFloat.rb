@@ -58,7 +58,7 @@ class TestFloat < Rubicon::TestCase
 
   def test_nan?
     a = 1.0/0.0
-    b = Math::log(-1.0)
+    b = 0.0/0.0
     assert(!a.nan?)
     assert(b.nan?)
     assert(!99.0.nan?)
@@ -75,7 +75,7 @@ class TestFloat < Rubicon::TestCase
 
   def test_finite?
     a = 1.0/0.0
-    b = Math::log(-1.0)
+    b = 0.0/0.0
     assert(!a.finite?)
     assert(!b.finite?)
     assert(99.0.finite?)
@@ -277,7 +277,7 @@ class TestFloat < Rubicon::TestCase
   def test_to_s
     assert_equal("Infinity",   (1.0/0.0).to_s)
     assert_equal("-Infinity",  (-1.0/0.0).to_s)
-    assert_equal("NaN",        (Math::log(-1)).to_s)
+    assert_equal("NaN",        (0.0/0.0).to_s)
 
     assert_equal("1.23456",    1.23456.to_s)
     assert_equal("-1.23456",  -1.23456.to_s)

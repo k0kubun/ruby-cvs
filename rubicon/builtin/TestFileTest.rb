@@ -35,7 +35,7 @@ class TestFileTest < FileInfoTest
 
   def test_test
     fileg = "_test/_fileg"
-    File.open(fileg, File::CREAT, 02644) { }
+    File.open(fileg, File::CREAT, 02755) { }
     
     filek = "_test/_filek"
     Dir.mkdir(filek, 01644)
@@ -92,7 +92,6 @@ class TestFileTest < FileInfoTest
         [ :file?,       ?f,    @file1,              true  ],
         [ :setgid?,     ?g,    @file1,              false ],
         [ :symlink?,    ?l,    ".",                 false ],
-        [ :symlink?,    ?l,    "/dev/tty",          false ],
         [ :symlink?,    ?l,    @file1,              false ],
         [ nil,          ?M,    @file1,              mtime ],
         [ :owned?,      ?o,    @file1,              true  ],
@@ -108,6 +107,10 @@ class TestFileTest < FileInfoTest
         [ :zero?,       ?z,    filez,               false ],
         [ :zero?,       ?z,    @file2,              true  ],
       ]
+
+      Solaris.dont do
+        tests << [ :symlink?,    ?l,    "/dev/tty",          false ]
+      end
 
       Windows.dont do
         tests << [ :pipe?,       ?p,    filep,               true  ]

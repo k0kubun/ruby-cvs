@@ -1,3 +1,21 @@
+2002-09-28  Tanaka Akira  <akr@m17n.org>
+
+	* rubicon.rb: recognize HP-UX to treat it as an Unix variant.
+
+	* builtin/TestIO.rb (test_pid): Use `exec' trick for all Unix
+	variants.
+
+	* builtin/TestFileTest.rb (TestFileTest::test_test): Use 02755 instead
+	of 02644 for setgid bit because setgid bit without execution bit means
+	mandatory locking for Solaris and it fails on NFS.
+	(TestFileTest::test_test): /dev/tty is symlink on Solaris.
+
+	* builtin/TestFloat.rb: Use 0.0/0.0 instead of Math::log(-1.0) to
+	generate NaN because Math::log(-1.0) returns -Infinity instead of NaN
+	on Solaris.
+
+	* builtin/TestThreadGroup.rb (test_list): Avoid deadlock.
+
 2002-09-22  Nobuyoshi Nakada  <nobu.nokada@softhome.net>
 
 	* builtin/TestThread.rb (TestThread::test_abort_on_exception): get

@@ -63,6 +63,7 @@ class Linux   < Unix;    end
 class BSD     < Unix;    end
 class FreeBSD < BSD;     end
 class Solaris < Unix;    end
+class HPUX    < Unix;    end
 
 class JRuby   < OS;      end
 
@@ -77,6 +78,7 @@ $os = case RUBY_PLATFORM
       when /linux/   then  Linux
       when /bsd/     then BSD
       when /solaris/ then Solaris
+      when /hpux/    then HPUX
       when /cygwin/  then Cygwin
       when /mswin32/ then MsWin32
       when /mingw32/ then MinGW
