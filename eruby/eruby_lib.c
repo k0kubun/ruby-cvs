@@ -660,15 +660,31 @@ static VALUE eruby_set_charset(VALUE self, VALUE val)
     return val;
 }
 
+static VALUE eruby_get_default_charset(VALUE self)
+{
+    return eruby_default_charset;
+}
+
+static VALUE eruby_set_default_charset(VALUE self, VALUE val)
+{
+    Check_Type(val, T_STRING);
+    eruby_default_charset = val;
+    return val;
+}
+
 void eruby_init()
 {
     rb_define_virtual_variable("$NOHEADER", noheader_getter, noheader_setter);
 
     mERuby = rb_define_module("ERuby");
-    rb_define_module_function(mERuby, "noheader", eruby_get_noheader, 0);
-    rb_define_module_function(mERuby, "noheader=", eruby_set_noheader, 1);
-    rb_define_module_function(mERuby, "charset", eruby_get_charset, 0);
-    rb_define_module_function(mERuby, "charset=", eruby_set_charset, 1);
+    rb_define_singleton_method(mERuby, "noheader", eruby_get_noheader, 0);
+    rb_define_singleton_method(mERuby, "noheader=", eruby_set_noheader, 1);
+    rb_define_singleton_method(mERuby, "charset", eruby_get_charset, 0);
+    rb_define_singleton_method(mERuby, "charset=", eruby_set_charset, 1);
+    rb_define_singleton_method(mERuby, "default_charset",
+			       eruby_get_default_charset, 0);
+    rb_define_singleton_method(mERuby, "default_charset=",
+			       eruby_set_default_charset, 1);
 
     cERubyCompiler = rb_define_class_under(mERuby, "Compiler", rb_cObject);
     rb_define_singleton_method(cERubyCompiler, "new", eruby_compiler_s_new, 0);
