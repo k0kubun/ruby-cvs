@@ -31,7 +31,7 @@ extern VALUE rb_defout;
 #define TAG_FATAL	0x8
 #define TAG_MASK	0xf
 
-#define ERUBY_VERSION "0.0.4"
+#define ERUBY_VERSION "0.0.7"
 
 #define MODE_UNKNOWN    1
 #define MODE_FILTER     2

@@ -51,7 +51,7 @@ static int parse_embedded_program(FILE *in, FILE *out,
 		    fputs(")); ", out);
 		else if (type == EMBEDDED_STMT && prevc != '\n')
 		    fputs("; ", out);
-		return 0;
+		return ERUBY_OK;
 	    }
 	    else if (c == EOF) {
 		if (ferror(in))
@@ -103,7 +103,7 @@ static int parse_embedded_line(FILE *in, FILE *out)
 		return ERUBY_MISSING_END_DELIMITER;
 	case '\n':
 	    putc(c, out);
-	    return 0;
+	    return ERUBY_OK;
 	    break;
 	default:
 	    putc(c, out);
@@ -153,17 +153,15 @@ int eruby_compile(FILE *in, FILE *out)
 			fputs("\"; ", out);
 		    if (c == eruby_comment_char) {
 			err = parse_embedded_program(in, out, EMBEDDED_COMMENT);
-			if (err) return err;
 		    }
 		    else if (c == eruby_expr_char) {
 			err = parse_embedded_program(in, out, EMBEDDED_EXPR);
-			if (err) return err;
 		    }
 		    else {
 			if (ungetc(c, in) == EOF)
 			    return ERUBY_SYSTEM_ERROR;
+			err = parse_embedded_program(in, out, EMBEDDED_STMT);
 		    }
-		    err = parse_embedded_program(in, out, EMBEDDED_STMT);
 		    if (err) return err;
 		    prevc = EOP;
 		}
