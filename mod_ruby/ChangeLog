@@ -1,3 +1,7 @@
+Fri Aug 24 11:24:38 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.3 released.
+
 Fri Aug 24 11:20:56 2001  Shugo Maeda <shugo@modruby.net>
 
 	* lib/apache/eruby-run.rb (postrun): do not overwrite r.content_type.

@@ -30,7 +30,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.2"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.3"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
