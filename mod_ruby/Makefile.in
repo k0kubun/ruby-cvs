@@ -13,6 +13,7 @@ DESTDIR =
 prefix = $(DESTDIR)@prefix@
 exec_prefix = @exec_prefix@
 bindir = @bindir@
+datadir = @datadir@
 libdir = @libdir@
 rubylibdir = @rubylibdir@
 archdir = @archdir@

@@ -1,3 +1,9 @@
+Tue May  7 14:27:27 2002  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.in: added datadir.
+
+	* configure.rb: added datadir support.
+
 Tue May  7 13:48:50 2002  Sean Chittenden <sean@chittenden.org>
 
 	* request.c (request_remote_host): takes an optional argument.

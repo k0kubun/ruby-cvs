@@ -209,6 +209,7 @@ $drive = CONFIG["prefix"] =~ drive ? $& : ''
 $prefix = CONFIG["prefix"].sub(drive, '')
 $exec_prefix = "$(prefix)"
 $bindir = CONFIG["bindir"].sub(prefix, "$(exec_prefix)").sub(drive, '')
+$datadir = CONFIG["datadir"].sub(prefix, "$(prefix)").sub(drive, '')
 $libdir = CONFIG["libdir"].sub(prefix, "$(exec_prefix)").sub(drive, '')
 $archdir = $archdir.sub(prefix, "$(prefix)").sub(drive, '')
 $sitelibdir = $sitelibdir.sub(prefix, "$(prefix)").sub(drive, '')
@@ -232,6 +233,8 @@ for option in ARGV
     $exec_prefix = optarg
   when /^--bindir/
     $bindir = optarg
+  when /^--datadir/
+    $datadir = optarg
   when /^--libdir/
     $libdir = optarg
   when /^--includedir/
@@ -264,6 +267,8 @@ Directory and file names:
   --bindir=DIR            user executables in DIR [EPREFIX/bin]
   --libdir=DIR            object code libraries in DIR [EPREFIX/lib]
   --includedir=DIR        C header files in DIR [PREFIX/include]
+  --datadir=DIR           read-only architecture-independent data in DIR
+                          [PREFIX/share]
   --mandir=DIR            manual pages in DIR [PREFIX/man]
 EOF
     if $ac_help.length > 0
@@ -342,6 +347,7 @@ AC_SUBST("drive")
 AC_SUBST("prefix")
 AC_SUBST("exec_prefix")
 AC_SUBST("bindir")
+AC_SUBST("datadir")
 AC_SUBST("libdir")
 AC_SUBST("rubylibdir")
 AC_SUBST("archdir")

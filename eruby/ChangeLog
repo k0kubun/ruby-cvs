@@ -1,3 +1,9 @@
+Tue May  7 14:25:39 2002  Shugo Maeda  <shugo@modruby.net>
+
+	* Makefile.in: added datadir.
+
+	* configure.rb: added datadir support.
+
 Fri Apr 19 17:29:54 2002  Shugo Maeda  <shugo@modruby.net>
 
 	* version 0.9.8 released.
