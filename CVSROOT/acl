@@ -63,6 +63,7 @@ group:hybris:matju
 group:csv:nahi
 group:devel-logger:nahi
 group:soap4r:nahi
+group:snmp:sean
 
 group:www:@all
 
@@ -114,6 +115,7 @@ grant:@hybris:lib/hybris
 grant:@csv:lib/csv
 grant:@devel-logger:lib/devel-logger
 grant:@soap4r:lib/soap4r
+grant:@snmp:lib/snmp
 
 grant:@www:www
 
