@@ -3,6 +3,10 @@ require '../rubicon'
 
 class TestFixnum < Rubicon::TestCase
 
+  # assumes 8 bit byte, 1 bit flag, and 2's comp
+  MAX = 2**(1.size*8 - 2) - 1
+  MIN = -MAX - 1
+
   def test_UMINUS
     [ -99, -1, 0, +1 , +99].each { |n| assert_equal(0, -n + n) }
   end
@@ -16,39 +20,116 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_AREF # '[]'
-    assert_fail("untested")
+    checkBits([], 0)
+    checkBits([15, 11, 7, 3], 0x8888)
+    checkBits((0..(1.size*8-1)).to_a, -1)
   end
 
   def test_CMP # '<=>'
-    assert_fail("untested")
+    assert_equal(0, MAX <=> MAX)
+    assert_equal(0, MIN <=> MIN)
+    assert_equal(0, 1   <=> 1)
+
+    assert_equal(1, MAX <=> MIN)
+    assert_equal(1, MAX <=> 0)
+    assert_equal(1, MAX <=> 1)
+
+    assert_equal(-1, MIN <=> MAX)
+    assert_equal(-1, MIN <=> 0)
+    assert_equal(-1, MIN <=> 1)
   end
 
   def test_DIV # '/'
-    assert_fail("untested")
+    assert_equal(2, 6 / 3)
+    assert_equal(2, 7 / 3)
+    assert_equal(2, 8 / 3)
+    assert_equal(3, 9 / 3)
+
+    assert_equal(2, -6 / -3)
+    assert_equal(2, -7 / -3)
+    assert_equal(2, -8 / -3)
+    assert_equal(3, -9 / -3)
+
+    assert_equal(-2, -6 / 3)
+    assert_equal(-2, -7 / 3)
+    assert_equal(-2, -8 / 3)
+    assert_equal(-3, -9 / 3)
+    
+    assert_equal(-2, 6 / -3)
+    assert_equal(-2, 7 / -3)
+    assert_equal(-2, 8 / -3)
+    assert_equal(-3, 9 / -3)
+    
+    assert_equal(-1, MIN / MAX)
+    assert_equal(0,  MAX / MIN)
   end
 
   def test_EQUAL # '=='
-    assert_fail("untested")
+    assert(0 == 0)
+    assert(MIN == MIN)
+    assert(MAX == MAX)
+    assert(!(MIN == MAX))
+    assert(!(1 == 0))
   end
 
   def test_GE # '>='
-    assert_fail("untested")
+    assert(0 >= 0)
+    assert(1 >= 0)
+    assert(MAX >= 0)
+    assert(0 >= MIN)
+
+    assert(!(0 >= 1))
+    assert(!(0 >= MAX))
+    assert(!(MIN >= 0))
   end
 
   def test_GT # '>'
-    assert_fail("untested")
+    assert(1 > 0)
+    assert(MAX > 0)
+    assert(0 > MIN)
+
+    assert(!(0 > 0))
+    assert(!(0 > 1))
+    assert(!(0 > MAX))
+    assert(!(MIN > 0))
   end
 
   def test_LE # '<='
-    assert_fail("untested")
+    assert(0 <= 0)
+    assert(0 <= 1)
+    assert(0 <= MAX)
+    assert(MIN <= 0)
+
+    assert(!(1 <= 0))
+    assert(!(MAX <= 0))
+    assert(!(0 <= MIN))
   end
 
   def test_LSHIFT # '<<'
-    assert_fail("untested")
+    assert_equal(0, 0 << 1)
+    assert_equal(2, 1 << 1)
+    assert_equal(8, 1 << 3)
+    assert_equal(2**20, 1 << 20)
+
+    assert_equal(-2, (-1) << 1)
+    assert_equal(-8, (-1) << 3)
+
+    a = 1 << (1.size*8 - 2)
+    assert_instance_of(a, Bignum)
+
+    a = (-1) << (1.size*8 - 1)
+    assert_instance_of(a, Bignum)
   end
 
   def test_LT # '<'
-    assert_fail("untested")
+    assert(0 < 1)
+    assert(0 < MAX)
+    assert(MIN < 0)
+
+    assert(!(0 < 0))
+    assert(!(1 < 0))
+    assert(!(MAX < 0))
+    assert(!(0 < MIN))
   end
 
   def test_MINUS # '-'
