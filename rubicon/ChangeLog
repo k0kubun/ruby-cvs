@@ -1,10 +1,10 @@
-2001-11-27    <chad fowler@CI29636-B>
+2001-11-27  ChangeLog  <chadfowler@chadfowler.com>
+
+	* builtin/TestFile.rb: Guarded known Win32 problems that were previously exposed during Cygwin testing.
 
 	* builtin/TestFile.rb: Windows doesn't like pre-18000-second dates on its files.  Changed the tests to accomodate.
 
 	* builtin/TestFloat.rb: fixed tests to work on Win32.
-
-2001-11-27    <chadfowler@chadfowler.com>
 
 	* builtin/TestTime.rb: Win32 fixes for asctime and ctime.
 

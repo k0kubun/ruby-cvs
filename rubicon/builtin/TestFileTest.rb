@@ -155,7 +155,7 @@ class TestFileTest < FileInfoTest
         end
       end
 
-      Cygwin.known_problem do
+      Windows.known_problem do
           assert_equal(Process.euid == 0, test(?w, filew), "test(?#{t.chr}, #{filew})")
           assert_equal(Process.euid == 0, FileTest.send(:writable?, filew),
                        "FileTest.writable?(#{filew})")
