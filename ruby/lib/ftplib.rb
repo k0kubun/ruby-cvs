@@ -1,7 +1,7 @@
 ## ftplib.rb
 
-# Author: Shugo Maeda <shugo@po.aianet.ne.jp>
-# Version: $Revision$
+# Author: Shugo Maeda <shugo@netlab.co.jp>
+# Version: 1.7.1
 
 ## Code:
 
@@ -15,9 +15,6 @@ class FTPPermError < FTPError; end
 class FTPProtoError < FTPError; end
 
 class FTP
-  
-  RCS_ID = %q$Id$ 
-  
   include MonitorMixin
   
   FTP_PORT = 21
@@ -311,7 +308,7 @@ class FTP
 	buf = file.gets
 	break if buf == nil
 	if buf[-2, 2] != CRLF
-	  buf = buf.chop + CRLF
+	  buf = buf.chomp + CRLF
 	end
 	conn.write(buf)
 	callback.call(buf) if use_callback
