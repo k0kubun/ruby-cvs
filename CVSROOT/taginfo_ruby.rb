@@ -13,7 +13,7 @@
 # ARG6 : revision1
 # ..
 #
-# $devId: taginfo.rb,v 1.3 2001/01/31 14:58:24 knu Exp $
+# $devId: taginfo.rb,v 1.5 2001/02/03 15:53:30 knu Exp $
 # $Id$
 #
 
@@ -29,7 +29,7 @@ $modulepath.tr_s!('/', '/')
 
 $modulename = $modulepath.sub(/^#{Regexp.quote($cvsroot)}/, '')
 
-$aclfile = "#{$cvsroot}/acl"
+$aclfile = "#{$cvsroot}/CVSROOT/acl"
 
 require "socket"
 $hostname = Socket.gethostbyname(Socket.gethostname)[0]
