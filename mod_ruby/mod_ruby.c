@@ -331,6 +331,7 @@ static void mod_ruby_clearenv()
 
     FreeEnvironmentStrings(orgp);
 #else
+#ifndef __CYGWIN__
     if (environ == origenviron) {
 	environ = ALLOC_N(char*, 1);
     }
@@ -343,6 +344,7 @@ static void mod_ruby_clearenv()
 	REALLOC_N(environ, char*, 1);
     }
     *environ = NULL;
+#endif
 #endif
 }
 
@@ -646,13 +648,13 @@ static int run_safely(int safe_level, int timeout,
     rsarg.timeout = timeout;
     rsarg.func = func;
     rsarg.arg = arg;
-#if defined(HAVE_SETITIMER)
+#if defined(HAVE_SETITIMER) && !defined(__CYGWIN__)
     rb_thread_start_timer();
 #endif
     thread = rb_thread_create(run_safely_0, &rsarg);
     ret = protect_funcall(thread, rb_intern("value"), &state, 0);
     rb_protect(kill_threads, Qnil, NULL);
-#if defined(HAVE_SETITIMER)
+#if defined(HAVE_SETITIMER) && !defined(__CYGWIN__)
     rb_thread_stop_timer();
 #endif
     if (retval)

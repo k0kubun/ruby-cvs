@@ -1,3 +1,9 @@
+Mon May 28 17:34:39 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c: hack for cygwin.
+
+	* configure.rb.in: ditto.
+
 Mon May 28 11:35:46 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (ruby_startup): don't initialize ruby if
