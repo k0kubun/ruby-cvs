@@ -48,12 +48,12 @@ class TestClass < Rubicon::TestCase
 
   def test_s_new
     c = Class.new
-    assert(Class, c.type)
-    assert(Object, c.superclass)
+    assert_same(Class, c.type)
+    assert_same(Object, c.superclass)
 
     c = Class.new(Fixnum)
-    assert(Class, c.type)
-    assert(Fixnum, c.superclass)
+    assert_same(Class, c.type)
+    assert_same(Fixnum, c.superclass)
   end
 
   def test_00_new_basic

@@ -1,3 +1,8 @@
+2001-11-04  Masaki Suketa <masaki.suketa@nifty.ne.jp>
+
+	* StringBase, TestClass, TestFile, TestMath: found various tests
+	which used assert(....) instead of asert_equal etc...
+
 2001-11-02    <dave@pragmaticprogrammer.com>
 
 	* Various: Start getting tests to run under MsWin32. Add

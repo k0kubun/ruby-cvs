@@ -4,8 +4,6 @@ require 'rubicon'
 
 class TestObjectSpace < Rubicon::TestCase
 
-  WORKED = "It Worked!\n"
-
   def test_s__id2ref
     s = "hello"
     t = ObjectSpace._id2ref(s.id)
@@ -20,16 +18,11 @@ class TestObjectSpace < Rubicon::TestCase
     begin
       tf.puts %{
 	a = "string"
-	ObjectSpace.define_finalizer(a) { puts(WORKED) }
-	a = "another string"
-	GC.start
-	exit}
+	ObjectSpace.define_finalizer(a) { puts "OK" }
+      }
       tf.close
-      p = IO.popen("#$interpreter #{tf.path}")
-      begin
-	assert_equal(WORKED, p.gets)
-      ensure
-	p.close
+      IO.popen("#$interpreter #{tf.path}") do |p|
+	assert_equal("OK", p.gets.chomp)
       end
     ensure
       tf.close(true)

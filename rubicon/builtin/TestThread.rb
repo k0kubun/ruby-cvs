@@ -87,38 +87,29 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_abort_on_exception=()
-    tf = Tempfile.new("tf")
-    begin
-      tf.puts %{
-	$stderr.close # Don't want to see the mess.
-	t = Thread.new {
-	  Thread.current.abort_on_exception = true
-	  raise "Error"
-	}
-	t.join
-	sleep 5
-	exit 1}
-      tf.close
-      IO.popen("#$interpreter #{tf.path}").close
-      assert_equal(0, $?) # Relies on abort doing exit(0)
+    save_stderr = nil
 
-      tf.open
-      tf.puts %{
-	$stderr.puts "start"
-	Thread.current.abort_on_exception = false
-	t = Thread.new {
-	  $stderr.puts "Raising"
-	  raise "Error"
-	}
-	$stderr.puts "sleeping"
-	sleep .5
-	$stderr.puts "exiting"
-	exit 1}
-      tf.close
-      IO.popen("#$interpreter #{tf.path}").close
-      assert_equal(1, $?)
+    begin
+      Thread.new do
+	raise "boom"
+      end
+      assert(true)
+    rescue Exception
+      fail("Thread exception propogated to main thread")
+    end
+
+    begin
+      Thread.new do
+	Thread.current.abort_on_exception = true
+	save_stderr = $stderr
+	$stderr = nil
+	raise "boom"
+      end
+      fail("Exception should have interrupted main thread")
+    rescue Exception
+      assert(true)
     ensure
-      tf.close(true)
+      $stderr = save_stderr
     end
   end
 
@@ -147,36 +138,33 @@ class TestThread < Rubicon::TestCase
     assert_equals(false,t.alive?)
   end
 
-  def try_join(dojoin=false)
-    a = []
-    t = []
-    10.times {|i|
-      t[i] = Thread.new { 
-        10.times {|j|
-          a << "#{i}-#{j}"
-          sleep .01
-        }
-      }
-    }
-    if (dojoin)
-      10.times {|i| t[i].join }
-    end
-    a.length
-  end
-
   def test_join
-
-    result = runChild do
-      exit try_join
+    sum = 0
+    t = Thread.new do
+      5.times { sum += 1; sleep .1 }
     end
-    assert(result != 100)
+    assert(sum != 5)
+    t.join
+    assert_equal(5, sum)
 
-    result = runChild do
-      exit try_join(true)
+    sum = 0
+    t = Thread.new do
+      5.times { sum += 1; sleep .1 }
     end
-    assert_equals(100, result)
+    t.join
+    assert_equal(5, sum)
 
+    # if you join a thread, it's exceptions become ours
+    t = Thread.new do
+      Thread.pass
+      raise "boom"
+    end
 
+    begin
+      t.join
+    rescue Exception => e
+      assert_equals("boom", e.message)
+    end
   end
 
   def test_key?
@@ -209,9 +197,10 @@ class TestThread < Rubicon::TestCase
     b = Thread.new { Thread.stop; loop { c2 += 1 }}
     a.priority = -2
     b.priority = -1
+    1 until a.stop? and b.stop?
     a.wakeup
     b.wakeup
-    10000.times { Thread.pass}
+    sleep 1
     Thread.critical = true
     begin
       assert (c2 > c1)
@@ -221,6 +210,7 @@ class TestThread < Rubicon::TestCase
       b.priority = -2
       Thread.critical = false
       sleep 1 
+      Thread.critical = true
       assert (c1 > c2)
       a.kill
       b.kill
@@ -230,7 +220,6 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_raise
-    puts Thread.list
     madeit = false
     t = nil
 
@@ -277,14 +266,21 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_safe_level
-    result = runChild do
-      $stderr.close
-      exit 1 if 0 != Thread.current.safe_level
+    t = Thread.new do
+      assert_equals(0, Thread.current.safe_level)
       $SAFE=1
-      exit 1 if 1 != Thread.current.safe_level
-      exit 0
+      assert_equals(1, Thread.current.safe_level)
+      $SAFE=2
+      assert_equals(2, Thread.current.safe_level)
+      $SAFE=3
+      assert_equals(3, Thread.current.safe_level)
+      $SAFE=4
+      assert_equals(4, Thread.current.safe_level)
+      Thread.pass
     end
-    assert_equals(0, result)
+    assert_equals(0, Thread.current.safe_level)
+    assert_equals(4, t.safe_level)
+    t.kill
   end
 
   def test_status
@@ -354,19 +350,31 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_s_abort_on_exception=
-    result = runChild do
+    save_stderr = nil
+
+    begin
       Thread.new do
-        $stderr.close # Don't want to see the mess.
-        Thread.abort_on_exception = true
-        thread_control do
-          Thread.new { _signal; raise "Error" }
-          _wait
-        end
+	raise "boom"
       end
-      sleep 5
-      exit 1
+      assert(true)
+    rescue Exception
+      fail("Thread exception propagated to main thread")
     end
-    assert_equal(0, result) # Relies on abort doing exit(0)
+
+    begin
+      Thread.abort_on_exception = true
+      Thread.new do
+	save_stderr = $stderr
+	$stderr = nil
+	raise "boom"
+      end
+      fail("Exception should have interrupted main thread")
+    rescue Exception
+      assert(true)
+    ensure
+      Thread.abort_on_exception = false
+      $stderr = save_stderr
+    end
   end
 
   def test_s_critical
@@ -391,11 +399,7 @@ class TestThread < Rubicon::TestCase
     assert_equal(saved, count)
 
     Thread.critical = false
-    p saved
-    p count
     100000.times { |i| Math.sin(i) ** Math.tan(i/2) }
-    p saved
-    p count
     assert(saved != count)
   end
 
@@ -413,11 +417,10 @@ class TestThread < Rubicon::TestCase
     t.join
     assert_equals(t, t.exit)
     assert_equals(false, t.alive?)
-    result = runChild do
-      Thread.exit
-      exit(1)
+    IO.popen("#$interpreter -e 'Thread.exit; puts 123'") do |p|
+      assert_nil(p.gets)
     end
-    assert_equals(0,result)
+    assert_equals(0, $?)
   end
 
   def test_s_fork

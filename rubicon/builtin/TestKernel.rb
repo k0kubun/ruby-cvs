@@ -743,23 +743,29 @@ class TestKernel < Rubicon::TestCase
 
   def test_s_exec
     open("xyzzy.dat", "w") { |f| f.puts "stuff" }
-    int1 = $interpreter.gsub(/\\/) { $& + $& }
+    tf = Tempfile.new("tf")
     begin
-      # With separate parameters, don't do expansion
-      str = %{#$interpreter -e 'exec("echo", "xy*y.dat")'}
-      IO.popen(str) do |p|
-	assert_equal("xy*y.dat", p.gets.chomp)
+
+      # all in one string - wildcards get expanded
+      tf.puts 'exec("echo xy*y.dat")'
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |p|
+        assert_equal("xyzzy.dat\n", p.gets)
       end
 
-      # all in one line, do expansion
-      str = %{#$interpreter -e 'exec("echo xy*y.dat")'}
-      IO.popen(str) do |p|
-	assert_equal("xyzzy.dat", p.gets.chomp)
+      # with two parameters, the '*' doesn't get expanded
+      tf.open
+      tf.puts 'exec("echo", "xy*y.dat")'
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |p|
+        assert_equal("xy*y.dat\n", p.gets)
       end
-      
+
     ensure
+      tf.close(true)
       File.unlink "xyzzy.dat" if p
     end
+
   end
 
   def test_s_exit
@@ -1985,22 +1991,26 @@ class TestKernel < Rubicon::TestCase
 
   def test_s_system
     open("xyzzy.dat", "w") { |f| f.puts "stuff" }
+    tf = Tempfile.new("tf")
     begin
-      p = IO.popen(%{#$interpreter -e 'system("echo xy*y.dat")'})
-      begin
-	assert_equal("xyzzy.dat\n", p.gets)
-      ensure
-	p.close
+
+      # all in one string - wildcards get expanded
+      tf.puts 'system("echo xy*y.dat")'
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |p|
+        assert_equal("xyzzy.dat\n", p.gets)
       end
 
-      # With separate parameters, don't do expansion
-      p = IO.popen(%{#$interpreter -e 'system("echo", "xy*y.dat")'})
-      begin
-	assert_equal("xyzzy.dat\n", p.gets)
-      ensure
-	p.close
+      # with two parameters, the '*' doesn't get expanded
+      tf.open
+      tf.puts 'system("echo", "xy*y.dat")'
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |p|
+        assert_equal("xy*y.dat\n", p.gets)
       end
+
     ensure
+      tf.close(true)
       File.unlink "xyzzy.dat" if p
     end
   end
@@ -2029,6 +2039,9 @@ class TestKernel < Rubicon::TestCase
 
   def test_s_trap
 
+    res = nil
+    lastProc = proc { res = 1 }
+
     # 1. Check that an exception is thrown if we wait for a child and
     # there is no child.
 
@@ -2047,8 +2060,6 @@ class TestKernel < Rubicon::TestCase
     # terminates
 
     MsWin32.dont do
-      res = nil
-      lastProc = proc { res = 1 }
       trap("SIGCHLD", lastProc)
       fork { ; }
       Process.wait

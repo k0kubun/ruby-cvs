@@ -143,22 +143,22 @@ class StringBase < Rubicon::TestCase
   end
 
   def test_CMP # '<=>'
-    assert(1, S("abcdef") <=> S("abcde"))
-    assert(0, S("abcdef") <=> S("abcdef"))
-    assert(-1, S("abcde") <=> S("abcdef"))
+    assert_equal(1, S("abcdef") <=> S("abcde"))
+    assert_equal(0, S("abcdef") <=> S("abcdef"))
+    assert_equal(-1, S("abcde") <=> S("abcdef"))
 
-    assert(1, S("ABCDEF") <=> S("abcdef"))
+    assert_equal(-1, S("ABCDEF") <=> S("abcdef"))
 
     pre_1_7_1 do
       $= = true
-      assert(0, S("ABCDEF") <=> S("abcdef"))
+      assert_equal(0, S("ABCDEF") <=> S("abcdef"))
       $= = false
     end
   end
 
   def test_EQUAL # '=='
     assert_equal(false, S("foo") == :foo)
-    assert(0, S("abcdef") == S("abcdef"))
+    assert(S("abcdef") == S("abcdef"))
 
     pre_1_7_1 do
       $= = true

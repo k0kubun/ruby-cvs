@@ -321,9 +321,9 @@ class TestFile < Rubicon::TestCase
     assert(File.exists?(filen))
     File.delete(filen)
     
-    File.open(filen, "w", 0444) {}
+    File.open(filen, File::CREAT, 0444) {}
     assert(File.exists?(filen))
-    assert(0444, File.stat(filen).mode)
+    assert_equal(0444, File.stat(filen).mode & 0777)
     File.delete(filen)
   end
 

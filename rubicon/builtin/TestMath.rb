@@ -116,7 +116,7 @@ class TestMath < Rubicon::TestCase
 
     # and some special cases
     assert_equal(-1, Math.log(0).infinite?)
-    assert(-1, Math.log10(0).infinite?)
+    assert_equal(-1, Math.log10(0).infinite?)
     assert_exception(ArgumentError) { Math.sqrt(-1) }
   end
 end
