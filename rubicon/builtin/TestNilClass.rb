@@ -4,41 +4,42 @@ require '../rubicon'
 class TestNilClass < Rubicon::TestCase
 
   def test_AND # '&'
-    assert_fail("untested")
+    truth_table(nil.method("&"), false, false)
+  end
+
+  def sideEffect
+    $global = 1
   end
 
   def test_OR # '|'
-    assert_fail("untested")
+    truth_table(nil.method("|"), false, true)
+    $global = 0
+    assert_equal(true,  nil | sideEffect)
+    assert_equal(1, $global)
   end
 
   def test_XOR # '^'
-    assert_fail("untested")
-  end
-
-  def test_inspect
-    assert_fail("untested")
+    truth_table(nil.method("^"), false, true)
+    $global = 0
+    assert_equal(true,  nil ^ sideEffect)
+    assert_equal(1, $global)
   end
 
   def test_nil?
-    assert_fail("untested")
+    assert(nil.nil?)
   end
 
   def test_to_a
-    assert_fail("untested")
+    assert_equal([], nil.to_a)
   end
 
   def test_to_i
-    assert_fail("untested")
+    assert_equal(0, nil.to_i)
   end
 
   def test_to_s
-    assert_fail("untested")
+    assert_equal("", nil.to_s)
   end
-
-  def test_type
-    assert_fail("untested")
-  end
-
 end
 
 Rubicon::handleTests(TestNilClass) if $0 == __FILE__
