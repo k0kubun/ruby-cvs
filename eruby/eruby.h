@@ -15,6 +15,8 @@ enum eruby_compile_status {
 };
 
 extern int eruby_noheader;
+extern VALUE eruby_charset;
+#define ERUBY_CHARSET RSTRING(eruby_charset)->ptr
 
 int eruby_compile(FILE *in, FILE *out);
 VALUE eruby_compile_file(char *filename);

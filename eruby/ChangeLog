@@ -1,3 +1,13 @@
+Thu May 18 17:07:56 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.8 released.
+
+Thu May 18 17:05:31 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby.c (eruby_init): new module ERuby.
+
+	* Makefile.RB: added --default-charset option.
+
 Wed Apr  5 17:08:26 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.0.7 released.

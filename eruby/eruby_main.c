@@ -31,7 +31,7 @@ extern VALUE rb_defout;
 #define TAG_FATAL	0x8
 #define TAG_MASK	0xf
 
-#define ERUBY_VERSION "0.0.7"
+#define ERUBY_VERSION "0.0.8"
 
 #define MODE_UNKNOWN    1
 #define MODE_FILTER     2
@@ -40,21 +40,6 @@ extern VALUE rb_defout;
 
 static char *eruby_filename = NULL;
 static int eruby_mode = MODE_UNKNOWN;
-
-static char *get_charset()
-{
-    switch (rb_kcode()) {
-    case MBCTYPE_EUC:
-	return "EUC-JP";
-    case MBCTYPE_SJIS:
-	return "SHIFT_JIS";
-    case MBCTYPE_UTF8:
-	return "UTF-8";
-    case MBCTYPE_ASCII:
-    default:
-	return "US-ASCII";
-    }
-}
 
 static void write_escaping_html(char *str, int len)
 {
@@ -384,7 +369,7 @@ static void error_print(int state, int mode, VALUE script)
 	printf("<body>\n");
         printf("<table summary=\"eRuby error information\">\n");
         printf("<caption>\n");
-	printf("<img src=\"%s/logo.gif\" alt=\"eRuby\">\n", imgdir);
+	printf("<img src=\"%s/logo.png\" alt=\"eRuby\">\n", imgdir);
         printf("<span id=version>version: %s</span>\n", ERUBY_VERSION);
         printf("</caption>\n");
         printf("<tr><th id=\"error\">\n");
@@ -483,7 +468,7 @@ static void give_img_logo(int mode)
 {
     if (mode == MODE_NPHCGI)
 	print_http_headers();
-    printf("Content-Type: image/gif\n\n");
+    printf("Content-Type: image/png\n\n");
     fwrite(eruby_logo_data, eruby_logo_size, 1, stdout);
 }
 
@@ -639,14 +624,13 @@ int main(int argc, char **argv)
     char *out;
     int nout;
 
-
     parse_options(argc, argv);
     if (eruby_mode == MODE_UNKNOWN)
 	eruby_mode = guess_mode();
 
     if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI) {
 	if ((path = getenv("PATH_INFO")) != NULL &&
-	    strcmp(path, "/logo.gif") == 0) {
+	    strcmp(path, "/logo.png") == 0) {
 	    give_img_logo(eruby_mode);
 	    return 0;
 	}
@@ -686,7 +670,7 @@ int main(int argc, char **argv)
 	if (eruby_mode == MODE_NPHCGI)
 	    print_http_headers();
 
-	printf("Content-Type: text/html; charset=%s\n", get_charset());
+	printf("Content-Type: text/html; charset=%s\n", ERUBY_CHARSET);
 	printf("Content-Length: %d\n", nout);
 	printf("\n");
     }

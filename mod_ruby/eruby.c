@@ -11,8 +11,11 @@
 #endif
 
 #include "eruby.h"
+#include "config.h"
 
+static VALUE mERuby;
 int eruby_noheader = 0;
+VALUE eruby_charset;
 
 static char eruby_begin_delimiter[] = "<%";
 static char eruby_end_delimiter[] = "%>";
@@ -316,9 +319,41 @@ static void noheader_setter(VALUE val)
     eruby_noheader = RTEST(val);
 }
 
+static VALUE eruby_get_noheader(VALUE self)
+{
+    return eruby_noheader ? Qtrue : Qfalse;
+}
+
+static VALUE eruby_set_noheader(VALUE self, VALUE val)
+{
+    eruby_noheader = RTEST(val);
+    return val;
+}
+
+static VALUE eruby_get_charset(VALUE self)
+{
+    return eruby_charset;
+}
+
+static VALUE eruby_set_charset(VALUE self, VALUE val)
+{
+    Check_Type(val, T_STRING);
+    eruby_charset = val;
+    return val;
+}
+
 void eruby_init()
 {
     rb_define_virtual_variable("$NOHEADER", noheader_getter, noheader_setter);
+
+    mERuby = rb_define_module("ERuby");
+    rb_define_module_function(mERuby, "noheader", eruby_get_noheader, 0);
+    rb_define_module_function(mERuby, "noheader=", eruby_set_noheader, 1);
+    rb_define_module_function(mERuby, "charset", eruby_get_charset, 0);
+    rb_define_module_function(mERuby, "charset=", eruby_set_charset, 1);
+
+    eruby_charset = rb_str_new2(ERUBY_DEFAULT_CHARSET);
+    rb_global_variable(&eruby_charset);
 }
 
 /*

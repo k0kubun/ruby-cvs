@@ -47,6 +47,7 @@
 #include "ruby_config.h"
 #include "apachelib.h"
 #include "eruby.h"
+#include "config.h"
 
 extern char **environ;
 static char **origenviron;
@@ -602,21 +603,6 @@ static VALUE load_ruby_script(request_rec *r)
     return Qnil;
 }
 
-static char *get_charset()
-{
-    switch (rb_kcode()) {
-    case MBCTYPE_EUC:
-	return "EUC-JP";
-    case MBCTYPE_SJIS:
-	return "SHIFT_JIS";
-    case MBCTYPE_UTF8:
-	return "UTF-8";
-    case MBCTYPE_ASCII:
-    default:
-	return "US-ASCII";
-    }
-}
-
 static VALUE load_eruby_script(request_rec *r)
 {
     ruby_server_config *sconf =
@@ -630,7 +616,7 @@ static VALUE load_eruby_script(request_rec *r)
     struct to_arg arg;
 
     rb_defout = ruby_create_request(r, 0);
-    r->content_type = ap_psprintf(r->pool, "text/html; charset=%s", get_charset());
+    eruby_charset = rb_str_new2(ERUBY_DEFAULT_CHARSET);
     arg.thread = rb_thread_current();
     arg.timeout = sconf->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
@@ -649,6 +635,9 @@ static VALUE load_eruby_script(request_rec *r)
 	if (!eruby_noheader) {
 	    int len = ruby_request_buffer_length(rb_defout);
 
+	    r->content_type = ap_psprintf(r->pool,
+					  "text/html; charset=%s",
+					  ERUBY_CHARSET);
 	    ap_table_set(r->headers_out, "Content-Length",
 			 ap_psprintf(r->pool, "%d", len));
 	    ap_send_http_header(r);

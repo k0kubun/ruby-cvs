@@ -3,6 +3,45 @@
 require "mkmf"
 require "getoptlong"
 
+$DEFAULT_CHARSET = case $KCODE
+		   when /^e/i
+		     "EUC-JP"
+		   when /^s/i
+		     "SHIFT_JIS"
+		   when /^u/i
+		     "UTF-8"
+		   else
+		     "US-ASCII"
+		   end
+
+parser = GetoptLong.new
+parser.set_options(['--help', GetoptLong::NO_ARGUMENT],
+		   ['--default-charset', GetoptLong::OPTIONAL_ARGUMENT])
+
+def usage
+  $stderr.printf <<EOS, $0
+usage: %s [options]
+				
+  --help                        print this message
+  --default-charset=CHARSET     default charset value
+EOS
+end
+
+begin
+  parser.each_option do |name, arg|
+    case name
+    when "--default-charset"
+      $DEFAULT_CHARSET = arg
+    when "--help"
+      usage
+      exit(1)
+    end
+  end
+rescue
+  usage
+  exit(1)
+end
+
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $LIBRUBYARG =~ /\.a$/
   $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
@@ -42,10 +81,11 @@ TARGET = eruby
 all: $(TARGET)
 
 install: all
+	strip $(TARGET)
 	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
 
 clean:
-	rm -f $(TARGET) $(OBJS) *~
+	rm -f config.h $(TARGET) $(OBJS) *~
 
 distclean: clean
 	rm -f Makefile
@@ -53,11 +93,22 @@ distclean: clean
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBRUBYARG) $(LIBS) -o $@
 
-eruby_logo.c: eruby_logo.gif
-	./bin2c eruby_logo.gif
+eruby_logo.c: eruby_logo.png
+	./bin2c eruby_logo.png
 EOMF
 ensure
   mfile.close
+end
+
+cfile = open("config.h", "w")
+begin
+  cfile.write <<EOMF
+/* Generated automatically by Makefile.RB. */
+
+#define ERUBY_DEFAULT_CHARSET "#{$DEFAULT_CHARSET}"
+EOMF
+ensure
+  cfile.close
 end
 
 # Local variables:
