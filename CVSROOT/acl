@@ -38,7 +38,7 @@ host:cvs.ruby-lang.org,helium.ruby-lang.org
 group:admin:matz,shugo,akira,knu
 
 group:ruby:matz,shugo,aamine,wakou,eban,knu,komatsu,usa,keiju,nobu,ts,ttate,nagai,akr,nahi,gotoken
-group:shim:@ruby
+group:shim:@all
 group:rough:@all
 group:eruby:shugo
 group:mod_ruby:shugo
