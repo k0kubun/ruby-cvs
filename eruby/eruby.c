@@ -187,9 +187,11 @@ int eruby_parse_options(int argc, char **argv)
 	    s++;
 	    if (strcmp("debug", s) == 0) {
 		ruby_debug = Qtrue;
+		s += 5;
 	    }
 	    else if (strcmp("noheader", s) == 0) {
 		eruby_noheader = 1;
+		s += 8;
 	    }
 	    else if (strcmp("version", s) == 0) {
 		show_version();
@@ -197,6 +199,7 @@ int eruby_parse_options(int argc, char **argv)
 	    }
 	    else if (strcmp("verbose", s) == 0) {
 		ruby_verbose = Qtrue;
+		s += 7;
 	    }
 	    else if (strcmp("help", s) == 0) {
 		usage(argv[0]);

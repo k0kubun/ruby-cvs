@@ -464,56 +464,8 @@ static void give_img_logo(int mode)
     fwrite(eruby_logo_data, eruby_logo_size, 1, stdout);
 }
 
-static void usage(char *progname)
+static void init()
 {
-    fprintf(stderr, "\
-usage: %s [switches] [inputfile]\n\n\
-  -d, --debug		set debugging flags (set $DEBUG to true)\n\
-  -K[kcode]		specifies KANJI (Japanese) code-set\n\
-  -M[mode]		specifies runtime mode\n\
-			  f: filter mode\n\
-			  c: CGI mode\n\
-			  n: NPH-CGI mode\n\
-  -C [charset]		specifies charset parameter for Content-Type\n\
-  -n, --noheader	disables CGI header output\n\
-  -v, --verbose		enables verbose mode\n\
-  --version		print version information and exit\n\
-\n", progname);
-}
-
-static void show_version()
-{
-    fprintf(stderr, "eRuby version %s\n", ERUBY_VERSION);
-    ruby_show_version();
-}
-
-static void set_mode(char *mode)
-{
-    switch (*mode) {
-    case 'f':
-	eruby_mode = MODE_FILTER;
-	break;
-    case 'c':
-	eruby_mode = MODE_CGI;
-	break;
-    case 'n':
-	eruby_mode = MODE_NPHCGI;
-	break;
-    default:
-	fprintf(stderr, "invalid mode -- %s\n", mode);
-	exit(2);
-    }
-}
-
-int main(int argc, char **argv)
-{
-    char *path;
-    VALUE script;
-    int state;
-    char *out;
-    int nout;
-    char *qstr;
-
     ruby_init();
 #if RUBY_VERSION_CODE >= 145
     rb_ary_push(rb_load_path, rb_str_new2("."));
@@ -525,39 +477,59 @@ int main(int argc, char **argv)
     rb_define_singleton_method(rb_defout, "write", defout_write, 1);
     rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
     eruby_init();
+}
 
-    eruby_parse_options(argc, argv);
+static void proc_args(int argc, char **argv)
+{
+    switch (eruby_parse_options(argc, argv)) {
+    case 1:
+	exit(0);
+    case 2:
+	exit(2);
+    }
+
     if (eruby_mode == MODE_UNKNOWN)
 	eruby_mode = guess_mode();
 
-    qstr = getenv("QUERY_STRING");
-    if (qstr && strchr(qstr, '=') == NULL)
-	eruby_filename = NULL;
     if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI) {
+	char *path;
 	char *script_filename;
+	char *path_translated;
 
 	if ((path = getenv("PATH_INFO")) != NULL &&
 	    strcmp(path, "/logo.png") == 0) {
 	    give_img_logo(eruby_mode);
-	    return 0;
+	    exit(0);
 	}
-	script_filename = getenv("SCRIPT_FILENAME");
-	if (eruby_filename == NULL) {
-	    if ((eruby_filename = getenv("PATH_TRANSLATED")) == NULL)
-		eruby_filename = "";
+	
+	if ((script_filename = getenv("SCRIPT_FILENAME")) != NULL
+	    && strstr(script_filename, argv[0]) != NULL)
+	    eruby_filename = NULL;
+	if ((path_translated = getenv("PATH_TRANSLATED")) != NULL) {
+	    eruby_filename = path_translated;
 	}
+	if (eruby_filename == NULL)
+	    eruby_filename = "";
     }
     else {
 	if (eruby_filename == NULL)
 	    eruby_filename = "-";
     }
+}
+
+static void run()
+{
+    VALUE script;
+    int state;
+    char *out;
+    int nout;
 
     script = eruby_load(eruby_filename, 0, &state);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	error_print(state, eruby_mode, script);
 	if (!NIL_P(script))
 	    unlink(RSTRING(script)->ptr);
-	return 0;
+	exit(0);
     }
     if (eruby_mode == MODE_FILTER && (RTEST(ruby_debug) || RTEST(ruby_verbose))) {
 	print_generated_code(script, 0);
@@ -576,6 +548,13 @@ int main(int argc, char **argv)
     }
     fwrite(out, nout, 1, stdout);
     fflush(stdout);
+}
+
+int main(int argc, char **argv)
+{
+    init();
+    proc_args(argc, argv);
+    run();
     return 0;
 }
 
