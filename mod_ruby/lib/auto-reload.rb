@@ -35,6 +35,8 @@ This library is useful to develop mod_ruby scripts.
 
 module AutoReload
   LIBRARY_MTIMES = {}
+  LIBRARY_DEPS = {}
+  PROCESSING_FILE = []
 
   def AutoReload.find_library(lib)
     if lib !~ /\.rb$/
@@ -52,12 +54,33 @@ module AutoReload
     unless file = AutoReload.find_library(lib)
       return super(lib)
     end
-    mtime = File.mtime(file)
-    if LIBRARY_MTIMES[file] == mtime
-      return false
-    else
-      LIBRARY_MTIMES[file] = mtime
-      return load(file)
+    deps = LIBRARY_DEPS[file] ||= {}
+    PROCESSING_FILE.each do |f|
+      LIBRARY_DEPS[f][file] = 1
+    end
+    PROCESSING_FILE.push file
+    begin
+      do_load = false
+      deps.each do |f,|
+        begin
+          if LIBRARY_MTIMES[f] == File.mtime(f)
+            do_load = true
+            break
+          end
+        rescue Errno::ENOENT
+          deps.delete f
+        end
+      end
+      mtime = File.mtime(file)
+      if do_load or LIBRARY_MTIMES[file] != mtime
+        result = load(file)
+        LIBRARY_MTIMES[file] = mtime
+        result
+      else
+        false
+      end
+    ensure
+      PROCESSING_FILE.pop
     end
   end
 end

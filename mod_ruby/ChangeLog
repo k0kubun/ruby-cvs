@@ -1,3 +1,7 @@
+Thu Aug 29 13:56:32 2002  Tietew <tietew@tietew.net>
+
+	* lib/auto-reload.rb (require): check the dependency of libraries.
+
 Thu Aug 29 13:30:40 2002  Shugo Maeda <shugo@modruby.net>
 	
 	* lib/apache/eruby-run.rb (postrun): do not overwrite r.content_type.
@@ -11,7 +15,7 @@ Fri Aug 23 12:06:53 2002  Shugo Maeda <shugo@modruby.net>
 Fri Aug 23 12:02:11 2002  Eugene Scripnik <Eugene.Scripnik@itgrp.net>
 	
 	* lib/auto-reload.rb (require): fix for the behaviour of nil on
-	ruby-1.7.2.
+<	ruby-1.7.2.
 
 Tue Aug 20 12:56:25 2002  Shugo Maeda <shugo@modruby.net>
 
