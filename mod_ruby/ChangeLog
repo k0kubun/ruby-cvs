@@ -1,6 +1,12 @@
-Wed Aug  2 14:14:32 2000  Shugo Maeda <shugo@ruby-lang.org>
+Wed Aug  2 15:11:52 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* version 0.1.9 released.
+
+Wed Aug  2 15:09:54 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* mod_ruby.c (ruby_init): add "." to the load path.
+
+	* mod_ruby.c (ruby_handler0): reset the load path.
 
 Tue Aug  1 09:55:07 2000  Shugo Maeda <shugo@ruby-lang.org>
 

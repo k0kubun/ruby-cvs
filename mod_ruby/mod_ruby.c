@@ -56,6 +56,9 @@ extern VALUE ruby_errinfo;
 extern VALUE rb_defout;
 extern VALUE rb_stdin;
 
+extern VALUE rb_load_path;
+static VALUE orig_load_path;
+
 #ifdef MULTITHREAD
 static mutex *mod_ruby_mutex = NULL;
 #endif
@@ -188,8 +191,8 @@ static void ruby_startup(server_rec *s, pool *p)
 						    &ruby_module);
     static char ruby_version[BUFSIZ];
     char **list;
-    char *rubylib;
     int i;
+    long j;
     int state;
 
 #if MODULE_MAGIC_NUMBER >= 19980507
@@ -213,8 +216,6 @@ static void ruby_startup(server_rec *s, pool *p)
 			   STRING_LITERAL(MOD_RUBY_STRING_VERSION));
 
     origenviron = environ;
-    if ((rubylib = getenv("RUBYLIB")) != NULL)
-	ap_table_set(conf->env, "RUBYLIB", rubylib);
 
     list = (char **) conf->required_files->elts;
     for (i = 0; i < conf->required_files->nelts; i++) {
@@ -224,6 +225,10 @@ static void ruby_startup(server_rec *s, pool *p)
 	    exit(1);
 	}
     }
+
+    rb_ary_push(rb_load_path, rb_str_new2("."));
+    orig_load_path = rb_load_path;
+    rb_global_variable(&orig_load_path);
 
     ruby_is_running = 1;
 }
@@ -660,6 +665,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     ruby_dir_config *dconf = NULL;
     int retval;
     const char *kcode_orig = NULL;
+    long i;
     int state;
 
     (void) ap_acquire_mutex(mod_ruby_mutex);
@@ -694,6 +700,10 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 
     ap_chdir_file(r->filename);
     setup_env(r, dconf);
+    rb_load_path = rb_ary_new();
+    for (i = 0; i < RARRAY(orig_load_path)->len; i++) {
+	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(orig_load_path)->ptr[i]));
+    }
     exit_status = -1;
 
     ap_soft_timeout("load ruby script", r);
