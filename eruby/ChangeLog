@@ -1,0 +1,16 @@
+Thu May 20 14:53:50 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.2 released.
+
+Thu May 20 14:26:17 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* Makefile.RB: added LIBERUBY for mod_ruby.
+
+Mon May 17 19:27:27 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.1 released.
+
+Local variables:
+mode: ChangeLog
+tab-width: 8
+End:

@@ -340,7 +340,7 @@ static void error_print(int state, int mode, VALUE script)
 	    imgdir = "UNKNOWN_IMG_DIR";
         if (mode == MODE_NPHCGI)
             print_http_headers();
-        printf("Content-Type: text/html; charset=%s\n", get_charset());
+        printf("Content-Type: text/html\n");
         printf("Content-Style-Type: text/css\n");
         printf("\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n");

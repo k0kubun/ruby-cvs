@@ -18,7 +18,7 @@ Required environment
 Installation
 ============
 
-  1) Type `ruby configure.rb' to create Makefile.
+  1) Type `./Makefile.RB' to create Makefile.
 
   2) Type `make' to compile mod_ruby.
 

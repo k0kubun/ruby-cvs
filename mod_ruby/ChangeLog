@@ -1,3 +1,17 @@
+Thu May 20 14:58:31 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.1 released.
+
+Thu May 20 14:54:32 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (eruby_handler): handle ruby embedded HTML file.
+
+	* Makefile.RB: renamed from configure.rb.
+
+	* Makefile.RB: use apxs.
+
+	* Makefile.RB: added options --enable-eruby and --eruby-dir.
+
 Tue Apr 20 16:22:11 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.1.0 released.

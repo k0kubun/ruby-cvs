@@ -18,7 +18,7 @@ mod_rubyとは?
 インストール
 ============
 
-  1) `ruby configure.rb'とタイプし、Makefileを作成してください。
+  1) `./Makefile.RB'とタイプし、Makefileを作成してください。
 
   2) `make'とタイプし、mod_rubyをコンパイルしてください。
 
