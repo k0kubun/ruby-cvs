@@ -283,40 +283,91 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_rename
-    assert_fail("untested")
+    Dir.chdir("_test")
+    assert_exception(Errno::ENOENT) { File.rename("gumby", "pokey") }
+    assert_equal(0, File.rename("_file1", "_renamed"))
+    assert(!File.exists?("_file1"))
+    assert(File.exists?("_renamed"))
+
   end
 
   def test_s_size
-    assert_fail("untested")
+    file = "_test/_file1"
+    assert_exception(Errno::ENOENT) { File.size("gumby") }
+    assert_equal(0, File.size(file))
+    File.open(file, "w") { |f| f.puts "123456789" }
+    assert_equal(10, File.size(file))
   end
 
   def test_s_split
-    assert_fail("untested")
+    %w{ "/", "/tmp", "/tmp/a", "/tmp/a/b", "/tmp/a/b/", "/tmp//a",
+        "/tmp//"
+    }.each { |file|
+      assert_equals( [ File.dirname(file), File.basename(file) ],
+                     File.split(file), file )
+    }
   end
 
+  # Stat is pretty much tested elsewhere, so we're minimal here
   def test_s_stat
-    assert_fail("untested")
+    assert_instance_of?(File::Stat, File.stat("."))
   end
+
 
   def test_s_symlink
-    assert_fail("untested")
+    Dir.chdir("_test")
+    File.symlink("_file1", "_file3") # may fail
+    assert(File.symlink("_file3"))
+    assert(!File.symlink("_file1"))
   end
 
   def test_s_truncate
-    assert_fail("untested")
+    file = "_test/_file1"
+    File.open(file, "w") { |f| f.puts "123456789" }
+    assert_equal(10, File.size(file))
+    File.truncate(file, 5)
+    assert_equal(5, File.size(file))
+    File.open(file, "r") { |f|
+      assert_equal("12345", f.read(99))
+      assert(f.eof?)
+    }
+  end
+
+  def myUmask
+    Integer(`sh -c umask`.chomp)
   end
 
   def test_s_umask
-    assert_fail("untested")
+    assert_equal(myUmask, File.umask)
+    assert_equal(myUmask, File.umask(0404))
+    assert_equal(0404, File.umask)
   end
 
   def test_s_unlink
-    assert_fail("untested")
+    Dir.chdir("_test")
+    assert_equal(0, File.unlink)
+    assert_exception(Errno::ENOENT) { File.unlink("gumby") }
+    assert_equal(2, File.unlink("_file1", "_file2"))
   end
 
   def test_s_utime
-    assert_fail("untested")
+    Dir.chdir("_test")
+
+    [ [ 0,                      0 ],
+      [ Time.at(0),             Time.at(12345) ],
+      [ Time.at(Time.now.to_i), Time.at(54321) ],
+      [ Time.at(121314),        Time.now.to_i ]
+    ].each { |aTime, mTime|
+      File.utime(aTime, mTime, "_file1", "_file2")
+
+      for file in [ "_file1", "_file2" ]
+        assert_equal(aTime, File.stat(file).atime) # does automatic conversion
+        assert_equal(mTime, File.stat(file).mtime)
+      end
+    }
   end
+
+  # Instance methods
 
   def test_atime
     assert_fail("untested")
