@@ -441,6 +441,7 @@ static void init()
 	rb_set_safe_level(1);
 
     rb_defout = rb_str_new("", 0);
+    rb_io_binmode(rb_stdout);	/* for mswin32 */
     rb_define_singleton_method(rb_defout, "write", defout_write, 1);
     rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
     eruby_init();

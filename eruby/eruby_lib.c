@@ -763,6 +763,7 @@ void eruby_init()
     rb_define_singleton_method(mERuby, "default_charset=",
 			       eruby_set_default_charset, 1);
     rb_define_singleton_method(mERuby, "import", eruby_import, 1);
+    rb_define_singleton_method(mERuby, "load", eruby_import, 1);
 
     cERubyCompiler = rb_define_class_under(mERuby, "Compiler", rb_cObject);
     rb_define_singleton_method(cERubyCompiler, "new", eruby_compiler_s_new, 0);
