@@ -1,5 +1,6 @@
 require '../rubicon'
 
+
 class AllBuiltinTests
   
   def AllBuiltinTests.suite
@@ -12,4 +13,10 @@ class AllBuiltinTests
   end
 end
 
-Rubicon::handleTests(AllBuiltinTests) if $0 == __FILE__
+#Rubicon::handleTests(AllBuiltinTests) if $0 == __FILE__
+
+tests = Rubicon::BulkTestRunner.new("Built-ins")
+
+Dir["Test*.rb"].each { |file| tests.addFile(file) }
+
+tests.run

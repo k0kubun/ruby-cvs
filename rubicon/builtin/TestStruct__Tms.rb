@@ -7,48 +7,55 @@ class TestStruct__Tms < Rubicon::TestCase
     a = 0.0; n.times {|i| a += Math.sin(1/(i+1)) }
   end
 
-  def burntime
-    # burn up user CPU
-    sillyCalculation(20000)
-    # and system CPU
+  def setup
+    # find out how much it takes to burn up a couple of seconds or so
+    n = 100
+    loop do
+      start = Time.now
+      sillyCalculation(n)
+      break if Time.now - start > 1
+      n *= 2
+    end
     200.times {
-      fork { sillyCalculation(100) }
+      fork { sillyCalculation(n/200) }
       Process.wait
     }
   end
 
-  def setup
-    # Make a child process. Run the process in both the child
-    # and the parent to get decent times. RUn in parallel so
-    # those with MP boxes get home slightly faster
-    burntime
-  end
-
-  def test_cstime
+  def cstime
     assert(Time.times.cstime != 0)
   end
 
-  def test_cutime
+  def cutime
     assert(Time.times.cutime != 0)
   end
 
-  def test_stime
+  def stime
     assert(Time.times.stime != 0)
   end
 
-  def test_utime
+  def utime
     assert(Time.times.utime != 0)
   end
 
-  def test_s_aref
+  def s_aref
     assert(Time.times['utime'] != 0)
     assert(Time.times['stime'] != 0)
     assert(Time.times['cutime'] != 0)
     assert(Time.times['cstime'] != 0)
   end
 
-  def test_s_members
-    assert_equals(4,Time.times.members.length)
+  def s_members
+    assert_equals(4, Time.times.members.length)
+  end
+  
+  def test_all
+    cstime()
+    cutime()
+    stime()
+    utime()
+    s_aref()
+    s_members()
   end
 
 end

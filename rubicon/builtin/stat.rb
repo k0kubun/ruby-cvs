@@ -7,12 +7,12 @@ module RubiconStat
 
   def stat(file)
     res = `../util/checkstat #{file}`.chomp
-    raise "unable to stat(#{file})" if $? != 0
+    raise "unable to stat(#{file}:)" if $? != 0
     return res.split
   end
 
-  def ctime(file)   stat(file)[10].to_i end
-  def blksize(file) stat(file)[11].to_i end
+  def ctime(file)   self.stat(file)[12].to_i end
+  def blksize(file) self.stat(file)[11].to_i end
 
   module_function :stat, :ctime, :blksize
 end

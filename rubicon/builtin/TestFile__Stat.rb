@@ -1,4 +1,5 @@
 require '../rubicon'
+require 'stat'
 
 
 class TestFile__Stat < Rubicon::TestCase
@@ -10,10 +11,6 @@ class TestFile__Stat < Rubicon::TestCase
     @file2 = "_test/_touched2"
 
     sys("touch #@file1")  # in case it needs creating
-    # Yes - there's a race condition here...
-    n = Time.now          # sets the time
-    sys("touch  #@file1")
-    @cTime1 = Time.local(n.year, n.month, n.day, n.hour, n.min, n.sec)
 
     sys("touch -a -t 122512341999 #@file1")
     @aTime1 = Time.local(1999, 12, 25, 12, 34, 00)
@@ -94,7 +91,8 @@ class TestFile__Stat < Rubicon::TestCase
   end
 
   def test_ctime
-    assert_equal(@cTime1, @s1.ctime)
+    cTime1 = Time.at(RubiconStat::ctime(@file1))
+    assert_equal(cTime1, @s1.ctime)
   end
 
   def test_dev

@@ -574,6 +574,7 @@ class TestIO < Rubicon::TestCase
       file.print 5, 6
       $\ = nil
       file.print "\n"
+      $, = nil
     end
 
     File.open(@file) do |file|

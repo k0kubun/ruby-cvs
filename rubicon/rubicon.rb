@@ -3,11 +3,26 @@ module Rubicon
   require 'runit/testcase'
   require 'runit/cui/testrunner'
 
-  class TestRunner < RUNIT::CUI::TestRunner
+  # -------------------------------------------------------
+
+  class TestResult < RUNIT::TestResult
   end
+
+  # -------------------------------------------------------
+
+  class TestRunner < RUNIT::CUI::TestRunner
+    def create_result
+      TestResult.new
+    end
+  end
+
+  # -------------------------------------------------------
 
   class TestSuite < RUNIT::TestSuite
   end
+
+
+  # -------------------------------------------------------
 
   class TestCase < RUNIT::TestCase
 
@@ -90,8 +105,10 @@ module Rubicon
       Process.waitpid(pid,0)
       return ($? >> 8) & 0xff
     end
-    
 
+    #
+    # Setup some files in a test directory
+    #
     def setupTestDir
       @start = Dir.getwd
  
@@ -115,6 +132,9 @@ module Rubicon
   end
 
     
+  #
+  # Common code to run the tests in a class
+  #
   def handleTests(testClass)
     testrunner = TestRunner.new
     TestRunner.quiet_mode = true
@@ -129,4 +149,147 @@ module Rubicon
     results = testrunner.run(suite)
   end
   module_function :handleTests
+
+
+  # Accumulate a running set of results, and report them at the end
+  
+  class ResultGatherer
+
+    LINE_LENGTH = 72
+    LINE = '=' * LINE_LENGTH
+    Line = ' ' * 12 + '-' * (LINE_LENGTH - 12)
+
+    def initialize(name)
+      @name    = name
+      @results = {}
+    end
+
+    def add(klass, resultSet)
+      @results[klass.name] = resultSet
+    end
+    
+    def report
+      puts
+      puts LINE
+      title = "Test Results".center(LINE_LENGTH)
+      title[0, @name.length] = @name
+      puts title
+      puts LINE
+      puts "            Name   OK?   Tests  Asserts      Failures   Errors"
+      puts Line
+
+      total_classes = 0
+      total_tests   = 0
+      total_asserts = 0
+      total_fails   = 0
+      total_errors  = 0
+      total_bad     = 0
+
+      format = "%16s   %4s   %4d  %7d  %9s  %7s\n"
+
+      names = @results.keys.sort
+      for name in names
+        res    = @results[name]
+        fails  = res.failure_size.nonzero? || ''
+        errors = res.error_size.nonzero? || ''
+
+        total_classes += 1
+        total_tests   += res.run_tests
+        total_asserts += res.run_asserts
+        total_fails   += res.failure_size
+        total_errors  += res.error_size
+        total_bad     += 1 unless res.succeed?
+
+        printf format,
+          name.sub(/^Test/, ''),
+          res.succeed? ? "    " : "FAIL",
+          res.run_tests, res.run_asserts, 
+          fails.to_s, errors
+      end
+
+      puts LINE
+      if total_classes > 1
+        printf format, 
+          sprintf("All %d classes", total_classes),
+          total_bad > 0 ? "FAIL" : "    ",
+          total_tests, total_asserts,
+          total_fails, total_errors
+        puts LINE
+      end
+
+      if total_fails > 0
+        puts
+        puts "Failure Report".center(LINE_LENGTH)
+        puts LINE
+        left = total_fails
+
+        for name in names
+          res = @results[name]
+          if res.failure_size > 0
+            puts
+            puts name + ":"
+
+            res.failures.each do |f|
+              f.at.each do |at|
+                break if at =~ /rubicon/
+                print "    ", at, "\n"
+              end
+              err = f.err.to_s
+
+              if err =~ /expected:(.*)but was:(.*)/m
+                exp = $1.dump
+                was = $2.dump
+                print "    Expected: #{exp}\n"
+                print "    But was:  #{was}\n"
+              else
+                print "    #{err}\n"
+              end
+            end
+
+            left -= res.failure_size
+            puts
+            puts Line if left > 0
+          end
+        end
+        puts LINE
+      end
+
+    end
+  end
+  # Run a set of tests in a file. This would be a TestSuite, but we
+  # want to run each file separately, and to summarize the results
+  # differently
+
+  class BulkTestRunner
+
+    def initialize(groupName)
+      @groupName = groupName
+      @files     = []
+      @results   = ResultGatherer.new(groupName)
+    end
+
+    def addFile(fileName)
+      @files << fileName
+    end
+
+    def run
+      @files.each do |file|
+        require file
+        className = File.basename(file)
+        className.sub!(/\.rb$/, '')
+        klass = eval className
+        runner = TestRunner.new
+        TestRunner.quiet_mode = true
+        $stderr.print "\n", className, ": "
+
+        @results.add(klass, runner.run(klass.suite))
+      end
+
+      @results.report
+    end
+
+  end
 end
+
+
+

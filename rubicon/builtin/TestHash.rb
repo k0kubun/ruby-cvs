@@ -554,6 +554,7 @@ class TestHash < Rubicon::TestCase
     assert_equal(h.to_a.join, h.to_s)
     h = {}
     assert_equal(h.to_a.join, h.to_s)
+    $, = nil
   end
 
   def test_update
