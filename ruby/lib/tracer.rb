@@ -17,12 +17,12 @@ class Tracer
   @RCS_ID='-$Id$-'
 
   @stdout = STDOUT
+  @verbose = false
   class << self
     attr :verbose, true
     alias verbose? verbose
     attr :stdout, true
   end
-  verbose = true
   
   MY_FILE_NAME = caller(0)[0].scan(/^(.*):[0-9]+$/)[0][0]
   
@@ -155,7 +155,7 @@ class Tracer
   
 end
 
-LINES__ = {} unless defined? LINES__
+SCRIPT_LINES__ = {} unless defined? SCRIPT_LINES__
 
 if caller(0).size == 1
   if $0 == Tracer::MY_FILE_NAME
