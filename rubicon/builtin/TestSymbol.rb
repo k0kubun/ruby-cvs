@@ -19,8 +19,9 @@ class TestSymbol < Rubicon::TestCase
   
 # ^----------- test ------------^
 
+  Fred.new.Fred
+
   def test_00sanity
-    Fred.new.Fred
     assert_equals($f1.id,$f2.id)
     assert_equals($f2.id,$f3.id)
   end
