@@ -24,3 +24,5 @@
 #DEFAULT (echo ""; id; echo %s; date; cat) >> $CVSROOT/CVSROOT/commitlog
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
+^CVSROOT $CVSROOT/CVSROOT/mailto-committers.pl %{sVv} cvs-admin@cvs.ruby-lang.org
+^proj $CVSROOT/CVSROOT/mailto-committers.pl %{sVv} ruby-committers@cvs.ruby-lang.org
