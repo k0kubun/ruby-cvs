@@ -409,6 +409,12 @@ class Date
       zone = $4
     end
 
+    if str.sub!(/\b(bc\b|bce\b|b\.c\.|b\.c\.e\.)/ino, ' ')
+      if year
+	year = -year + 1
+      end
+    end
+
     if comp and year
       if year >= 0 and year <= 99
 	if year >= 69
@@ -477,7 +483,7 @@ class Date
       when '%r'; o << strftime('%I:%M:%S %p')			# P2,ID
       when '%S'; o << '%02d' % sec
       when '%s'							# TZ,GL
-	d = rjd - type.jd_to_rjd(type.civil_to_jd(1970,1,1), 0)
+	d = ajd - type.jd_to_ajd(type.civil_to_jd(1970,1,1), 0)
 	s = (d * 86400).to_i
 	o << '%d' % s
       when '%T'; o << strftime('%H:%M:%S')			# P2,ID

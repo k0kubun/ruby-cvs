@@ -1,6 +1,6 @@
 #! /usr/bin/env ruby
 
-# goodfriday.rb: Written by Tadayoshi Funaba 1998, 2000
+# goodfriday.rb: Written by Tadayoshi Funaba 1998, 2000, 2002
 # $Id$
 
 require 'date'
@@ -44,5 +44,5 @@ es = Date.new(*easter(Time.now.year))
  [8*7,  'Trinity Sunday'],
  [60,   'Corpus Christi (Thursday after Trinity)']].
 each do |xs|
-  puts ((es + xs.shift).to_s + '  ' + xs.shift)
+  puts((es + xs.shift).to_s + '  ' + xs.shift)
 end
