@@ -335,7 +335,7 @@ class TestFile < Rubicon::TestCase
     File.open(filen, File::CREAT, 0444) {}
     begin
       assert(File.exists?(filen))
-      Cygwi.known_problem do
+      Cygwin.known_problem do
         assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
       end
     ensure
