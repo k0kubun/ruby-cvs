@@ -8,6 +8,7 @@
 #include "regex.h"
 #include "version.h"
 
+#include <ctype.h>
 #include <time.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -31,16 +32,6 @@ extern VALUE rb_load_path;
 #define TAG_THROW	0x7
 #define TAG_FATAL	0x8
 #define TAG_MASK	0xf
-
-#define ERUBY_VERSION "0.0.9"
-
-#define MODE_UNKNOWN    1
-#define MODE_FILTER     2
-#define MODE_CGI        4
-#define MODE_NPHCGI     8
-
-static char *eruby_filename = NULL;
-static int eruby_mode = MODE_UNKNOWN;
 
 static void write_escaping_html(char *str, int len)
 {
@@ -514,97 +505,6 @@ static void set_mode(char *mode)
     }
 }
 
-static void parse_options(int argc, char **argv)
-{
-    int i;
-    char *s;
-
-    for (i = 1; i < argc; i++) {
-	if (argv[i][0] != '-' || argv[i][1] == '\0') {
-	    eruby_filename = argv[i];
-	    break;
-	}
-
-	s = argv[i] + 1;
-    again:
-	switch (*s) {
-	case 'M':
-	    set_mode(++s);
-	    s++;
-	    goto again;
-	case 'K':
-	    s++;
-	    if (*s == '\0') {
-		fprintf(stderr, "%s: no arg given for -K\n", argv[0]);
-		exit(2);
-	    }
-	    rb_set_kcode(s);
-	    s++;
-	    goto again;
-	case 'C':
-	    s++;
-	    if (*s == '\0') {
-		i++;
-		if (i == argc) {
-		    fprintf(stderr, "%s: no arg given for -C\n", argv[0]);
-		    exit(2);
-		}
-		eruby_charset = rb_str_new2(argv[i]);
-	    }
-	    else {
-		eruby_charset = rb_str_new2(s);
-	    }
-	    break;
-	case 'd':
-	    ruby_debug = Qtrue;
-	    s++;
-	    goto again;
-	case 'v':
-	    ruby_verbose = Qtrue;
-	    s++;
-	    goto again;
-	case 'n':
-	    eruby_noheader = 1;
-	    s++;
-	    goto again;
-	case '\0':
-	    break;
-	case 'h':
-	    usage(argv[0]);
-	    exit(0);
-	case '-':
-	    s++;
-	    if (strcmp("debug", s) == 0) {
-		ruby_debug = Qtrue;
-	    }
-	    else if (strcmp("noheader", s) == 0) {
-		eruby_noheader = 1;
-	    }
-	    else if (strcmp("version", s) == 0) {
-		show_version();
-		exit(0);
-	    }
-	    else if (strcmp("verbose", s) == 0) {
-		ruby_verbose = Qtrue;
-	    }
-	    else if (strcmp("help", s) == 0) {
-		usage(argv[0]);
-		exit(0);
-	    }
-	    else {
-		fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
-		fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
-		exit(2);
-	    }
-	    break;
-	default:
-	    fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
-	    fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
-	    exit(2);
-	}
-    }
-}
-
 int main(int argc, char **argv)
 {
     char *path;
@@ -612,6 +512,7 @@ int main(int argc, char **argv)
     int state;
     char *out;
     int nout;
+    char *qstr;
 
     ruby_init();
 #if RUBY_VERSION_CODE >= 145
@@ -625,18 +526,26 @@ int main(int argc, char **argv)
     rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
     eruby_init();
 
-    parse_options(argc, argv);
+    eruby_parse_options(argc, argv);
     if (eruby_mode == MODE_UNKNOWN)
 	eruby_mode = guess_mode();
 
+    qstr = getenv("QUERY_STRING");
+    if (qstr && strchr(qstr, '=') == NULL)
+	eruby_filename = NULL;
     if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI) {
+	char *script_filename;
+
 	if ((path = getenv("PATH_INFO")) != NULL &&
 	    strcmp(path, "/logo.png") == 0) {
 	    give_img_logo(eruby_mode);
 	    return 0;
 	}
-	if ((eruby_filename = getenv("PATH_TRANSLATED")) == NULL)
-	    eruby_filename = "";
+	script_filename = getenv("SCRIPT_FILENAME");
+	if (eruby_filename == NULL) {
+	    if ((eruby_filename = getenv("PATH_TRANSLATED")) == NULL)
+		eruby_filename = "";
+	}
     }
     else {
 	if (eruby_filename == NULL)

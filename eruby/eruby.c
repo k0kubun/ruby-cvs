@@ -19,6 +19,9 @@
 #include "config.h"
 
 static VALUE mERuby;
+
+char *eruby_filename = NULL;
+int eruby_mode = MODE_UNKNOWN;
 int eruby_noheader = 0;
 VALUE eruby_charset;
 
@@ -36,88 +39,179 @@ enum embedded_program_type {
 
 #define EOP (-2)
 
-static int parse_options(FILE *in, FILE *out)
+static char *readline(FILE *f)
 {
-    int c;
+    char buff[BUFSIZ];
+    char *line;
+    int buff_len, line_len = 0;
 
-    do {
-	c = getc(in);
-	if (c == EOF) return 0;
-    } while (!isspace(c));
-
+    line = (char *) malloc(BUFSIZ);
+    if (line == NULL)
+	return NULL;
     for (;;) {
-	c = getc(in);
-    again:
-	switch (c) {
-	case EOF:
-	    return 0;
-	case '\n':
-	    putc(c, out);
-	    return 0;
-	case '-':
-	    c = getc(in);
-	    switch (c) {
-	    case 'K':
-	    {
-		char tmp[1];
-
-		c = getc(in);
-		if (c == EOF || c == '\n')
-		    return -1;
-		tmp[0] = c;
-		rb_set_kcode(tmp);
-		while (c != EOF && !isspace(c)) {
-		    c = getc(in);
-		}
-		goto again;
+	if (fgets(buff, BUFSIZ, f) == NULL) {
+	    if (ferror(f)) {
+		free(line);
+		return NULL;
 	    }
-	    case 'C':
-	    {
-		int term;
-		char tmp[1];
-		VALUE charset = rb_str_new("", 0);
+	    return line;
+	}
+	strcpy(line + line_len, buff);
+	buff_len = strlen(buff);
+	line_len += buff_len;
+	if (buff[buff_len - 1] == '\n' || buff_len < BUFSIZ - 1) {
+	    break;
+	}
+	else {
+	    char *tmp;
+	    tmp = (char *) realloc(line, line_len + BUFSIZ);
+	    if (tmp == NULL) {
+		free(line);
+		return NULL;
+	    }
+	    line = tmp;
+	}
+    }
+    return line;
+}
 
-		c = getc(in);
-		while (isspace(c)) {
-		    if (c == '\n') return -1;
-		    c = getc(in);
+static void usage(char *progname)
+{
+    fprintf(stderr, "\
+usage: %s [switches] [inputfile]\n\n\
+  -d, --debug		set debugging flags (set $DEBUG to true)\n\
+  -K[kcode]		specifies KANJI (Japanese) code-set\n\
+  -M[mode]		specifies runtime mode\n\
+			  f: filter mode\n\
+			  c: CGI mode\n\
+			  n: NPH-CGI mode\n\
+  -C [charset]		specifies charset parameter for Content-Type\n\
+  -n, --noheader	disables CGI header output\n\
+  -v, --verbose		enables verbose mode\n\
+  --version		print version information and exit\n\
+\n", progname);
+}
+
+static void show_version()
+{
+    fprintf(stderr, "eRuby version %s\n", ERUBY_VERSION);
+    ruby_show_version();
+}
+
+static int set_mode(char *mode)
+{
+    switch (*mode) {
+    case 'f':
+	eruby_mode = MODE_FILTER;
+	break;
+    case 'c':
+	eruby_mode = MODE_CGI;
+	break;
+    case 'n':
+	eruby_mode = MODE_NPHCGI;
+	break;
+    default:
+	fprintf(stderr, "invalid mode -- %s\n", mode);
+	return -1;
+    }
+    return 0;
+}
+
+int eruby_parse_options(int argc, char **argv)
+{
+    unsigned char *s;
+    int i;
+
+    for (i = 1; i < argc; i++) {
+	if (argv[i][0] != '-' || argv[i][1] == '\0') {
+	    eruby_filename = argv[i];
+	    break;
+	}
+	s = argv[i];
+    again:
+	while (isspace(*s))
+	    s++;
+	if (*s == '-') s++;
+	switch (*s) {
+	case 'M':
+	    if (set_mode(++s) == -1)
+		return 2;
+	    s++;
+	    goto again;
+	case 'K':
+	    s++;
+	    if (*s == '\0') {
+		fprintf(stderr, "%s: no arg given for -K\n", argv[0]);
+		return 2;
+	    }
+	    rb_set_kcode(s);
+	    s++;
+	    goto again;
+	case 'C':
+	    s++;
+	    if (isspace(*s)) s++;
+	    if (*s == '\0') {
+		i++;
+		if (i == argc) {
+		    fprintf(stderr, "%s: no arg given for -C\n", argv[0]);
+		    return 2;
 		}
-		if (c == EOF) {
-		    return -1;
-		}
-		else if (c == '"' || c == '\'') {
-		    term = c;
-		    c = getc(in);
-		    while (c != EOF && c != term) {
-			tmp[0] = c;
-			rb_str_cat(charset, tmp, 1);
-			c = getc(in);
-		    }
-		    eruby_charset = charset;
-		}
-		else {
-		    while (c != EOF && !isspace(c)) {
-			tmp[0] = c;
-			rb_str_cat(charset, tmp, 1);
-			c = getc(in);
-		    }
-		    eruby_charset = charset;
-		    goto again;
-		}
+		eruby_charset = rb_str_new2(argv[i]);
 		break;
 	    }
-	    default:
-		return -1;
+	    else {
+		unsigned char *p = s;
+		while (*p && !isspace(*p)) p++;
+		eruby_charset = rb_str_new(s, p - s);
+		s = p;
+		goto again;
+	    }
+	case 'd':
+	    ruby_debug = Qtrue;
+	    s++;
+	    goto again;
+	case 'v':
+	    ruby_verbose = Qtrue;
+	    s++;
+	    goto again;
+	case 'n':
+	    eruby_noheader = 1;
+	    s++;
+	    goto again;
+	case '\0':
+	    break;
+	case 'h':
+	    usage(argv[0]);
+	    return 1;
+	case '-':
+	    s++;
+	    if (strcmp("debug", s) == 0) {
+		ruby_debug = Qtrue;
+	    }
+	    else if (strcmp("noheader", s) == 0) {
+		eruby_noheader = 1;
+	    }
+	    else if (strcmp("version", s) == 0) {
+		show_version();
+		return 1;
+	    }
+	    else if (strcmp("verbose", s) == 0) {
+		ruby_verbose = Qtrue;
+	    }
+	    else if (strcmp("help", s) == 0) {
+		usage(argv[0]);
+		return 1;
+	    }
+	    else {
+		fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
+		fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
+		return 1;
 	    }
 	    break;
-	case ' ':
-	case '\t':
-	case '\v':
-	case '\f':
-	case '\r':
-	    break;
 	default:
-	    return -1;
+	    fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
+	    fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
+	    return 2;
 	}
     }
 
@@ -217,8 +311,27 @@ int eruby_compile(FILE *in, FILE *out)
     if (c == '#') {
 	c = getc(in);
 	if (c == '!') {
-	    if (parse_options(in, out) == -1)
+	    unsigned char *p;
+	    char *argv[2];
+	    char *line = readline(in);
+
+	    if (line == NULL)
+		return ERUBY_SYSTEM_ERROR;
+	    if (line[strlen(line) - 1] == '\n') {
+		line[strlen(line) - 1] = '\0';
+		putc('\n', out);
+	    }
+	    argv[0] = "eruby";
+	    p = line;
+	    while (isspace(*p)) p++;
+	    while (*p && !isspace(*p)) p++;
+	    while (isspace(*p)) p++;
+	    argv[1] = p;
+	    if (eruby_parse_options(2, argv) != 0) {
+		free(line);
 		return ERUBY_INVALID_OPTION;
+	    }
+	    free(line);
 	}
 	else {
 	    while (c != EOF) {
