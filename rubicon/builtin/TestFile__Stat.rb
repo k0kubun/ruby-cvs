@@ -42,11 +42,9 @@ class TestFile__Stat < FileInfoTest
   end
 
   def test_blockdev?
-    try(:blockdev?, "/dev/tty", false)
+    try(:blockdev?, "/dev/tty", false) if $os <= Unix
     try(:blockdev?, ".",        false)
-    if $os == Linux
-      try(:blockdev?, "/dev/fd0", true)
-    end
+    try(:blockdev?, "/dev/fd0", true) if $os == Linux
   end
 
   def test_blocks
@@ -101,7 +99,6 @@ class TestFile__Stat < FileInfoTest
   def test_ftype
     Dir.chdir("_test")
     File.symlink("_file1", "_file3") # may fail
-    system("mkfifo _fifo") # may fail
 
     tests = {
       "../_test"          => "directory",
@@ -109,11 +106,12 @@ class TestFile__Stat < FileInfoTest
       "/dev/tty"          => "characterSpecial",
       "/tmp/.X11-unix/X0" => "socket",
       "_file3"            => "file",   # try uses stat
-      "_fifo"             => "fifo" 
     }
 
     if $os == Linux
       tests["/dev/fd0"] = "blockSpecial"
+      system("mkfifo _fifo") # may fail
+      tests["_fifo"]    = "fifo" 
     end
 
     tests.each do |file, type|
@@ -150,15 +148,21 @@ class TestFile__Stat < FileInfoTest
   end
 
   def test_mode
+    base = $os == Cygwin ? 0444 : 0
+
     Dir.chdir("_test")
-    File.open("_file1") { |f|
-      assert_equal(0,    f.chmod(0))
-      assert_equal(0,    f.stat.mode & 0777)
-      assert_equal(0,    f.chmod(0400))
-      assert_equal(0400, f.stat.mode & 0777)
-      assert_equal(0,    f.chmod(0644))
-      assert_equal(0644, f.stat.mode & 0777)
-    }
+    begin
+      File.open("_file1") do |f|
+	assert_equal(0,           f.chmod(0))
+	assert_equal(base,        f.stat.mode & 0777)
+	assert_equal(0,           f.chmod(0400))
+	assert_equal(base | 0400, f.stat.mode & 0777)
+	assert_equal(0,           f.chmod(0644))
+	assert_equal(base |0644,  f.stat.mode & 0777)
+      end
+    ensure
+      Dir.chdir("..")
+    end
   end
 
   def test_mtime
@@ -180,7 +184,7 @@ class TestFile__Stat < FileInfoTest
   end
 
   def test_pipe?
-    try(:pipe?, "/dev/tty", false)
+    try(:pipe?, "/dev/tty", false) if $os <= Unix
     try(:pipe?, ".",        false)
     IO.popen("-") { |p|
       assert_equal(true, (p ? p : $stdout).stat.pipe?)
@@ -201,16 +205,19 @@ class TestFile__Stat < FileInfoTest
 #    assert_fail("untested")
   end
 
-  def test_setgid?
-    try(:setgid?, @file1, false)
-    File.chmod(02644, @file1)
-    try(:setgid?, @file1, true)
-  end
-
-  def test_setuid?
-    try(:setuid?, @file1, false)
-    File.chmod(04644, @file1)
-    try(:setuid?, @file1, true)
+  if $os <= Unix
+    
+    def test_setgid?
+      try(:setgid?, @file1, false)
+      File.chmod(02644, @file1)
+      try(:setgid?, @file1, true)
+    end
+    
+    def test_setuid?
+      try(:setuid?, @file1, false)
+      File.chmod(04644, @file1)
+      try(:setuid?, @file1, true)
+    end
   end
 
   def test_size
@@ -232,18 +239,20 @@ class TestFile__Stat < FileInfoTest
     try(:socket?, "/tmp/.X11-unix/X0", true)
   end
 
-  def test_sticky?
-    Dir.chdir("_test")
-    m = File.stat(".").mode
-    begin
-      File.chmod(m | 01000, ".")
-      try(:sticky?, ".",      true)
-    ensure
-      File.chmod(m, ".")
+  if $os <= Unix
+    def test_sticky?
+      Dir.chdir("_test")
+      m = File.stat(".").mode
+      begin
+	File.chmod(m | 01000, ".")
+	try(:sticky?, ".",      true)
+      ensure
+	File.chmod(m, ".")
+      end
+      try(:sticky?, ".",        false)
+      try(:sticky?, "/dev/tty", false)
+      try(:sticky?, "_file2",   false)
     end
-    try(:sticky?, ".",        false)
-    try(:sticky?, "/dev/tty", false)
-    try(:sticky?, "_file2",   false)
   end
 
   def test_symlink?

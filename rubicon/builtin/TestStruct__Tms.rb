@@ -5,10 +5,7 @@ TimesClass = $rubyVersion >= "1.7" ? Process : Time
 
 class TestStruct__Tms < Rubicon::TestCase
 
-  def sillyCalculation(n)
-    a = 0.0; n.times {|i| a += Math.sin(1/(i+1)) }
-  end
-
+  # Burn up some CPU in the parent and the child
   def setup
     pid = fork
 
@@ -16,10 +13,12 @@ class TestStruct__Tms < Rubicon::TestCase
 
     Dir.rmdir(name) if File.exists?(name)
 
-    5000.times {
+    t = Time.now
+
+    while Time.now - t < 3
       Dir.mkdir(name)
       Dir.rmdir(name)
-    }
+    end
 
     exit unless pid
 

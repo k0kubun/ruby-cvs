@@ -1,5 +1,11 @@
 require 'rubicon'
 
+# use of $= is deprecated after 1.7.1
+def pre_1_7_1
+  yield if $rubyVersion < "1.7.1"
+end
+
+
 class StringBase < Rubicon::TestCase
 
   def initialize(*args)
@@ -121,13 +127,15 @@ class StringBase < Rubicon::TestCase
     s[S("Foo")] = S("xyz")
     assert_equal(S("BarBar"), s)
 
-    $= = true
-    s = S("FooBar")
-    s[S("FOO")] = S("Bar")
-    assert_equal(S("BarBar"), s)
-    s[S("FOO")] = S("xyz")
-    assert_equal(S("BarBar"), s)
-    $= = false
+    pre_1_7_1 do
+      $= = true
+      s = S("FooBar")
+      s[S("FOO")] = S("Bar")
+      assert_equal(S("BarBar"), s)
+      s[S("FOO")] = S("xyz")
+      assert_equal(S("BarBar"), s)
+      $= = false
+    end
 
     s = S("a string")
     s[0..s.size] = S("another string")
@@ -140,18 +148,25 @@ class StringBase < Rubicon::TestCase
     assert(-1, S("abcde") <=> S("abcdef"))
 
     assert(1, S("ABCDEF") <=> S("abcdef"))
-    $= = true
-    assert(0, S("ABCDEF") <=> S("abcdef"))
-    $= = false
+
+    pre_1_7_1 do
+      $= = true
+      assert(0, S("ABCDEF") <=> S("abcdef"))
+      $= = false
+    end
   end
 
   def test_EQUAL # '=='
     assert_equal(false, S("foo") == :foo)
     assert(0, S("abcdef") == S("abcdef"))
-    $= = true
-    assert(S("CAT") == S('cat'))
-    assert(S("CaT") == S('cAt'))
-    $= = false
+
+    pre_1_7_1 do
+      $= = true
+      assert(S("CAT") == S('cat'))
+      assert(S("CaT") == S('cAt'))
+      $= = false
+    end
+
     assert(S("CAT") != S('cat'))
     assert(S("CaT") != S('cAt'))
   end
@@ -164,9 +179,12 @@ class StringBase < Rubicon::TestCase
   def test_MATCH # '=~'
     assert_equal(10,  S("FeeFieFoo-Fum") =~ /Fum$/)
     assert_equal(nil, S("FeeFieFoo-Fum") =~ /FUM$/)
-    $= = true
-    assert_equal(10,  S("FeeFieFoo-Fum") =~ /FUM$/)
-    $= = false
+
+    pre_1_7_1 do 
+      $= = true
+      assert_equal(10,  S("FeeFieFoo-Fum") =~ /FUM$/)
+      $= = false
+    end
   end
 
   def test_MOD # '%'
@@ -203,10 +221,12 @@ class StringBase < Rubicon::TestCase
     $_ = S("FeeFieFoo-Fum")
     assert_equal(10,  ~S("Fum$"))
     assert_equal(nil, ~S("FUM$"))
-    $= = true
-    assert_equal(10, ~S("FUM$"))
-    $= = false
-    
+
+    pre_1_7_1 do
+      $= = true
+      assert_equal(10, ~S("FUM$"))
+      $= = false
+    end
   end
 
   def casetest(a, b, rev=false)
@@ -221,10 +241,14 @@ class StringBase < Rubicon::TestCase
   def test_VERY_EQUAL # '==='
     assert_equal(false, S("foo") === :foo)
     casetest(S("abcdef"), S("abcdef"))
-    $= = true
-    casetest(S("CAT"), S('cat'))
-    casetest(S("CaT"), S('cAt'))
-    $= = false
+    
+    pre_1_7_1 do
+      $= = true
+      casetest(S("CAT"), S('cat'))
+      casetest(S("CaT"), S('cAt'))
+      $= = false
+    end
+
     casetest(S("CAT"), S('cat'), true) # Reverse the test - we don't want to
     casetest(S("CaT"), S('cAt'), true) # find these in the case.
   end

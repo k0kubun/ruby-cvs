@@ -4,6 +4,10 @@ require 'rubicon'
 
 class TestIO < Rubicon::TestCase
 
+  SAMPLE = "08: This is a line\n"
+
+  LINE_LENGTH = $os <= Windows ? SAMPLE.length + 1 : SAMPLE.length
+
   def setup
     setupTestDir
     @file  = "_test/_10lines"
@@ -88,10 +92,10 @@ class TestIO < Rubicon::TestCase
     end
 
     f = File.open(@file, "r")
-    f.sysread(3*19)
+    f.sysread(3*LINE_LENGTH)
     io = IO.new(f.fileno, "r")
     begin
-      assert_equal(3*19, io.tell)
+      assert_equal(3*LINE_LENGTH, io.tell)
       
       count = 0
       io.each { count += 1 }
@@ -228,7 +232,7 @@ class TestIO < Rubicon::TestCase
 
     lines = IO.readlines(@file, nil)
     assert_equal(1, lines.size)
-    assert_equal(19*10, lines[0].size)
+    assert_equal(SAMPLE.length*10, lines[0].size)
   end
 
   def test_s_select
@@ -402,7 +406,7 @@ class TestIO < Rubicon::TestCase
         count += 1
       end
     end
-    assert_equal(19*10, count)
+    assert_equal(SAMPLE.length*10, count)
   end
 
   def test_each_line
@@ -491,7 +495,7 @@ class TestIO < Rubicon::TestCase
       end
       assert_equal(nil, file.getc)
     end
-    assert_equal(19*10, count)
+    assert_equal(SAMPLE.length*10, count)
   end
 
   def test_gets
@@ -589,7 +593,7 @@ class TestIO < Rubicon::TestCase
 
   def test_pos
     pos = 0
-    File.open(@file) do |file|
+    File.open(@file, "rb") do |file|
       assert_equal(0, file.pos)
       while (line = file.gets)
         pos += line.length
@@ -600,13 +604,13 @@ class TestIO < Rubicon::TestCase
 
   def test_pos=
     nums = [ 5, 8, 0, 1, 0 ]
-    
+
     File.open(@file) do |file|
       file.pos = 999
       assert_nil(file.gets)
       assert_kindof_exception(SystemCallError) { file.pos = -1 }
       for pos in nums
-        assert_equal(0, file.pos = 19*pos)
+        assert_equal(0, file.pos = LINE_LENGTH*pos)
         line = file.gets
         assert_equal(pos, line[0..1].to_i)
       end
@@ -667,7 +671,7 @@ class TestIO < Rubicon::TestCase
   def test_read
     File.open(@file) do |file|
       content = file.read
-      assert_equal(19*10, content.length)
+      assert_equal(SAMPLE.length*10, content.length)
       count = 0
       content.split(/\n/).each do |line|
         num = line[0..1].to_i
@@ -749,7 +753,7 @@ class TestIO < Rubicon::TestCase
     File.open(@file) do |file|
       lines = file.readlines(nil)
       assert_equal(1, lines.size)
-      assert_equal(19*10, lines[0].size)
+      assert_equal(SAMPLE.length*10, lines[0].size)
     end
   end
 
@@ -772,16 +776,16 @@ class TestIO < Rubicon::TestCase
 
   def test_reopen2 
     f1 = File.new(@file)
-    assert_equal("00: This is a line\n", f1.read(19))
-    assert_equal("01: This is a line\n", f1.read(19))
+    assert_equal("00: This is a line\n", f1.read(SAMPLE.length))
+    assert_equal("01: This is a line\n", f1.read(SAMPLE.length))
 
     f2 = File.new(@file1)
     assert_equal("Line 00\n", f2.read(8))
     assert_equal("Line 01\n", f2.read(8))
 
     f2.reopen(f1)
-    assert_equal("02: This is a line\n", f2.read(19))
-    assert_equal("03: This is a line\n", f2.read(19))
+    assert_equal("02: This is a line\n", f2.read(SAMPLE.length))
+    assert_equal("03: This is a line\n", f2.read(SAMPLE.length))
 
     f1.close
     f2.close
@@ -804,13 +808,13 @@ class TestIO < Rubicon::TestCase
 
   def test_seek
     nums = [ 5, 8, 0, 1, 0 ]
-    
-    File.open(@file) do |file|
+
+    File.open(@file, "rb") do |file|
       file.seek(999, IO::SEEK_SET)
       assert_nil(file.gets)
       assert_kindof_exception(SystemCallError) { file.seek(-1) }
       for pos in nums
-        assert_equal(0, file.seek(19*pos))
+        assert_equal(0, file.seek(LINE_LENGTH*pos))
         line = file.gets
         assert_equal(pos, line[0..1].to_i)
       end
@@ -821,7 +825,7 @@ class TestIO < Rubicon::TestCase
       count = -1
       file.seek(0)
       for pos in nums
-        assert_equal(0, file.seek(19*pos, IO::SEEK_CUR))
+        assert_equal(0, file.seek(LINE_LENGTH*pos, IO::SEEK_CUR))
         line = file.gets
         count = count + pos + 1
         assert_equal(count, line[0..1].to_i)
@@ -833,7 +837,7 @@ class TestIO < Rubicon::TestCase
     File.open(@file) do |file|
       file.seek(0)
       for pos in nums
-        assert_equal(0, file.seek(-19*pos, IO::SEEK_END))
+        assert_equal(0, file.seek(-LINE_LENGTH*pos, IO::SEEK_END))
         line = file.gets
         assert_equal(10-pos, line[0..1].to_i)
       end
@@ -873,7 +877,7 @@ class TestIO < Rubicon::TestCase
       assert_equal("0:", file.sysread(2))
       assert_equal(" Thi", file.sysread(4))
       rest = file.sysread(100000)
-      assert_equal(19*10 - (1+2+4), rest.length)
+      assert_equal(SAMPLE.length*10 - (1+2+4), rest.length)
       assert_exception(EOFError) { file.sysread(1) }
     end
   end
@@ -894,7 +898,7 @@ class TestIO < Rubicon::TestCase
   # see also pos
   def test_tell
     pos = 0
-    File.open(@file) do |file|
+    File.open(@file, "rb") do |file|
       assert_equal(0, file.tell)
       while (line = file.gets)
         pos += line.length

@@ -28,6 +28,11 @@ raise "Cannot find 'util' directory" unless defined?(UTIL)
 CHECKSTAT = File.join(UTIL, "checkstat")
 TEST_TOUCH = File.join(UTIL, "test_touch")
 
+if RUBY_PLATFORM =~ /mswin32/
+  CHECKSTAT << ".exe"
+  TEST_TOUCH << ".exe"
+end
+
 for file in [CHECKSTAT, TEST_TOUCH]
   raise "Cannot find #{file}" unless File.exist?(file)
 end
@@ -85,11 +90,13 @@ class FreeBSD < BSD;     end
 
 class Windows < OS;      end
 class Cygwin  < Windows; end
+class MsWin32 < Windows; end
 
 $os = case RUBY_PLATFORM
-      when /linux/  then  Linux
-      when /bsd/    then BSD
-      when /cygwin/ then Cygwin
+      when /linux/   then  Linux
+      when /bsd/     then BSD
+      when /cygwin/  then Cygwin
+      when /mswin32/ then MsWin32
       else OS
       end
 
@@ -214,8 +221,12 @@ module Rubicon
     # Issue a system and abort on error
     #
     def sys(cmd)
-      assert(system(cmd), cmd + ": #{$? >> 8}")
-      assert_equal(0, $?, "cmd: #{$?}")
+      if $os == MsWin32
+	assert(system(cmd), "command failed: #{cmd}")
+      else
+	assert(system(cmd), cmd + ": #{$? >> 8}")
+	assert_equal(0, $?, "cmd: #{$?}")
+      end
     end
 
     #
@@ -248,7 +259,7 @@ module Rubicon
     def runChild(&block)
       pid = fork 
       if pid.nil?
-        block.call
+	block.call
         exit 0
       end
       Process.waitpid(pid, 0)
@@ -260,9 +271,11 @@ module Rubicon
     end
 
     def teardown
-      begin
-        loop { Process.wait; puts "\n\nCHILD REAPED\n\n" }
-      rescue Errno::ECHILD
+      if $os != MsWin32
+	begin
+	  loop { Process.wait; puts "\n\nCHILD REAPED\n\n" }
+	rescue Errno::ECHILD
+	end
       end
       super
     end
@@ -272,8 +285,9 @@ module Rubicon
     def setupTestDir
       @start = Dir.getwd
       teardownTestDir
-      Dir.mkdir("_test")
-      if $? != 0 && false
+      begin
+	Dir.mkdir("_test")
+      rescue
         $stderr.puts "Cannot run a file or directory test: " + 
           "will destroy existing directory _test"
         exit(99)

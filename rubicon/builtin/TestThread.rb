@@ -4,6 +4,10 @@ require 'rubicon'
 
 class TestThread < Rubicon::TestCase
 
+  def setup
+    puts "******************" if Thread.critical
+  end
+
   def thread_control
     @ready = false
     yield
@@ -169,8 +173,8 @@ class TestThread < Rubicon::TestCase
   def test_kill
     t = Thread.new { Thread.current.kill }
     t.join
-    assert_equals(t,t.kill)
-    assert_equals(false,t.alive?)
+    assert_equals(t, t.kill)
+    assert_equals(false, t.alive?)
   end
 
   def test_priority
@@ -180,29 +184,41 @@ class TestThread < Rubicon::TestCase
   def test_priority=
     c1 = 0
     c2 = 0
-    a = Thread.new { loop { c1 += 1 }}
-    b = Thread.new { loop { c2 += 1 }}
+    a = Thread.new { Thread.stop; loop { c1 += 1 }}
+    b = Thread.new { Thread.stop; loop { c2 += 1 }}
     a.priority = -2
     b.priority = -1
-    sleep 1
+    a.wakeup
+    b.wakeup
+    10000.times { Thread.pass}
     Thread.critical = true
-    assert (c2 > c1)
-    c1 = 0
-    c2 = 0
-    a.priority = -1
-    b.priority = -2
-    Thread.critical = false
-    sleep 1 
-    assert (c1 > c2)
-    a.kill
-    b.kill
+    begin
+      assert (c2 > c1)
+      c1 = 0
+      c2 = 0
+      a.priority = -1
+      b.priority = -2
+      Thread.critical = false
+      sleep 1 
+      assert (c1 > c2)
+      a.kill
+      b.kill
+    ensure
+      Thread.critical = false
+    end
   end
 
   def test_raise
+    puts Thread.list
     madeit = false
     t = nil
+
     thread_control do
-      t = Thread.new { _signal; sleep 60; madeit = true }
+      t = Thread.new do
+	_signal
+	sleep 5
+	madeit = true 
+      end
       _wait
     end
     t.raise "Gotcha"
@@ -344,17 +360,21 @@ class TestThread < Rubicon::TestCase
     count = 0
     a = nil
     thread_control do
-      a = Thread.new { _signal; loop { count += 1; sleep .01 }}
+      a = Thread.new { _signal; loop { count += 1; Thread.pass }}
       _wait
     end
 
     Thread.critical = true
     saved = count # Fixnum, will copy the value
-    foo = 0
-    10000.times { |i| foo += Math.sin(i) ** Math.tan(i/2) }
+    100000.times { |i| Math.sin(i) ** Math.tan(i/2) }
     assert_equal(saved, count)
+
     Thread.critical = false
-    10000.times { |i| foo += Math.sin(i) ** Math.tan(i/2) }
+    p saved
+    p count
+    100000.times { |i| Math.sin(i) ** Math.tan(i/2) }
+    p saved
+    p count
     assert(saved != count)
   end
 
@@ -388,13 +408,13 @@ class TestThread < Rubicon::TestCase
 
   def test_s_kill
     count = 0
-    t = Thread.new { loop { count += 1 }}
+    t = Thread.new { loop { Thread.pass; count += 1 }}
     sleep .1
     saved = count
     Thread.kill(t)
     sleep .1
     t.join
-    assert_equals(saved,count)
+    assert_equals(saved, count)
   end
 
   def test_s_list

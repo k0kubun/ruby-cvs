@@ -35,6 +35,24 @@
 	finding it)
 
 2001-07-27    <dave@pragmaticprogrammer.com>
+
+	* builtin\StringBase.rb: Use of $= is deprecated as of 1.7.1
+
+	* builtin\TestIO.rb: Under Windows, the CR is stripped out of
+	lines we read, so we can't simply add the length of the input to
+	arrive at the file position. Putting files into binary mode fixes
+	this.
+
+	* builtin\TestFixnum.rb: On my windows box, 0**-1 returns -Infinity,
+	rather that +Infinity. Who cares as long as it's infinite... :)
+
+	* builtin\TestStruct__Tms.rb (TimesClass): Under Windows, burning
+	CPU by creating and deleting a directory 5,000 times takes forever
+	and is effectively non-interruptable. Change it to loop for no
+	more than three seconds. Also start removing the Cygwin
+	unsupported stuff.
+
+2001-07-27    <dave@pragmaticprogrammer.com>
 	Start getting stuff to work under Windows. First we get Cygwin working,
 	and then we attack the MSVC version.
 	

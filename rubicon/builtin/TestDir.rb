@@ -27,7 +27,8 @@ class TestDir < Rubicon::TestCase
       [ %w( _test/_file1 _test/_file2 ), Dir["_test/_file{0,1,2,3}"] ],
       [ %w( ),                           Dir["_test/_file{4,5,6,7}"] ],
       
-      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]l*"] ],      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]e[0-9]"] ],
+      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]l*"] ],    
+      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]e[0-9]"] ],
       [ %w( _test/_file1              ), Dir["**/_f*[il]e[01]"] ],
       [ %w( _test/_file1              ), Dir["**/_f*[il]e[01]*"] ],
       [ %w( _test/_file1              ), Dir["**/_f*[^ie]e[01]*"] ],
@@ -43,8 +44,13 @@ class TestDir < Rubicon::TestCase
     assert_equal(File.join(start, "_test"), Dir.getwd)
     assert_equal(0,                         Dir.chdir(".."))
     assert_equal(start,                     Dir.getwd)
-    assert_equal(0,                         Dir.chdir("/tmp"))
-    assert_equal("/tmp",                    Dir.getwd)
+    if $os == MsWin32
+      assert_equal(0,                       Dir.chdir("C:/Program Files"));
+      assert_equal("C:/Program Files",      Dir.getwd)
+    else
+      assert_equal(0,                       Dir.chdir("/tmp"))
+      assert_equal("/tmp",                  Dir.getwd)
+    end
   end
 
   def test_s_chroot
@@ -76,7 +82,11 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_getwd
-    assert_equal(`pwd`.chomp, Dir.getwd)
+    if $os == MsWin32
+      assert_equal(`cd`.chomp.gsub(/\\/, '/'), Dir.getwd)
+    else
+      assert_equal(`pwd`.chomp, Dir.getwd)
+    end
   end
 
   def test_s_glob
@@ -135,7 +145,11 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_pwd
-    assert_equal(`pwd`.chomp, Dir.pwd)
+    if $os == MsWin32
+      assert_equal(`cd`.chomp.gsub(/\\/, '/'), Dir.pwd)
+    else
+      assert_equal(`pwd`.chomp, Dir.pwd)
+    end
   end
 
   def test_s_rmdir
