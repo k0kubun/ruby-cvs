@@ -4,47 +4,124 @@ require '../rubicon'
 class TestKernel < Rubicon::TestCase
 
   def test_EQUAL # '=='
-    assert_fail("untested")
+    o1 = Object.new
+    o2 = Object.new
+    assert(o1 == o1)
+    assert(o2 == o2)
+    assert(o1 != o2)
+    assert(!(o1 == o2))
   end
 
   def test_MATCH # '=~'
-    assert_fail("untested")
+    o1 = Object.new
+    o2 = Object.new
+    assert(!(o1 =~ o1))
+    assert(!(o2 =~ o2))
+    assert(o1 !~ o2)
+    assert(!(o1 =~ o2))
   end
 
   def test_VERY_EQUAL # '==='
-    assert_fail("untested")
+    o1 = Object.new
+    o2 = Object.new
+    assert(o1 === o1)
+    assert(o2 === o2)
+    assert(!(o1 === o2))
   end
 
   def test___id__
-    assert_fail("untested")
+    # naive test - no 2 ids the same
+    objs = []
+    ObjectSpace.each_object { |obj| objs << obj.__id__ }
+    s1 = objs.size
+    assert_equal(s1, objs.uniq.size)
+
+    assert_equal(1.__id__, (3-2).__id__)
+    assert_instance_of(Fixnum, 1.__id__)
+  end
+
+  class SendTest
+    def send_test1
+      "send1"
+    end
+    
+    def send_test2(a, b)
+      a + b
+    end
   end
 
   def test___send__
-    assert_fail("untested")
+    t = SendTest.new
+    assert_equal("send1", t.__send__(:send_test1))
+    assert_equal(99,      t.__send__("send_test2", 44, 55))
   end
 
   def test_class
-    assert_fail("untested")
+    assert_instance_of(Class, 1.class)
+    assert_equal(Fixnum, 1.class)
+    assert_equal(Class, TestKernel.class)
+    assert_equal(Class, TestKernel.class.class)
+    assert_equal(Module, Enumerable.class)
+  end
+
+  class CloneTest
+    attr_accessor :str
   end
 
   def test_clone
-    assert_fail("untested")
+    s1 = CloneTest.new
+    s1.str = "hello"
+    s2 = s1.clone
+    assert(s1.str    == s2.str)
+    assert(s1.str.id == s2.str.id)
+    assert(s1.id     != s2.id)
+  end
+
+  class DisplayTest
+    attr :val
+    def write(obj)
+      @val = "!#{obj.to_s}!"
+    end
   end
 
   def test_display
-    assert_fail("untested")
+    dt = DisplayTest.new
+    assert_nil("hello".display(dt))
+    assert_equal("!hello!", dt.val)
+
+    save = $>
+    begin
+      $> = dt
+      assert_nil("hello".display)
+      assert_equal("!hello!", dt.val)
+    rescue
+      $> = save
+    end
   end
 
   def test_dup
-    assert_fail("untested")
+    s1 = CloneTest.new
+    s1.str = "hello"
+    s2 = s1.dup
+    assert(s1.str    == s2.str)
+    assert(s1.str.id == s2.str.id)
+    assert(s1.id     != s2.id)
   end
 
   def test_eql?
-    assert_fail("untested")
+    o1 = Object.new
+    o2 = Object.new
+    assert(o1.eql? o1)
+    assert(o2.eql? o2)
+    assert(!(o1.eql? o2))
   end
 
   def test_equal?
-    assert_fail("untested")
+    o1 = Object.new
+    o2 = Object.new
+    assert(o1.equal? o1)
+    assert(o2.equal? o2)
+    assert(!(o1.equal? o2))
   end
 
   def test_extend
@@ -64,7 +141,13 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_id
-    assert_fail("untested")
+    objs = []
+    ObjectSpace.each_object { |obj| objs << obj.id }
+    s1 = objs.size
+    assert_equal(s1, objs.uniq.size)
+
+    assert_equal(1.id, (3-2).id)
+    assert_instance_of(Fixnum, 1.id)
   end
 
   def test_inspect
@@ -120,7 +203,9 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_send
-    assert_fail("untested")
+    t = SendTest.new
+    assert_equal("send1", t.send(:send_test1))
+    assert_equal(99,      t.send("send_test2", 44, 55))
   end
 
   def test_singleton_methods
@@ -246,7 +331,7 @@ class TestKernel < Rubicon::TestCase
       end
       EOM
     end
-    assert(!defined? Module_Test::VAL)
+    assert(!defined? Module_Test)
     autoload(:Module_Test, "./_dummy.rb")
     assert(defined? Module_Test::VAL)
     assert_equal(123, Module_Test::VAL)
@@ -699,7 +784,10 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_lambda
-    assert_fail("untested")
+    a = lambda { "hello" }
+    assert_equal("hello", a.call)
+    a = lambda { |s| "there " + s  }
+    assert_equal("there Dave", a.call("Dave"))
   end
 
   def test_s_load
@@ -735,7 +823,10 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_proc
-    assert_fail("untested")
+    a = proc { "hello" }
+    assert_equal("hello", a.call)
+    a = proc { |s| "there " + s  }
+    assert_equal("there Dave", a.call("Dave"))
   end
 
   def test_s_putc
