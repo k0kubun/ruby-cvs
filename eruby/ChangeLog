@@ -1,3 +1,7 @@
+Tue May  1 18:14:56 2001  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.RB: add .1 to .SUFFIXES.
+
 Tue May  1 12:23:44 2001  YASUI Kentarow <kenyasui@alles.or.jp>
 
 	* Makefile.RB: fixed duplicated DESTDIR.
