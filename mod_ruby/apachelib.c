@@ -70,7 +70,8 @@ static VALUE apache_unescape_url(VALUE self, VALUE url)
 
     Check_Type(url, T_STRING);
     buff = ALLOCA_N(char, RSTRING(url)->len + 1);
-    strcpy(buff, RSTRING(url)->ptr);
+    memcpy(buff, RSTRING(url)->ptr, RSTRING(url)->len);
+    buff[RSTRING(url)->len] = '\0';
     ap_unescape_url(buff);
     return rb_str_new2(buff);
 }
@@ -99,8 +100,7 @@ static VALUE table_get(VALUE self, VALUE name)
     table *tbl;
     const char *key, *res;
 
-    Check_Type(name, T_STRING);
-    key = RSTRING(name)->ptr;
+    key = STR2CSTR(name);
     Data_Get_Struct(self, table, tbl);
     res = ap_table_get(tbl, key);
     if (res == NULL)
@@ -113,10 +113,8 @@ static VALUE table_set(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
-    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_set(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    ap_table_set(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
 
@@ -124,10 +122,8 @@ static VALUE table_setn(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
-    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_setn(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    ap_table_setn(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
 
@@ -135,10 +131,8 @@ static VALUE table_merge(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
-    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_merge(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    ap_table_merge(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
 
@@ -146,10 +140,8 @@ static VALUE table_mergen(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
-    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_mergen(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    ap_table_mergen(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
 
@@ -157,9 +149,8 @@ static VALUE table_unset(VALUE self, VALUE name)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_unset(tbl, RSTRING(name)->ptr);
+    ap_table_unset(tbl, STR2CSTR(name));
     return Qnil;
 }
 
@@ -167,10 +158,8 @@ static VALUE table_add(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
-    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_add(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    ap_table_add(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
 
@@ -178,10 +167,8 @@ static VALUE table_addn(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
 
-    Check_Type(name, T_STRING);
-    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_addn(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    ap_table_addn(tbl, STR2CSTR(name), STR2CSTR(val));
     return val;
 }
 
@@ -247,8 +234,7 @@ static VALUE in_table_get(VALUE self, VALUE name)
     table *tbl;
     const char *key, *res;
 
-    Check_Type(name, T_STRING);
-    key = RSTRING(name)->ptr;
+    key = STR2CSTR(name);
     if (strcasecmp(key, "authorization") == 0 ||
 	strcasecmp(key, "proxy-authorization") == 0)
 	return Qnil;
@@ -328,7 +314,8 @@ static VALUE in_table_each_value(VALUE self)
 
 static void request_mark(request_data *data)
 {
-    rb_gc_mark(data->buff);
+    rb_gc_mark(data->inbuf);
+    rb_gc_mark(data->outbuf);
     rb_gc_mark(data->headers_in);
     rb_gc_mark(data->headers_out);
 }
@@ -337,24 +324,37 @@ VALUE ruby_create_request(request_rec *r)
 {
     request_data *data;
     VALUE result;
+    char buff[BUFSIZ];
+    int len;
     
     r->content_type = "text/html";
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
 			      (void (*) _((void*))) request_mark, free, data);
     data->request = r;
-    data->buff = rb_str_new("", 0);
+    data->inbuf = rb_str_new("", 0);
+    data->outbuf = rb_str_new("", 0);
     data->headers_in = ruby_create_table(rb_cApacheInTable, r->headers_in);
     data->headers_out = ruby_create_table(rb_cApacheTable, r->headers_out);
     data->send_http_header = 0;
+    data->pos = 0;
+
+    ap_hard_timeout("get_client_block", r);
+    if (ap_should_client_block(r)) {
+	while ((len = ap_get_client_block(r, buff, BUFSIZ)) > 0) {
+	    rb_str_cat(data->inbuf, buff, len);
+	}
+    }
+    ap_kill_timeout(r);
+
     return result;
 }
 
-int ruby_request_buffer_length(VALUE self)
+int ruby_request_outbuf_length(VALUE self)
 {
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    return RSTRING(data->buff)->len;
+    return RSTRING(data->outbuf)->len;
 }
 
 static VALUE request_to_s(VALUE self)
@@ -362,7 +362,7 @@ static VALUE request_to_s(VALUE self)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    return data->buff;
+    return data->outbuf;
 }
 
 static VALUE request_replace(int argc, VALUE *argv, VALUE self)
@@ -370,7 +370,7 @@ static VALUE request_replace(int argc, VALUE *argv, VALUE self)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    return rb_funcall2(data->buff, rb_frame_last_func(), argc, argv);
+    return rb_funcall2(data->outbuf, rb_frame_last_func(), argc, argv);
 }
 
 static VALUE request_cancel(VALUE self)
@@ -378,8 +378,8 @@ static VALUE request_cancel(VALUE self)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    RSTRING(data->buff)->len = 0;
-    RSTRING(data->buff)->ptr[0] = '\0';
+    RSTRING(data->outbuf)->len = 0;
+    RSTRING(data->outbuf)->ptr[0] = '\0';
     return Qnil;
 }
 
@@ -390,7 +390,7 @@ static VALUE request_write(VALUE self, VALUE str)
 
     Data_Get_Struct(self, request_data, data);
     str = rb_obj_as_string(str);
-    rb_str_cat(data->buff, RSTRING(str)->ptr, RSTRING(str)->len);
+    rb_str_cat(data->outbuf, RSTRING(str)->ptr, RSTRING(str)->len);
     len = RSTRING(str)->len;
     return INT2NUM(len);
 }
@@ -401,7 +401,7 @@ static VALUE request_putc(VALUE self, VALUE c)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    rb_str_cat(data->buff, &ch, 1);
+    rb_str_cat(data->outbuf, &ch, 1);
     return c;
 }
 
@@ -516,9 +516,9 @@ void rb_request_flush(VALUE self)
 	if (data->request->header_only)
 	    return;
     }
-    if (RSTRING(data->buff)->len > 0) {
-	ap_rwrite(RSTRING(data->buff)->ptr,
-		  RSTRING(data->buff)->len, data->request);
+    if (RSTRING(data->outbuf)->len > 0) {
+	ap_rwrite(RSTRING(data->outbuf)->ptr,
+		  RSTRING(data->outbuf)->len, data->request);
     }
 }
 
@@ -630,10 +630,9 @@ static VALUE request_set_content_type(VALUE self, VALUE str)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    Check_Type(str, T_STRING);
     str = rb_funcall(str, rb_intern("downcase"), 0);
     data->request->content_type =
-	ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+	ap_pstrdup(data->request->pool, STR2CSTR(str));
     return str;
 }
 
@@ -653,10 +652,9 @@ static VALUE request_set_content_encoding(VALUE self, VALUE str)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    Check_Type(str, T_STRING);
     str = rb_funcall(str, rb_intern("downcase"), 0);
     data->request->content_encoding =
-	ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+	ap_pstrdup(data->request->pool, STR2CSTR(str));
     return str;
 }
 
@@ -696,7 +694,7 @@ static VALUE request_set_content_languages(VALUE self, VALUE ary)
 	VALUE str = RARRAY(ary)->ptr[i];
 	str = rb_funcall(str, rb_intern("downcase"), 0);
         *(char **) ap_push_array(data->request->content_languages) =
-	    ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+	    ap_pstrdup(data->request->pool, STR2CSTR(str));
     }
     return ary;
 }
@@ -733,8 +731,8 @@ static VALUE request_aref(VALUE self, VALUE vkey)
 
 static VALUE request_aset(VALUE self, VALUE key, VALUE val)
 {
-    char *s;
     request_data *data;
+    char *s;
 
     s = STR2CSTR(key);
     if (strcasecmp(s, "content-type") == 0) {
@@ -752,11 +750,11 @@ static VALUE request_aset(VALUE self, VALUE key, VALUE val)
 
 static VALUE request_each_header(VALUE self)
 {
-    VALUE assoc;
     request_data *data;
     array_header *hdrs_arr;
     table_entry *hdrs;
     int i;
+    VALUE assoc;
 
     Data_Get_Struct(self, request_data, data);
     hdrs_arr = ap_table_elts(data->request->headers_in);
@@ -818,17 +816,271 @@ static VALUE request_each_value(VALUE self)
 
 static VALUE request_escape_html(VALUE self, VALUE str)
 {
-    char *tmp;
     request_data *data;
+    char *tmp;
 
     Data_Get_Struct(self, request_data, data);
     tmp = ap_escape_html(data->request->pool, STR2CSTR(str));
     return rb_str_new2(tmp);
 }
 
-static VALUE send_to_stdin(int argc, VALUE *argv, VALUE self)
+static VALUE request_read_all(VALUE self)
 {
-    return rb_funcall2(rb_stdin, rb_frame_last_func(), argc, argv);
+    request_data *data;
+    VALUE str;
+
+    Data_Get_Struct(self, request_data, data);
+    if (data->pos >= RSTRING(data->inbuf)->len)
+	return Qnil;
+    str = rb_str_substr(data->inbuf, data->pos,
+			RSTRING(data->inbuf)->len - data->pos);
+    data->pos = RSTRING(data->inbuf)->len;
+    OBJ_TAINT(str);
+    return str;
+}
+
+static VALUE request_read(int argc, VALUE *argv, VALUE self)
+{
+    request_data *data;
+    VALUE length, str;
+    long len, rest;
+
+    Data_Get_Struct(self, request_data, data);
+    rb_scan_args(argc, argv, "01", &length);
+    if (NIL_P(length)) {
+	return request_read_all(self);
+    }
+
+    len = NUM2LONG(length);
+    if (len < 0) {
+	rb_raise(rb_eArgError, "negative length %d given", len);
+    }
+
+    if (data->pos >= RSTRING(data->inbuf)->len)
+	return Qnil;
+    if (len == 0)
+	return rb_str_new("", 0);
+
+    rest = RSTRING(data->inbuf)->len - data->pos;
+    if (len > rest) len = rest;
+
+    str = rb_str_substr(data->inbuf, data->pos, len);
+    data->pos += len;
+    OBJ_TAINT(str);
+    return str;
+}
+
+static long memsearch(char *s, size_t slen, char *t, size_t tlen)
+{
+    long i, j, k;
+
+    if (tlen == 0)
+	return -1;
+    for (i = 0; i < slen; i++) {
+	for (j = i, k = 0; s[j] == t[k]; j++, k++) {
+	    if (k == tlen - 1)
+		return i;
+	}
+    }
+    return -1;
+}
+
+static VALUE request_gets(int argc, VALUE *argv, VALUE self)
+{
+    request_data *data;
+    VALUE rs, str;
+    char *rsptr;
+    long rslen, len, i;
+
+    Data_Get_Struct(self, request_data, data);
+    if (rb_scan_args(argc, argv, "01", &rs) == 0) {
+	rs = rb_rs;
+    }
+    else {
+	if (!NIL_P(rs)) Check_Type(rs, T_STRING);
+    }
+
+    if (data->pos >= RSTRING(data->inbuf)->len)
+	return Qnil;
+
+    if (NIL_P(rs)) {
+	str = request_read_all(self);
+	if (!NIL_P(str)) {
+	    rb_lastline_set(str);
+	}
+	return str;
+    }
+    else {
+	rsptr = RSTRING(rs)->ptr;
+	rslen = RSTRING(rs)->len;
+    }
+    i = memsearch(RSTRING(data->inbuf)->ptr + data->pos,
+		  RSTRING(data->inbuf)->len - data->pos,
+		  rsptr, rslen);
+    if (i == -1) {
+	len = RSTRING(data->inbuf)->len - data->pos;
+    }
+    else {
+	len = i + rslen;
+    }
+    str = rb_str_substr(data->inbuf, data->pos, len);
+    data->pos += len;
+
+    OBJ_TAINT(str);
+    rb_lastline_set(str);
+    return str;
+}
+
+static VALUE request_readline(int argc, VALUE *argv, VALUE self)
+{
+    VALUE line = request_gets(argc, argv, self);
+
+    if (NIL_P(line)) {
+	rb_raise(rb_eEOFError, "End of file reached");
+    }
+    return line;
+}
+
+static VALUE request_readlines(int argc, VALUE *argv, VALUE self)
+{
+    VALUE line, ary;
+
+    ary = rb_ary_new();
+    while (!NIL_P(line = request_gets(argc, argv, self))) {
+	rb_ary_push(ary, line);
+    }
+    return ary;
+}
+
+static VALUE request_each_line(int argc, VALUE *argv, VALUE self)
+{
+    VALUE line;
+
+    while (!NIL_P(line = request_gets(argc, argv, self))) {
+	rb_yield(line);
+    }
+    return self;
+}
+
+static VALUE request_each_byte(int argc, VALUE *argv, VALUE self)
+{
+    request_data *data;
+    unsigned char c;
+
+    Data_Get_Struct(self, request_data, data);
+    while (data->pos < RSTRING(data->inbuf)->len) {
+	c = RSTRING(data->inbuf)->ptr[data->pos];
+	rb_yield(INT2FIX(c));
+	data->pos++;
+    }
+    return self;
+}
+
+static VALUE request_getc(VALUE self)
+{
+    request_data *data;
+    unsigned char c;
+
+    Data_Get_Struct(self, request_data, data);
+    if (data->pos >= RSTRING(data->inbuf)->len)
+	return Qnil;
+    c = RSTRING(data->inbuf)->ptr[data->pos];
+    data->pos++;
+    return INT2FIX(c);
+}
+
+static VALUE request_readchar(VALUE self)
+{
+    VALUE c = request_getc(self);
+
+    if (NIL_P(c)) {
+	rb_raise(rb_eEOFError, "End of file reached");
+    }
+    return c;
+}
+
+static VALUE request_ungetc(VALUE self, VALUE c)
+{
+    request_data *data;
+    int cc = NUM2INT(c);
+
+    Data_Get_Struct(self, request_data, data);
+    if (data->pos == 0)
+	return Qnil;
+    data->pos--;
+    RSTRING(data->inbuf)->ptr[data->pos] = cc;
+    return Qnil;
+}
+
+static VALUE request_tell(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2NUM(data->pos);
+}
+
+static VALUE request_seek(int argc, VALUE *argv, VALUE self)
+{
+    request_data *data;
+    VALUE offset, ptrname;
+    int whence;
+
+    Data_Get_Struct(self, request_data, data);
+    rb_scan_args(argc, argv, "11", &offset, &ptrname);
+    if (argc == 1) whence = SEEK_SET;
+    else whence = NUM2INT(ptrname);
+
+    switch (whence) {
+    case SEEK_SET:
+	data->pos = NUM2LONG(offset);
+	break;
+    case SEEK_CUR:
+	data->pos = data->pos + NUM2LONG(offset);
+	break;
+    case SEEK_END:
+	data->pos = RSTRING(data->inbuf)->len + NUM2LONG(offset);
+	break;
+    default:
+	rb_raise(rb_eArgError, "invalid whence: %d", whence);
+	break;
+    }
+    if (data->pos < 0)
+	data->pos = 0;
+    if (data->pos > RSTRING(data->inbuf)->len)
+	data->pos = RSTRING(data->inbuf)->len;
+
+    return INT2FIX(0);
+}
+
+static VALUE request_rewind(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    data->pos = 0;
+    return INT2FIX(0);
+}
+
+static VALUE request_set_pos(VALUE self, VALUE pos)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    data->pos = NUM2LONG(pos);
+    if (data->pos < 0)
+	data->pos = 0;
+    if (data->pos > RSTRING(data->inbuf)->len)
+	data->pos = RSTRING(data->inbuf)->len;
+    return INT2NUM(pos);
+}
+
+static VALUE request_eof(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->pos >= RSTRING(data->inbuf)->len ? Qtrue : Qfalse;
 }
 
 void ruby_init_apachelib()
@@ -904,18 +1156,26 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);
     rb_define_method(rb_cApacheRequest, "each_header", request_each_header, 0);
-    rb_define_alias(rb_cApacheRequest, "each", "each_header");
     rb_define_method(rb_cApacheRequest, "each_key", request_each_key, 0);
     rb_define_method(rb_cApacheRequest, "each_value", request_each_value, 0);
     rb_define_method(rb_cApacheRequest, "escape_html", request_escape_html, 1);
-    rb_define_method(rb_cApacheRequest, "read", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "gets", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "readline", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "getc", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "readchar", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "ungetc", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "tell", send_to_stdin, -1);
-    rb_define_method(rb_cApacheRequest, "seek", send_to_stdin, -1);
+    rb_define_method(rb_cApacheRequest, "read", request_read, -1);
+    rb_define_method(rb_cApacheRequest, "gets", request_gets, -1);
+    rb_define_method(rb_cApacheRequest, "readline", request_readline, -1);
+    rb_define_method(rb_cApacheRequest, "readlines", request_readlines, -1);
+    rb_define_method(rb_cApacheRequest, "each", request_each_line, -1);
+    rb_define_method(rb_cApacheRequest, "each_line", request_each_line, -1);
+    rb_define_method(rb_cApacheRequest, "each_byte", request_each_byte, 0);
+    rb_define_method(rb_cApacheRequest, "getc", request_getc, 0);
+    rb_define_method(rb_cApacheRequest, "readchar", request_readchar, 0);
+    rb_define_method(rb_cApacheRequest, "ungetc", request_ungetc, 1);
+    rb_define_method(rb_cApacheRequest, "tell", request_tell, 0);
+    rb_define_method(rb_cApacheRequest, "seek", request_seek, -1);
+    rb_define_method(rb_cApacheRequest, "rewind", request_rewind, 0);
+    rb_define_method(rb_cApacheRequest, "pos", request_tell, 0);
+    rb_define_method(rb_cApacheRequest, "pos=", request_set_pos, 1);
+    rb_define_method(rb_cApacheRequest, "eof", request_eof, 0);
+    rb_define_method(rb_cApacheRequest, "eof?", request_eof, 0);
 
     rb_eApacheTimeoutError =
 	rb_define_class_under(rb_mApache, "TimeoutError", rb_eException);

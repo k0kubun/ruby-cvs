@@ -201,8 +201,6 @@ static void ruby_startup(server_rec *s, pool *p)
     static char ruby_version[BUFSIZ];
     char **list;
     int i;
-    long j;
-    int state;
 
 #if MODULE_MAGIC_NUMBER >= 19980507
     ap_add_version_component(MOD_RUBY_STRING_VERSION);
@@ -352,7 +350,10 @@ static void get_exception_info(VALUE str)
 {
     VALUE errat;
     VALUE eclass;
-    VALUE einfo;
+    VALUE estr;
+    char *einfo;
+    int elen;
+    int state;
 
     if (NIL_P(ruby_errinfo)) return;
 
@@ -369,30 +370,37 @@ static void get_exception_info(VALUE str)
     }
 
     eclass = CLASS_OF(ruby_errinfo);
-    einfo = rb_obj_as_string(ruby_errinfo);
-    if (eclass == rb_eRuntimeError && RSTRING(einfo)->len == 0) {
+    estr = rb_protect(rb_obj_as_string, ruby_errinfo, &state);
+    if (state) {
+	einfo = "";
+	elen = 0;
+    }
+    else {
+	einfo = str2cstr(estr, &elen);
+    }
+    if (eclass == rb_eRuntimeError && elen == 0) {
 	STR_CAT_LITERAL(str, ": unhandled exception\n");
     }
     else {
 	VALUE epath;
 
 	epath = rb_class_path(eclass);
-	if (RSTRING(einfo)->len == 0) {
+	if (elen == 0) {
 	    STR_CAT_LITERAL(str, ": ");
 	    rb_str_cat(str, RSTRING(epath)->ptr, RSTRING(epath)->len);
 	    STR_CAT_LITERAL(str, "\n");
 	}
 	else {
 	    char *tail  = 0;
-	    int len = RSTRING(einfo)->len;
+	    int len = elen;
 
 	    if (RSTRING(epath)->ptr[0] == '#') epath = 0;
-	    if ((tail = strchr(RSTRING(einfo)->ptr, '\n')) != NULL) {
-		len = tail - RSTRING(einfo)->ptr;
+	    if ((tail = strchr(einfo, '\n')) != NULL) {
+		len = tail - einfo;
 		tail++;		/* skip newline */
 	    }
 	    STR_CAT_LITERAL(str, ": ");
-	    rb_str_cat(str, RSTRING(einfo)->ptr, len);
+	    rb_str_cat(str, einfo, len);
 	    if (epath) {
 		STR_CAT_LITERAL(str, " (");
 		rb_str_cat(str, RSTRING(epath)->ptr, RSTRING(epath)->len);
@@ -478,106 +486,15 @@ static void ruby_error_print(request_rec *r, int state)
 	rb_str_cat(errmsg, buff, strlen(buff));
 	break;
     }
-    ap_rputs(ap_escape_html(r->pool, RSTRING(errmsg)->ptr), r);
+    ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
     logmsg = STRING_LITERAL("ruby script error\n");
     rb_str_concat(logmsg, errmsg);
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
-		 "%s", RSTRING(logmsg)->ptr);
+		 "%s", STR2CSTR(logmsg));
 
     ap_rputs("</pre>\n", r);
     ap_rputs("</body>\n", r);
     ap_rputs("</html>\n", r);
-}
-
-static VALUE stdin_reopen(VALUE io)
-{
-    rb_funcall(rb_stdin, rb_intern("reopen"), 1, io);
-    return rb_stdin;
-}
-
-struct wcb_arg {
-    request_rec *r;
-    FILE *fp;
-};
-
-static VALUE write_client_block0(struct wcb_arg *arg)
-{
-    request_rec *r = arg->r;
-    FILE *fp = arg->fp;
-#define BUFF_LEN 256
-    char buff[BUFF_LEN];
-    int len;
-#ifdef SIGPIPE
-    void (*handler) (int);
-#endif
-
-    ap_hard_timeout("write script args", arg->r);
-#ifdef SIGPIPE
-    handler = signal(SIGPIPE, SIG_IGN);
-#endif
-    while ((len = ap_get_client_block(r, buff, BUFF_LEN)) > 0) {
-	ap_reset_timeout(r);
-	rb_thread_fd_writable(fileno(fp));
-	if (fwrite(buff, 1, len, fp) == EOF)
-	    break;
-    }
-#ifdef SIGPIPE
-    signal(SIGPIPE, handler);
-#endif
-    ap_kill_timeout(r);
-    fclose(fp);
-    return Qnil;
-}
-
-static int write_client_block(request_rec *r, VALUE *thread)
-{
-    struct wcb_arg arg;
-    int state;
-    int pipes[2];
-    FILE *file;
-    OpenFile *fp;
-    NEWOBJ(io, struct RFile);
-    OBJSETUP(io, rb_cIO, T_FILE);
-
-#ifdef NT
-    if (_pipe(pipes, 1024, O_BINARY) == -1)
-#else
-    if (pipe(pipes) == -1)
-#endif
-	return -1;
-    if ((file = fdopen(pipes[1], "w")) == NULL)
-	return -1;
-    MakeOpenFile(io, fp);
-    if ((fp->f = fdopen(pipes[0], "r")) == NULL)
-	return -1;
-    fp->mode = FMODE_READABLE;
-    rb_protect(stdin_reopen, (VALUE) io, &state);
-    if (state) {
-	fclose(file);
-	rb_protect(rb_io_close, (VALUE) io, &state);
-	return -1;
-    }
-    arg.r = r;
-    arg.fp = file;
-    *thread = rb_thread_create(write_client_block0, &arg);
-    return 0;
-}
-
-struct to_arg {
-    VALUE thread;
-    int timeout;
-};
-
-static VALUE do_timeout(struct to_arg *arg)
-{
-    char buff[BUFSIZ];
-    VALUE err;
-
-    rb_thread_sleep(arg->timeout);
-    snprintf(buff, BUFSIZ, "timeout (%d sec)", arg->timeout);
-    err = rb_exc_new2(rb_eApacheTimeoutError, buff);
-    rb_funcall(arg->thread, rb_intern("raise"), 1, err);
-    return Qnil;
 }
 
 static VALUE thread_kill(VALUE thread)
@@ -593,6 +510,7 @@ static VALUE thread_join(VALUE thread)
 
 static VALUE kill_threads(VALUE arg)
 {
+    extern VALUE rb_thread_list();
     VALUE threads = rb_thread_list();
     VALUE current = rb_thread_current();
     VALUE th;
@@ -608,22 +526,10 @@ static VALUE kill_threads(VALUE arg)
 
 static VALUE load_ruby_script(request_rec *r)
 {
-    ruby_server_config *sconf =
-	(ruby_server_config *) ap_get_module_config(r->server->module_config,
-						    &ruby_module);
-    VALUE orig_defout = rb_defout;
-    VALUE timeout_thread;
     int state;
     request_data *data;
-    struct to_arg arg;
 
-    rb_defout = ruby_create_request(r);
-    arg.thread = rb_thread_current();
-    arg.timeout = sconf->timeout;
-    timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
-    ruby_errinfo = Qnil;
     rb_load_protect(rb_str_new2(r->filename), 1, &state);
-    rb_protect(thread_kill, timeout_thread, NULL);
 #if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
     rb_exec_end_proc();
 #endif
@@ -634,33 +540,20 @@ static VALUE load_ruby_script(request_rec *r)
     else {
 	rb_request_flush(rb_defout);
     }
-    rb_defout = orig_defout;
     return Qnil;
 }
 
 #ifdef USE_ERUBY
 static VALUE load_eruby_script(request_rec *r)
 {
-    ruby_server_config *sconf =
-	(ruby_server_config *) ap_get_module_config(r->server->module_config,
-						    &ruby_module);
-    VALUE orig_defout = rb_defout;
-    VALUE timeout_thread;
     VALUE script;
     int state;
     request_data *data;
-    struct to_arg arg;
 
-    rb_defout = ruby_create_request(r);
     eruby_noheader = 0;
     eruby_charset = eruby_default_charset;
-    arg.thread = rb_thread_current();
-    arg.timeout = sconf->timeout;
-    timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
-    ruby_errinfo = Qnil;
     script = eruby_load(r->filename, 1, &state);
-    if (!NIL_P(script)) unlink(RSTRING(script)->ptr);
-    rb_protect(thread_kill, timeout_thread, NULL);
+    if (!NIL_P(script)) unlink(STR2CSTR(script));
 #if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
     rb_exec_end_proc();
 #endif
@@ -670,7 +563,7 @@ static VALUE load_eruby_script(request_rec *r)
     }
     else {
 	if (!eruby_noheader) {
-	    int len = ruby_request_buffer_length(rb_defout);
+	    int len = ruby_request_outbuf_length(rb_defout);
 
 	    if (strcmp(r->content_type, "text/html") == 0) {
 		r->content_type = ap_psprintf(r->pool,
@@ -683,25 +576,38 @@ static VALUE load_eruby_script(request_rec *r)
 	}
 	rb_request_flush(rb_defout);
     }
-    rb_defout = orig_defout;
     return Qnil;
 }
 #endif
 
-static VALUE open_null(VALUE arg)
+struct timeout_arg {
+    VALUE thread;
+    int timeout;
+};
+
+static VALUE do_timeout(struct timeout_arg *arg)
 {
-    return rb_funcall(rb_cFile, rb_intern("open"), 1, rb_str_new2("/dev/null"));
+    char buff[BUFSIZ];
+    VALUE err;
+
+    rb_thread_sleep(arg->timeout);
+    snprintf(buff, BUFSIZ, "timeout (%d sec)", arg->timeout);
+    err = rb_exc_new2(rb_eApacheTimeoutError, buff);
+    rb_funcall(arg->thread, rb_intern("raise"), 1, err);
+    return Qnil;
 }
 
 static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
-    VALUE wcb_thread = Qnil;
-    VALUE load_thread;
+    ruby_server_config *sconf =
+	(ruby_server_config *) ap_get_module_config(r->server->module_config,
+						    &ruby_module);
     ruby_dir_config *dconf = NULL;
+    VALUE load_thread, timeout_thread;
+    struct timeout_arg arg;
     int retval;
     const char *kcode_orig = NULL;
     long i;
-    int state;
 
     (void) ap_acquire_mutex(mod_ruby_mutex);
 
@@ -722,17 +628,6 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
 	return retval;
 
-    if (ap_should_client_block(r)) {
-	if (write_client_block(r, &wcb_thread) == -1)
-	    return SERVER_ERROR;
-    }
-    else {
-	VALUE file = rb_protect(open_null, Qnil, &state);
-	rb_protect(stdin_reopen, (VALUE) file, &state);
-	if (state)
-	    return SERVER_ERROR;
-    }
-
     ap_chdir_file(r->filename);
     setup_env(r, dconf);
     rb_load_path = rb_ary_new();
@@ -741,8 +636,18 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     }
     exit_status = -1;
 
+    rb_defout = ruby_create_request(r);
+    rb_gv_set("$stdin", rb_defout);
+    rb_gv_set("$stdout", rb_defout);
+    ruby_errinfo = Qnil;
+    ruby_debug = Qfalse;
+    ruby_verbose = Qfalse;
+
     ap_soft_timeout("load ruby script", r);
     load_thread = rb_thread_create(load, r);
+    arg.thread = load_thread;
+    arg.timeout = sconf->timeout;
+    timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
     rb_protect(thread_join, load_thread, NULL);
     rb_protect(kill_threads, Qnil, NULL);
     ap_kill_timeout(r);
