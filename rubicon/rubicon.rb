@@ -61,14 +61,34 @@ module Rubicon
     #
     # Handle broken exception handling
     #
-    def assert_exception(ex, &code)
-      begin
-        super
-      rescue ex
-        $stderr.puts "\nThis RubyUnit does not trap #{ex}. This error can\n" +
-                     "safely be ignored"
+#     def assert_exception(ex, &code)
+#       begin
+#         super
+#       rescue ex
+#         if $!.instance_of? ex
+#           $stderr.puts "\nThis RubyUnit does not trap #{ex}. This error can\n" +
+#           "safely be ignored"
+#         else
+#           raise
+#         end
+#       end
+#     end
+
+    #
+    # Check a float for approximate equality
+    #
+    def assert_flequal(exp, actual, msg='')
+      if exp == 0.0
+        error = 1e-7
+      else
+        error = exp.abs/1e7
       end
+      
+      assert((exp - actual).abs < error, 
+             "#{msg} Expected #{'%f' % exp} got #{'%f' % actual}")
     end
+
+
     #
     # Skip a test if not super user
     #
@@ -97,15 +117,26 @@ module Rubicon
     # Run a block in a sub process and return exit status
     #
     def runChild(&block)
-      pid=fork 
+      pid = fork 
       if pid.nil?
           block.call
           exit 0
       end
-      Process.waitpid(pid,0)
+      Process.waitpid(pid, 0)
       return ($? >> 8) & 0xff
     end
 
+    def setup
+      super
+    end
+
+    def teardown
+      begin
+        loop { Process.wait; puts "\n\nCHILD REAPED\n\n" }
+      rescue Errno::ECHILD
+      end
+      super
+    end
     #
     # Setup some files in a test directory.
     #
@@ -216,7 +247,7 @@ module Rubicon
       puts LINE
       if total_classes > 1
         printf format, 
-          sprintf("All %d classes", total_classes),
+          sprintf("All %d files", total_classes),
           total_bad > 0 ? "FAIL" : "    ",
           total_tests, total_asserts,
           total_fails, total_errors
@@ -234,6 +265,7 @@ module Rubicon
           if res.failure_size > 0
             puts
             puts name + ":"
+            puts "-" * name.length.succ
 
             res.failures.each do |f|
               f.at.each do |at|
@@ -245,10 +277,10 @@ module Rubicon
               if err =~ /expected:(.*)but was:(.*)/m
                 exp = $1.dump
                 was = $2.dump
-                print "    Expected: #{exp}\n"
-                print "    But was:  #{was}\n"
+                print "    ....Expected: #{exp}\n"
+                print "    ....But was:  #{was}\n"
               else
-                print "    #{err}\n"
+                print "    ....#{err}\n"
               end
             end
 
@@ -260,8 +292,40 @@ module Rubicon
         puts LINE
       end
 
+      if total_errors > 0
+        puts
+        puts "Error Report".center(LINE_LENGTH)
+        puts LINE
+        left = total_errors
+
+        for name in names
+          res = @results[name]
+          if res.error_size > 0
+            puts
+            puts name + ":"
+            puts "-" * name.length.succ
+
+            res.errors.each do |f|
+              f.at.each do |at|
+                break if at =~ /rubicon/
+                print "    ", at, "\n"
+              end
+              err = f.err.to_s
+              print "    ....#{err}\n"
+            end
+
+            left -= res.error_size
+            puts
+            puts Line if left > 0
+          end
+        end
+        puts LINE
+      end
+
     end
   end
+
+
   # Run a set of tests in a file. This would be a TestSuite, but we
   # want to run each file separately, and to summarize the results
   # differently
