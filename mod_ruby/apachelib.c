@@ -76,7 +76,7 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->buff);
 }
 
-VALUE ruby_create_request(request_rec *r, int sync)
+VALUE ruby_create_request(request_rec *r)
 {
     request_data *data;
     VALUE result;
@@ -87,7 +87,6 @@ VALUE ruby_create_request(request_rec *r, int sync)
     data->request = r;
     data->buff = rb_str_new("", 0);
     data->send_http_header = 0;
-    data->sync = sync;
     return result;
 }
 
@@ -102,7 +101,6 @@ int ruby_request_buffer_length(VALUE self)
 static VALUE request_to_s(VALUE self)
 {
     request_data *data;
-    int len;
 
     Data_Get_Struct(self, request_data, data);
     return data->buff;
@@ -111,7 +109,6 @@ static VALUE request_to_s(VALUE self)
 static VALUE request_replace(int argc, VALUE *argv, VALUE self)
 {
     request_data *data;
-    int len;
 
     Data_Get_Struct(self, request_data, data);
     return rb_funcall2(data->buff, rb_frame_last_func(), argc, argv);
@@ -134,13 +131,8 @@ static VALUE request_write(VALUE self, VALUE str)
 
     Data_Get_Struct(self, request_data, data);
     str = rb_obj_as_string(str);
-    if (data->sync) {
-	len = ap_rwrite(RSTRING(str)->ptr, RSTRING(str)->len, data->request);
-    }
-    else {
-	rb_str_cat(data->buff, RSTRING(str)->ptr, RSTRING(str)->len);
-	len = RSTRING(str)->len;
-    }
+    rb_str_cat(data->buff, RSTRING(str)->ptr, RSTRING(str)->len);
+    len = RSTRING(str)->len;
     return INT2NUM(len);
 }
 
@@ -150,12 +142,7 @@ static VALUE request_putc(VALUE self, VALUE c)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    if (data->sync) {
-	ap_rputc(ch, data->request);
-    }
-    else {
-	rb_str_cat(data->buff, &ch, 1);
-    }
+    rb_str_cat(data->buff, &ch, 1);
     return c;
 }
 
@@ -251,52 +238,29 @@ static VALUE request_addstr(VALUE out, VALUE str)
     return out;
 }
 
-static VALUE request_send_http_header(VALUE self)
+VALUE rb_request_send_http_header(VALUE self)
 {
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    if (data->sync) {
-	ap_send_http_header(data->request);
-    }
-    else {
-	data->send_http_header = 1;
-    }
+    data->send_http_header = 1;
     return Qnil;
 }
 
-VALUE rb_request_flush(VALUE self)
+void rb_request_flush(VALUE self)
 {
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
     if (data->send_http_header) {
 	ap_send_http_header(data->request);
-	data->send_http_header = 0;
+	if (data->request->header_only)
+	    return;
     }
     if (RSTRING(data->buff)->len > 0) {
 	ap_rwrite(RSTRING(data->buff)->ptr,
 		  RSTRING(data->buff)->len, data->request);
     }
-
-    return self;
-}
-
-static VALUE request_get_sync(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return data->sync ? Qtrue : Qfalse;
-}
-
-static VALUE request_set_sync(VALUE self, VALUE mode)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    data->sync = RTEST(mode);
-    return mode;
 }
 
 static VALUE request_hostname(VALUE self)
@@ -356,6 +320,14 @@ static VALUE request_request_method(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     return rb_str_new2(data->request->method);
+}
+
+static VALUE request_header_only(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->request->header_only ? Qtrue : Qfalse;
 }
 
 static VALUE request_args(VALUE self)
@@ -604,10 +576,8 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "printf", request_printf, -1);
     rb_define_method(rb_cApacheRequest, "puts", request_puts, -1);
     rb_define_method(rb_cApacheRequest, "<<", request_addstr, 1);
-    rb_define_method(rb_cApacheRequest, "flush", rb_request_flush, 0);
-    rb_define_method(rb_cApacheRequest, "sync", request_get_sync, 0);
-    rb_define_method(rb_cApacheRequest, "sync=", request_set_sync, 1);
-    rb_define_method(rb_cApacheRequest, "send_http_header", request_send_http_header, 0);
+    rb_define_method(rb_cApacheRequest, "send_http_header",
+		     rb_request_send_http_header, 0);
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
     rb_define_method(rb_cApacheRequest, "unparsed_uri", request_unparsed_uri, 0);
     rb_define_method(rb_cApacheRequest, "uri", request_uri, 0);
@@ -615,6 +585,7 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);
     rb_define_method(rb_cApacheRequest, "request_time", request_request_time, 0);
     rb_define_method(rb_cApacheRequest, "request_method", request_request_method, 0);
+    rb_define_method(rb_cApacheRequest, "header_only?", request_header_only, 0);
     rb_define_method(rb_cApacheRequest, "args", request_args, 0);
     rb_define_method(rb_cApacheRequest, "content_length", request_content_length, 0);
     rb_define_method(rb_cApacheRequest, "content_type",

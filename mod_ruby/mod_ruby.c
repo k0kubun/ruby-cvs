@@ -409,19 +409,17 @@ static void get_exception_info(VALUE str)
     ruby_errinfo = Qnil;
 }
 
-static void ruby_error_print(request_rec *r, int state, int sync)
+static void ruby_error_print(request_rec *r, int state)
 {
     char buff[BUFSIZ];
     VALUE errmsg, logmsg;
 
-    if (!sync) {
-	r->content_type = "text/html";
-	ap_send_http_header(r);
-	ap_rputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n", r);
-	ap_rputs("<html>\n", r);
-	ap_rputs("<head><title>Error</title></head>\n", r);
-	ap_rputs("<body>\n", r);
-    }
+    r->content_type = "text/html";
+    ap_send_http_header(r);
+    ap_rputs("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n", r);
+    ap_rputs("<html>\n", r);
+    ap_rputs("<head><title>Error</title></head>\n", r);
+    ap_rputs("<body>\n", r);
     ap_rputs("<pre>\n", r);
 
     errmsg = STRING_LITERAL("");
@@ -463,10 +461,8 @@ static void ruby_error_print(request_rec *r, int state, int sync)
 		 "%s", RSTRING(logmsg)->ptr);
 
     ap_rputs("</pre>\n", r);
-    if (!sync) {
-	ap_rputs("</body>\n", r);
-	ap_rputs("</html>\n", r);
-    }
+    ap_rputs("</body>\n", r);
+    ap_rputs("</html>\n", r);
 }
 
 static VALUE stdin_reopen(VALUE io)
@@ -582,7 +578,7 @@ static VALUE load_ruby_script(request_rec *r)
     request_data *data;
     struct to_arg arg;
 
-    rb_defout = ruby_create_request(r, 1);
+    rb_defout = ruby_create_request(r);
     arg.thread = rb_thread_current();
     arg.timeout = sconf->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
@@ -594,7 +590,7 @@ static VALUE load_ruby_script(request_rec *r)
 #endif
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
-	ruby_error_print(r, state, data->sync);
+	ruby_error_print(r, state);
     }
     else {
 	rb_request_flush(rb_defout);
@@ -615,7 +611,8 @@ static VALUE load_eruby_script(request_rec *r)
     request_data *data;
     struct to_arg arg;
 
-    rb_defout = ruby_create_request(r, 0);
+    rb_defout = ruby_create_request(r);
+    eruby_noheader = 0;
     eruby_charset = rb_str_new2(ERUBY_DEFAULT_CHARSET);
     arg.thread = rb_thread_current();
     arg.timeout = sconf->timeout;
@@ -629,7 +626,7 @@ static VALUE load_eruby_script(request_rec *r)
 #endif
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
-	ruby_error_print(r, state, data->sync);
+	ruby_error_print(r, state);
     }
     else {
 	if (!eruby_noheader) {
@@ -640,7 +637,7 @@ static VALUE load_eruby_script(request_rec *r)
 					  ERUBY_CHARSET);
 	    ap_table_set(r->headers_out, "Content-Length",
 			 ap_psprintf(r->pool, "%d", len));
-	    ap_send_http_header(r);
+	    rb_request_send_http_header(rb_defout);
 	}
 	rb_request_flush(rb_defout);
     }

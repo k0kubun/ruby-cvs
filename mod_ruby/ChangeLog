@@ -1,3 +1,20 @@
+Wed May 24 13:53:25 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.8 released.
+
+Wed May 24 13:52:48 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (load_eruby_script): set eruby_noheader to 0.
+
+Wed May 24 12:39:43 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apachelib.c (request_get_sync): removed.
+
+	* apachelib.c (request_set_sync): removed.
+
+	* apachelib.c (rb_request_flush): do not send body if
+	data->request->header_only is non-zero.
+
 Thu May 18 17:43:42 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* apachelib.c (ruby_create_request): cast request_mark to

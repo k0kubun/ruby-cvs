@@ -97,7 +97,6 @@ static int parse_embedded_line(FILE *in, FILE *out)
 
     for (;;) {
 	c = getc(in);
-    again:
 	switch (c) {
 	case EOF:
 	    if (ferror(in))
