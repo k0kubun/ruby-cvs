@@ -4,12 +4,22 @@ require "mkmf"
 require "getoptlong"
 
 def usage
-  $stderr.printf <<EOS, $0
-usage: %s [options]
+  $stderr.print(<<EOS)
+usage: configure.rb [options]
 
-  --help                        print this message
-  --default-charset=CHARSET     default charset value
-  --enable-shared               build a shared library for Ruby.
+  --help                      print this message
+
+  --prefix=PREFIX             install architecture-independent files in PREFIX
+                              [#{CONFIG["prefix"]}]
+  --exec-prefix=EPREFIX       install architecture-dependent files in EPREFIX
+                              [same as prefix]
+  --bindir=DIR                user executables in DIR [EPREFIX/bin]
+  --libdir=DIR                object code libraries in DIR [EPREFIX/lib]
+  --includedir=DIR            C header files in DIR [PREFIX/include]
+  --mandir=DIR                manual pages in DIR [PREFIX/man]
+
+  --default-charset=CHARSET   default charset value
+  --enable-shared             build a shared library for eruby
 EOS
 end
 
@@ -44,14 +54,44 @@ $DEFAULT_CHARSET = case $KCODE
 		   end
 $ENABLE_SHARED = false
 
+$prefix = CONFIG["prefix"]
+$exec_prefix = "$(prefix)"
+prefix = Regexp.new("\\A" + Regexp.quote($prefix))
+$bindir = CONFIG["bindir"].sub(prefix, "$(exec_prefix)")
+$libdir = CONFIG["libdir"].sub(prefix, "$(exec_prefix)")
+$includedir = CONFIG["includedir"].sub(prefix, "$(prefix)")
+$mandir = CONFIG["mandir"].sub(prefix, "$(prefix)")
+
 parser = GetoptLong.new
 parser.set_options(["--help", GetoptLong::NO_ARGUMENT],
+		   ["--prefix", GetoptLong::OPTIONAL_ARGUMENT],
+		   ["--exec-prefix", GetoptLong::OPTIONAL_ARGUMENT],
+		   ["--bindir", GetoptLong::OPTIONAL_ARGUMENT],
+		   ["--libdir", GetoptLong::OPTIONAL_ARGUMENT],
+		   ["--includedir", GetoptLong::OPTIONAL_ARGUMENT],
+		   ["--mandir", GetoptLong::OPTIONAL_ARGUMENT],
 		   ["--default-charset", GetoptLong::OPTIONAL_ARGUMENT],
 		   ["--enable-shared", GetoptLong::OPTIONAL_ARGUMENT])
 
 begin
   parser.each_option do |name, arg|
     case name
+    when "--prefix"
+      $prefix = arg
+    when "--exec-prefix"
+      $exec_prefix = arg
+    when "--bindir"
+      $bindir = arg
+    when "--libdir"
+      $libdir = arg
+    when "--includedir"
+      $includedir = arg
+    when "--mandir"
+      $mandir = arg
+    when "--archdir"
+      $archdir = arg
+    when "--sitearch"
+      $sitearchdir = arg
     when "--default-charset"
       $DEFAULT_CHARSET = arg
     when "--enable-shared"
@@ -79,14 +119,13 @@ config["RANLIB"] = CONFIG["RANLIB"]
 
 config["RUBY_INSTALL_NAME"] = CONFIG["RUBY_INSTALL_NAME"]
 
-config["prefix"] = CONFIG["prefix"]
+config["prefix"] = $prefix
+config["exec_prefix"] = $exec_prefix
 
-prefix = Regexp.new("\\A" + Regexp.quote(config["prefix"]))
-config["bindir"] = CONFIG["bindir"].sub(prefix, "$(prefix)")
-config["libdir"] = CONFIG["libdir"].sub(prefix, "$(prefix)")
-config["sitelibdir"] = $sitelibdir
-config["includedir"] = CONFIG["includedir"].sub(prefix, "$(prefix)")
-config["mandir"] = CONFIG["mandir"].sub(prefix, "$(prefix)")
+config["bindir"] = $bindir
+config["libdir"] = $libdir
+config["includedir"] = $includedir
+config["mandir"] = $mandir
 
 drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
 config["archdir"] = $archdir.sub(drive, '')

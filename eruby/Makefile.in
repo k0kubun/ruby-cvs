@@ -12,9 +12,9 @@ RUBY = $(RUBY_INSTALL_NAME)
 DESTDIR = 
 
 prefix = @prefix@
+exec_prefix = @exec_prefix@
 bindir = $(DESTDIR)@bindir@
 libdir = $(DESTDIR)@libdir@
-sitelibdir = $(DESTDIR)@sitelibdir@
 includedir = $(DESTDIR)@includedir@
 archdir = $(DESTDIR)@archdir@
 sitearchdir = $(DESTDIR)@sitearchdir@
@@ -62,12 +62,19 @@ EXT_OBJS = eruby_ext.@OBJEXT@
 
 all: $(LIBERUBY_A) $(ERUBY) $(DLLIB) $(MANPAGE)
 
-install: all
+install: install-main
+	@-$(INSTALL_DIR) $(archdir)
+	@-$(INSTALL_DLLIB) $(DLLIB) $(archdir)
+
+site-install: install-main
+	@-$(INSTALL_DIR) $(sitearchdir)
+	@-$(INSTALL_DLLIB) $(DLLIB) $(sitearchdir)
+
+install-main: all
 	@-$(INSTALL_DIR) $(bindir)
 	@-$(INSTALL_DIR) $(libdir)
 	@-$(INSTALL_DIR) $(includedir)
 	@-$(INSTALL_DIR) $(mandir)/man1
-	@-$(INSTALL_DIR) $(archdir)
 	@-$(INSTALL_PROGRAM) $(ERUBY) $(bindir)/$(ERUBY)
 	@-if [ -f $(LIBERUBY_SO) ]; then \
 		$(INSTALL_DATA) $(LIBERUBY_SO) $(libdir)/$(LIBERUBY_SO); \
@@ -80,7 +87,6 @@ install: all
 	@-$(INSTALL_DATA) $(LIBERUBY_A) $(libdir)/$(LIBERUBY_A)
 	@-$(INSTALL_DATA) $(srcdir)/eruby.h $(includedir)/eruby.h
 	@-$(INSTALL_DATA) $(srcdir)/$(MANPAGE) $(mandir)/man1/$(MANPAGE)
-	@-$(INSTALL_DLLIB) $(DLLIB) $(archdir)
 
 clean:
 	$(RM) $(ERUBY)

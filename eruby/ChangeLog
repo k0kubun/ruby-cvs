@@ -1,3 +1,17 @@
+Wed May 16 17:32:30 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb: new options, --prefix, --exec-prefix etc....
+
+	* config.h.in: quote @DEFAULT_CHARSET@.
+
+Wed May 16 13:25:27 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb: new file.
+
+	* Makefile.in: new file.
+
+	* config.h.in: new file.
+
 Tue May 15 15:18:02 2001  Shugo Maeda <shugo@modruby.net>
 
 	* eruby_lib.c (eruby_import): new method. inspired by Hoss
