@@ -1,5 +1,9 @@
 2001-11-27  ChangeLog  <chadfowler@chadfowler.com>
 
+	* language/TestFloats.rb: fixed tests to work on Win32
+
+	* builtin/TestFile__Stat.rb: Guarded known Win32 problems that were previously exposed during Cygwin testing.
+
 	* builtin/TestFile.rb: Guarded known Win32 problems that were previously exposed during Cygwin testing.
 
 	* builtin/TestFile.rb: Windows doesn't like pre-18000-second dates on its files.  Changed the tests to accomodate.

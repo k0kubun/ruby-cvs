@@ -227,7 +227,7 @@ class TestFile__Stat < FileInfoTest
 
   def test_readable?
     try(:readable?, @file1, true)
-    Cygwin.known_problem do
+    Windows.known_problem do
       File.chmod(0222, @file1)
       try(:readable?, @file1, false)
     end

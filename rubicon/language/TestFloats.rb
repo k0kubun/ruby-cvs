@@ -11,11 +11,13 @@ class TestFloats < Rubicon::TestCase
       [ 2.1e3,        "2100.0"],
       [-2.1E,           "-2.1"],
       [-2.1E-3,         "-0.0021"],
-      [-2.1E10,         "-2.1e+10"],
     ]
     for number, string in tests
       assert_equal(string, number.to_s, "case #{number} to \"#{string}\"")
     end
+
+    # For the big numbers... 
+    assert_flequal(-2.1E10, Float(-2.1E10.to_s), "case #{number} to \"#{string}\"")
   end
 
   def test_malformed
