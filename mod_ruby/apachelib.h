@@ -34,8 +34,11 @@
 extern VALUE rb_mApache;
 extern VALUE rb_eApacheTimeoutError;
 extern VALUE rb_request;
+extern VALUE rb_apache_objrefs;
 void rb_init_apache();
 void rb_apache_exit(int status);
+void rb_apache_register_object(VALUE obj);
+void rb_apache_unregister_object(VALUE obj);
 
 /* array_header.c */
 extern VALUE rb_cApacheArrayHeader;
@@ -61,10 +64,11 @@ VALUE rb_apache_server_new(server_rec *server);
 /* request.c */
 extern VALUE rb_cApacheRequest;
 void rb_init_apache_request();
-VALUE rb_apache_request_new(request_rec *r);
+VALUE rb_get_request_object(request_rec *r);
 long rb_apache_request_length(VALUE self);
 VALUE rb_apache_request_send_http_header(VALUE self);
 void rb_apache_request_flush(VALUE request);
+void rb_apache_request_set_error(VALUE request, VALUE error, VALUE exception);
 
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
 #define CSTR2OBJ(s) ((s) ? rb_str_new2(s) : Qnil)

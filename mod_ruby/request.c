@@ -55,9 +55,14 @@ typedef struct request_data {
     VALUE err_headers_out;
     VALUE subprocess_env;
     VALUE finfo;
-    int send_http_header;
-    long pos;
+    VALUE error_message;
+    VALUE exception;
 } request_data;
+
+#define REQ_SYNC_HEADER     FL_USER1
+#define REQ_SYNC_OUTPUT     FL_USER2
+#define REQ_HEADER_PENDING  FL_USER3
+#define REQ_SENT_HEADER     FL_USER4
 
 #define REQUEST_STRING_ATTR_READER(fname, member) \
 	DEFINE_STRING_ATTR_READER(fname, request_data, request->member)
@@ -66,7 +71,7 @@ typedef struct request_data {
 static VALUE fname(VALUE self, VALUE val) \
 { \
     request_data *data; \
-    Data_Get_Struct(self, request_data, data); \
+    data = get_request_data(self); \
     data->request->member = \
 	ap_pstrdup(data->request->pool, STR2CSTR(val)); \
     return val; \
@@ -87,15 +92,30 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->err_headers_out);
     rb_gc_mark(data->subprocess_env);
     rb_gc_mark(data->finfo);
+    rb_gc_mark(data->error_message);
+    rb_gc_mark(data->exception);
 }
 
-VALUE rb_apache_request_new(request_rec *r)
+static void cleanup_request_object(void *data)
+{
+    request_rec *r = (request_rec *) data;
+    VALUE reqobj;
+
+    reqobj = (VALUE) ap_get_module_config(r->request_config, &ruby_module);
+    if (reqobj == 0) return;
+    if (TYPE(reqobj) == T_DATA)
+	RDATA(reqobj)->data = NULL;
+    ap_set_module_config(r->request_config, &ruby_module, 0);
+    rb_apache_unregister_object(reqobj);
+}
+
+static VALUE apache_request_new(request_rec *r)
 {
     request_data *data;
-    VALUE result;
-    
-    result = Data_Make_Struct(rb_cApacheRequest, request_data,
-			      request_mark, free, data);
+    VALUE obj;
+
+    obj = Data_Make_Struct(rb_cApacheRequest, request_data,
+			   request_mark, free, data);
     data->request = r;
     data->outbuf = rb_tainted_str_new("", 0);
     data->connection = Qnil;
@@ -105,17 +125,45 @@ VALUE rb_apache_request_new(request_rec *r)
     data->err_headers_out = Qnil;
     data->subprocess_env = Qnil;
     data->finfo = Qnil;
-    data->send_http_header = 0;
-    data->pos = 0;
+    data->error_message = Qnil;
+    data->exception = Qnil;
+    rb_apache_register_object(obj);
+    ap_set_module_config(r->request_config, &ruby_module, (void *) obj);
+    ap_register_cleanup(r->pool, (void *) r,
+			cleanup_request_object, ap_null_cleanup);
+    return obj;
+}
 
-    return result;
+VALUE rb_get_request_object(request_rec *r)
+{
+    VALUE reqobj;
+
+    if (r == NULL) return Qnil;
+    reqobj = (VALUE) ap_get_module_config(r->request_config, &ruby_module);
+    if (reqobj) {
+	return reqobj;
+    }
+    else {
+	return apache_request_new(r);
+    }
+}
+
+static request_data *get_request_data(VALUE obj)
+{
+    request_data *data;
+
+    Check_Type(obj, T_DATA);
+    data = (request_data *) RDATA(obj)->data;
+    if (data == NULL)
+	rb_raise(rb_eArgError, "destroyed request");
+    return data;
 }
 
 long rb_apache_request_length(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return RSTRING(data->outbuf)->len;
 }
 
@@ -123,7 +171,7 @@ static VALUE request_output_buffer(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return data->outbuf;
 }
 
@@ -131,18 +179,63 @@ static VALUE request_replace(int argc, VALUE *argv, VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
-    return rb_funcall2(data->outbuf, rb_frame_last_func(), argc, argv);
+    data = get_request_data(self);
+    return rb_funcall2(data->outbuf, rb_intern("replace"), argc, argv);
 }
 
 static VALUE request_cancel(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     RSTRING(data->outbuf)->len = 0;
     RSTRING(data->outbuf)->ptr[0] = '\0';
     return Qnil;
+}
+
+static VALUE request_get_sync_header(VALUE self)
+{
+    return FL_TEST(self, REQ_SYNC_HEADER) ? Qtrue : Qfalse;
+}
+
+static VALUE request_set_sync_header(VALUE self, VALUE val)
+{
+    if (RTEST(val)) {
+	FL_SET(self, REQ_SYNC_HEADER);
+    }
+    else {
+	FL_UNSET(self, REQ_SYNC_HEADER);
+    }
+    return val;
+}
+
+static VALUE request_get_sync_output(VALUE self)
+{
+    return FL_TEST(self, REQ_SYNC_OUTPUT) ? Qtrue : Qfalse;
+}
+
+static VALUE request_set_sync_output(VALUE self, VALUE val)
+{
+    if (RTEST(val)) {
+	FL_SET(self, REQ_SYNC_OUTPUT);
+    }
+    else {
+	FL_UNSET(self, REQ_SYNC_OUTPUT);
+    }
+    return val;
+}
+
+static VALUE request_set_sync(VALUE self, VALUE val)
+{
+    if (RTEST(val)) {
+	FL_SET(self, REQ_SYNC_HEADER);
+	FL_SET(self, REQ_SYNC_OUTPUT);
+    }
+    else {
+	FL_UNSET(self, REQ_SYNC_HEADER);
+	FL_UNSET(self, REQ_SYNC_OUTPUT);
+    }
+    return val;
 }
 
 static VALUE request_write(VALUE self, VALUE str)
@@ -150,10 +243,19 @@ static VALUE request_write(VALUE self, VALUE str)
     request_data *data;
     int len;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     str = rb_obj_as_string(str);
-    rb_str_cat(data->outbuf, RSTRING(str)->ptr, RSTRING(str)->len);
-    len = RSTRING(str)->len;
+    if (FL_TEST(self, REQ_SYNC_OUTPUT)) {
+	if (data->request->header_only &&
+	    FL_TEST(self, REQ_SENT_HEADER))
+	    return INT2NUM(0);
+	len = ap_rwrite(RSTRING(str)->ptr, RSTRING(str)->len, data->request);
+	ap_rflush(data->request);
+    }
+    else {
+	rb_str_cat(data->outbuf, RSTRING(str)->ptr, RSTRING(str)->len);
+	len = RSTRING(str)->len;
+    }
     return INT2NUM(len);
 }
 
@@ -162,9 +264,20 @@ static VALUE request_putc(VALUE self, VALUE c)
     char ch = NUM2CHR(c);
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
-    rb_str_cat(data->outbuf, &ch, 1);
-    return c;
+    data = get_request_data(self);
+    if (FL_TEST(self, REQ_SYNC_OUTPUT)) {
+	int ret;
+
+	if (data->request->header_only &&
+	    FL_TEST(self, REQ_SENT_HEADER))
+	    return INT2NUM(EOF);
+	ret = ap_rputc(NUM2INT(c), data->request);
+	return INT2NUM(ret);
+    }
+    else {
+	rb_str_cat(data->outbuf, &ch, 1);
+	return c;
+    }
 }
 
 static VALUE request_print(int argc, VALUE *argv, VALUE out)
@@ -263,36 +376,48 @@ VALUE rb_apache_request_send_http_header(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
-    data->send_http_header = 1;
+    if (FL_TEST(self, REQ_SYNC_HEADER)) {
+	data = get_request_data(self);
+	ap_send_http_header(data->request);
+	FL_SET(self, REQ_SENT_HEADER);
+	FL_UNSET(self, REQ_HEADER_PENDING);
+    }
+    else {
+	FL_SET(self, REQ_HEADER_PENDING);
+    }
     return Qnil;
 }
 
 static VALUE request_sent_http_header(VALUE self)
 {
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return data->send_http_header ? Qtrue : Qfalse;
+    if (FL_TEST(self, REQ_SENT_HEADER) ||
+	FL_TEST(self, REQ_HEADER_PENDING)) {
+	return Qtrue;
+    }
+    else {
+	return Qfalse;
+    }
 }
 
 void rb_apache_request_flush(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
-    if (data->send_http_header) {
+    data = get_request_data(self);
+    if (FL_TEST(self, REQ_HEADER_PENDING)) {
 	ap_send_http_header(data->request);
-	data->send_http_header = 0;
-	if (data->request->header_only) {
-	    RSTRING(data->outbuf)->len = 0;
-	    return;
-	}
+	FL_SET(self, REQ_SENT_HEADER);
+	FL_UNSET(self, REQ_HEADER_PENDING);
+    }
+    if (data->request->header_only &&
+	FL_TEST(self, REQ_SENT_HEADER)) {
+	RSTRING(data->outbuf)->len = 0;
+	return;
     }
     if (RSTRING(data->outbuf)->len > 0) {
-	ap_rwrite(RSTRING(data->outbuf)->ptr,
-		  RSTRING(data->outbuf)->len, data->request);
-       ap_rflush(data->request);
+	ap_rwrite(RSTRING(data->outbuf)->ptr, RSTRING(data->outbuf)->len,
+		  data->request);
+	ap_rflush(data->request);
 	RSTRING(data->outbuf)->len = 0;
     }
 }
@@ -302,7 +427,7 @@ static VALUE request_connection(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->connection)) {
 	data->connection = rb_apache_connection_new(data->request->connection);
     }
@@ -313,11 +438,35 @@ static VALUE request_server(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->server)) {
 	data->server = rb_apache_server_new(data->request->server);
     }
     return data->server;
+}
+
+static VALUE request_next(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    return rb_get_request_object(data->request->next);
+}
+
+static VALUE request_prev(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    return rb_get_request_object(data->request->prev);
+}
+
+static VALUE request_main(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    return rb_get_request_object(data->request->main);
 }
 
 REQUEST_STRING_ATTR_READER(request_protocol, protocol);
@@ -344,7 +493,7 @@ static VALUE request_request_time(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return rb_time_new(data->request->request_time, 0);
 }
 
@@ -352,7 +501,7 @@ static VALUE request_header_only(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return data->request->header_only ? Qtrue : Qfalse;
 }
 
@@ -362,7 +511,7 @@ static VALUE request_content_length(VALUE self)
     const char *s;
 
     rb_warn("content_length is obsolete; use headers_in[\"Content-Length\"] instead");
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     s = ap_table_get(data->request->headers_in, "Content-Length");
     return s ? rb_cstr2inum(s, 10) : Qnil;
 }
@@ -371,7 +520,7 @@ static VALUE request_set_content_type(VALUE self, VALUE str)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(str)) {
 	data->request->content_type = NULL;
     }
@@ -388,7 +537,7 @@ static VALUE request_set_content_encoding(VALUE self, VALUE str)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(str)) {
 	data->request->content_encoding = NULL;
     }
@@ -405,7 +554,7 @@ static VALUE request_get_content_languages(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (data->request->content_languages) {
 #if 0
 	VALUE ary = rb_ary_new();
@@ -430,7 +579,7 @@ static VALUE request_set_content_languages(VALUE self, VALUE ary)
     request_data *data;
     int i;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(ary)) {
 	data->request->content_languages = NULL;
     }
@@ -455,7 +604,7 @@ static VALUE request_headers_in(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->headers_in)) {
 	if (ap_table_get(data->request->notes, "ruby_in_authen_handler")) {
 	    data->headers_in = rb_apache_table_new(rb_cApacheTable,
@@ -473,7 +622,7 @@ static VALUE request_headers_out(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->headers_out)) {
 	data->headers_out = rb_apache_table_new(rb_cApacheTable,
 						data->request->headers_out);
@@ -485,7 +634,7 @@ static VALUE request_err_headers_out(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->err_headers_out)) {
 	data->err_headers_out =
 	    rb_apache_table_new(rb_cApacheTable, data->request->err_headers_out);
@@ -497,7 +646,7 @@ static VALUE request_subprocess_env(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->subprocess_env)) {
 	data->subprocess_env =
 	    rb_apache_table_new(rb_cApacheTable,
@@ -512,7 +661,7 @@ static VALUE request_finfo(VALUE self)
     request_data *data;
     struct stat *st;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (NIL_P(data->finfo)) {
 	cStat = rb_const_get(rb_cFile, rb_intern("Stat"));
 	data->finfo = Data_Make_Struct(cStat, struct stat, NULL, free, st);
@@ -531,7 +680,7 @@ static VALUE request_aref(VALUE self, VALUE vkey)
     if (strcasecmp(key, "authorization") == 0 ||
 	strcasecmp(key, "proxy-authorization") == 0)
 	return Qnil;
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     val = ap_table_get(data->request->headers_in, key);
     return val ? rb_str_new2(val) : Qnil;
 }
@@ -550,7 +699,7 @@ static VALUE request_aset(VALUE self, VALUE key, VALUE val)
 	return request_set_content_encoding(self, val);
     }
     else {
-	Data_Get_Struct(self, request_data, data);
+	data = get_request_data(self);
 	ap_table_set(data->request->headers_out, s, STR2CSTR(val));
 	return val;
     }
@@ -565,7 +714,7 @@ static VALUE request_each_header(VALUE self)
     VALUE assoc;
 
     rb_warn("each_header is obsolete; use headers_in instead");
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     hdrs_arr = ap_table_elts(data->request->headers_in);
     hdrs = (table_entry *) hdrs_arr->elts;
     for (i = 0; i < hdrs_arr->nelts; i++) {
@@ -589,7 +738,7 @@ static VALUE request_each_key(VALUE self)
     int i;
 
     rb_warn("each_key is obsolete; use headers_in instead");
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     hdrs_arr = ap_table_elts(data->request->headers_in);
     hdrs = (table_entry *) hdrs_arr->elts;
     for (i = 0; i < hdrs_arr->nelts; i++) {
@@ -611,7 +760,7 @@ static VALUE request_each_value(VALUE self)
     int i;
 
     rb_warn("each_value is obsolete; use headers_in instead");
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     hdrs_arr = ap_table_elts(data->request->headers_in);
     hdrs = (table_entry *) hdrs_arr->elts;
     for (i = 0; i < hdrs_arr->nelts; i++) {
@@ -631,7 +780,7 @@ static VALUE request_setup_client_block(int argc, VALUE *argv, VALUE self)
     VALUE policy;
     int read_policy = REQUEST_CHUNKED_ERROR;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (rb_scan_args(argc, argv, "01", &policy) == 1) {
 	read_policy = NUM2INT(policy);
     }
@@ -642,7 +791,7 @@ static VALUE request_should_client_block(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return INT2BOOL(ap_should_client_block(data->request));
 }
 
@@ -652,7 +801,7 @@ static VALUE request_get_client_block(VALUE self, VALUE length)
     char *buf;
     int len;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     len = NUM2INT(length);
     buf = (char *) ap_palloc(data->request->pool, len);
     len = ap_get_client_block(data->request, buf, len);
@@ -705,7 +854,7 @@ static VALUE request_read(int argc, VALUE *argv, VALUE self)
     VALUE length;
     int len;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     rb_scan_args(argc, argv, "01", &length);
     if (NIL_P(length)) {
 	return read_client_block(data->request, -1);
@@ -722,7 +871,7 @@ static VALUE request_getc(VALUE self)
     request_data *data;
     VALUE str;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     str = read_client_block(data->request, 1);
     if (NIL_P(str) || RSTRING(str)->len == 0)
 	return Qnil;
@@ -733,7 +882,7 @@ static VALUE request_eof(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return INT2BOOL(data->request->remaining == 0);
 }
 
@@ -746,7 +895,7 @@ static VALUE request_allow_options(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return INT2NUM(ap_allow_options(data->request));
 }
 
@@ -754,7 +903,7 @@ static VALUE request_allow_overrides(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return INT2NUM(ap_allow_overrides(data->request));
 }
 
@@ -763,7 +912,7 @@ static VALUE request_default_type(VALUE self)
     request_data *data;
     const char *type;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     type = ap_default_type(data->request);
     return type ? rb_str_new2(type) : Qnil;
 }
@@ -773,7 +922,7 @@ static VALUE request_remote_host(VALUE self)
     request_data *data;
     const char *host;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     host = ap_get_remote_host(data->request->connection,
 			      data->request->per_dir_config,
 			      REMOTE_HOST);
@@ -785,7 +934,7 @@ static VALUE request_remote_logname(VALUE self)
     request_data *data;
     const char *logname;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     logname = ap_get_remote_logname(data->request);
     return logname ? rb_str_new2(logname) : Qnil;
 }
@@ -795,7 +944,7 @@ static VALUE request_construct_url(VALUE self, VALUE uri)
     request_data *data;
     char *url;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     url = ap_construct_url(data->request->pool, STR2CSTR(uri), data->request);
     return rb_str_new2(url);
 }
@@ -804,7 +953,7 @@ static VALUE request_server_name(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return rb_str_new2(ap_get_server_name(data->request));
 }
 
@@ -812,7 +961,7 @@ static VALUE request_server_port(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return INT2NUM(ap_get_server_port(data->request));
 }
 
@@ -821,7 +970,7 @@ static VALUE request_auth_type(VALUE self)
     request_data *data;
     const char *auth_type;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     auth_type = ap_auth_type(data->request);
     return auth_type ? rb_str_new2(auth_type) : Qnil;
 }
@@ -831,7 +980,7 @@ static VALUE request_auth_name(VALUE self)
     request_data *data;
     const char *auth_name;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     auth_name = ap_auth_name(data->request);
     return auth_name ? rb_str_new2(auth_name) : Qnil;
 }
@@ -840,7 +989,7 @@ static VALUE request_satisfies(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return INT2NUM(ap_satisfies(data->request));
 }
 
@@ -852,7 +1001,7 @@ static VALUE request_requires(VALUE self)
     require_line *reqs;
     int i;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     reqs_arr = ap_requires(data->request);
     if (reqs_arr == NULL)
 	return Qnil;
@@ -872,7 +1021,7 @@ static VALUE request_escape_html(VALUE self, VALUE str)
     char *tmp;
     VALUE result;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     tmp = ap_escape_html(data->request->pool, STR2CSTR(str));
     result = rb_str_new2(tmp);
     OBJ_INFECT(result, str);
@@ -883,7 +1032,7 @@ static VALUE request_signature(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     return rb_str_new2(ap_psignature("", data->request));
 }
 
@@ -891,7 +1040,7 @@ static VALUE request_reset_timeout(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_reset_timeout(data->request);
     return Qnil;
 }
@@ -900,7 +1049,7 @@ static VALUE request_hard_timeout(VALUE self, VALUE name)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_hard_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
 		    data->request);
     return Qnil;
@@ -910,7 +1059,7 @@ static VALUE request_soft_timeout(VALUE self, VALUE name)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_soft_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
 		    data->request);
     return Qnil;
@@ -920,7 +1069,7 @@ static VALUE request_kill_timeout(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_kill_timeout(data->request);
     return Qnil;
 }
@@ -929,7 +1078,7 @@ static VALUE request_note_auth_failure(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_note_auth_failure(data->request);
     return Qnil;
 }
@@ -938,7 +1087,7 @@ static VALUE request_note_basic_auth_failure(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_note_basic_auth_failure(data->request);
     return Qnil;
 }
@@ -947,7 +1096,7 @@ static VALUE request_note_digest_auth_failure(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_note_digest_auth_failure(data->request);
     return Qnil;
 }
@@ -958,7 +1107,7 @@ static VALUE request_get_basic_auth_pw(VALUE self)
     const char *pw;
     int res;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     if (ap_table_get(data->request->notes, "ruby_in_authen_handler") == NULL) {
 	rb_raise(rb_eSecurityError, "Only RubyAuthenHandler can get password");
     }
@@ -972,7 +1121,7 @@ static VALUE request_add_common_vars(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_add_common_vars(data->request);
     return Qnil;
 }
@@ -981,7 +1130,7 @@ static VALUE request_add_cgi_vars(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_add_cgi_vars(data->request);
     return Qnil;
 }
@@ -990,7 +1139,7 @@ static VALUE request_setup_cgi_env(VALUE self)
 {
     request_data *data;
 
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     rb_setup_cgi_env(data->request);
     return Qnil;
 }
@@ -1001,7 +1150,7 @@ static VALUE request_log_reason(VALUE self, VALUE msg, VALUE file)
 
     Check_Type(msg, T_STRING);
     Check_Type(file, T_STRING);
-    Data_Get_Struct(self, request_data, data);
+    data = get_request_data(self);
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
 		 data->request->server,
 		 "access to %s failed for %s, reason: %s",
@@ -1011,6 +1160,31 @@ static VALUE request_log_reason(VALUE self, VALUE msg, VALUE file)
 				    REMOTE_NAME),
 		 STR2CSTR(msg));
     return Qnil;
+}
+
+void rb_apache_request_set_error(VALUE request, VALUE errmsg, VALUE exception)
+{
+    request_data *data;
+
+    Data_Get_Struct(request, request_data, data);
+    data->error_message = errmsg;
+    data->exception = exception;
+}
+
+static VALUE request_error_message(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    return data->error_message;
+}
+
+static VALUE request_exception(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    return data->exception;
 }
 
 void rb_init_apache_request()
@@ -1028,6 +1202,16 @@ void rb_init_apache_request()
 		     request_output_buffer, 0);
     rb_define_method(rb_cApacheRequest, "replace", request_replace, -1);
     rb_define_method(rb_cApacheRequest, "cancel", request_cancel, 0);
+    rb_define_method(rb_cApacheRequest, "sync_header",
+		     request_get_sync_header, 0);
+    rb_define_method(rb_cApacheRequest, "sync_header=",
+		     request_set_sync_header, 1);
+    rb_define_method(rb_cApacheRequest, "sync_output",
+		     request_get_sync_output, 0);
+    rb_define_method(rb_cApacheRequest, "sync_output=",
+		     request_set_sync_output, 1);
+    rb_define_method(rb_cApacheRequest, "sync=",
+		     request_set_sync, 1);
     rb_define_method(rb_cApacheRequest, "write", request_write, 1);
     rb_define_method(rb_cApacheRequest, "putc", request_putc, 1);
     rb_define_method(rb_cApacheRequest, "print", request_print, -1);
@@ -1040,6 +1224,9 @@ void rb_init_apache_request()
 		     request_sent_http_header, 0);
     rb_define_method(rb_cApacheRequest, "connection", request_connection, 0);
     rb_define_method(rb_cApacheRequest, "server", request_server, 0);
+    rb_define_method(rb_cApacheRequest, "next", request_next, 0);
+    rb_define_method(rb_cApacheRequest, "prev", request_prev, 0);
+    rb_define_method(rb_cApacheRequest, "main", request_main, 0);
     rb_define_method(rb_cApacheRequest, "protocol", request_protocol, 0);
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
     rb_define_method(rb_cApacheRequest, "unparsed_uri",
@@ -1147,4 +1334,8 @@ void rb_init_apache_request()
 		     request_setup_cgi_env, 0);
     rb_define_method(rb_cApacheRequest, "log_reason",
 		     request_log_reason, 2);
+    rb_define_method(rb_cApacheRequest, "error_message",
+		     request_error_message, 0);
+    rb_define_method(rb_cApacheRequest, "exception",
+		     request_exception, 0);
 }

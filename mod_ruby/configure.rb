@@ -375,7 +375,7 @@ AC_SUBST("RUBY_SO_NAME")
 
 version =
   open(File.join($srcdir, "mod_ruby.h")).grep(/MOD_RUBY_STRING_VERSION/)[0]
-$MAJOR, $MINOR, $TEENY = version.scan(/mod_ruby\/(\d+).(\d+).(\d+)/)[0]
+$MAJOR, $MINOR, $TEENY = version.scan(/mod_ruby\/(\d+).(\d+).(\d+)/)[0] #/
 AC_SUBST("MAJOR")
 AC_SUBST("MINOR")
 AC_SUBST("TEENY")
@@ -504,7 +504,8 @@ Config.expand(librubyarg)
 $MODULE_LIBS = "#{$LIBERUBYARG} #{librubyarg} #{$LIBS}"
 AC_SUBST("MODULE_LIBS")
 
-AC_OUTPUT("Makefile", "libruby.module")
+AC_OUTPUT("Makefile",
+	  "libruby.module")
 
 # Local variables:
 # mode: Ruby

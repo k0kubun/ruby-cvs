@@ -37,6 +37,8 @@
 #include "util_script.h"
 #include "multithread.h"
 
+#include "ruby.h"
+
 #include "mod_ruby.h"
 #include "ruby_config.h"
 

@@ -39,12 +39,14 @@
 #include "ruby.h"
 #include "version.h"
 
+#include "mod_ruby.h"
 #include "apachelib.h"
 
 VALUE rb_mApache;
 VALUE rb_eApacheTimeoutError;
 
 VALUE rb_request;
+VALUE rb_apache_objrefs;
 
 void rb_apache_exit(int status)
 {
@@ -53,6 +55,17 @@ void rb_apache_exit(int status)
     exit = rb_exc_new(rb_eSystemExit, 0, 0);
     rb_iv_set(exit, "status", INT2NUM(status));
     rb_exc_raise(exit);
+}
+
+void rb_apache_register_object(VALUE obj)
+{
+    rb_hash_aset(rb_apache_objrefs, rb_obj_id(obj), obj);
+}
+
+void rb_apache_unregister_object(VALUE obj)
+{
+    rb_protect_funcall(rb_apache_objrefs,
+		       rb_intern("delete"), NULL, 1, rb_obj_id(obj));
 }
 
 static VALUE f_exit(int argc, VALUE *argv, VALUE obj)
@@ -127,6 +140,8 @@ void rb_init_apache()
 {
     rb_request = Qnil;
     rb_global_variable(&rb_request);
+    rb_apache_objrefs = rb_hash_new();
+    rb_global_variable(&rb_apache_objrefs);
 
     rb_define_global_function("exit", f_exit, -1);
     rb_define_global_function("eval_string_wrap", f_eval_string_wrap, 1);

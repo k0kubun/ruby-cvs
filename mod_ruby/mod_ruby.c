@@ -217,7 +217,7 @@ static VALUE protect_funcall0(VALUE arg)
 		       ((protect_call_arg_t *) arg)->argv);
 }
 
-static VALUE protect_funcall(VALUE recv, ID mid, int *state, int argc, ...)
+VALUE rb_protect_funcall(VALUE recv, ID mid, int *state, int argc, ...)
 {
     va_list ap;
     VALUE *argv;
@@ -354,7 +354,7 @@ static void get_exception_info(VALUE str)
 	    }
 	}
     }
-    ruby_errinfo = Qnil;
+    /* ruby_errinfo = Qnil; */
 }
 
 static VALUE get_error_info(int state)
@@ -421,15 +421,25 @@ static void ruby_print_error(request_rec *r, int state)
     ap_rputs("</html>\n", r);
 }
 
-void ruby_log_error(server_rec *s, int state)
+void ruby_log_error(server_rec *s, VALUE errmsg)
 {
-    VALUE errmsg, logmsg;
+    VALUE logmsg;
 
-    errmsg = get_error_info(state);
     logmsg = STRING_LITERAL("mod_ruby: error in ruby\n");
     rb_str_concat(logmsg, errmsg);
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
 		 "%s", STR2CSTR(logmsg));
+}
+
+static void handle_error(request_rec *r, int state)
+{
+    VALUE errmsg, reqobj;
+
+    errmsg = get_error_info(state);
+    reqobj = (VALUE) ap_get_module_config(r->request_config, &ruby_module);
+    if (reqobj)
+	rb_apache_request_set_error(reqobj, errmsg, ruby_errinfo);
+    ruby_log_error(r->server, errmsg);
 }
 
 int ruby_running()
@@ -522,7 +532,7 @@ static void ruby_startup(server_rec *s, pool *p)
 		if ((state = ruby_require(list[i]))) {
 		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
 				 "mod_ruby: failed to require %s", list[i]);
-		    ruby_log_error(s, state);
+		    ruby_log_error(s, get_error_info(state));
 		}
 	    }
 	}
@@ -640,7 +650,7 @@ static VALUE kill_threads(VALUE arg)
     for (i = 0; i < RARRAY(threads)->len; i++) {
 	th = RARRAY(threads)->ptr[i];
 	if (th != main_thread)
-	    protect_funcall(th, rb_intern("kill"), NULL, 0);
+	    rb_protect_funcall(th, rb_intern("kill"), NULL, 0);
     }
     return Qnil;
 }
@@ -681,7 +691,7 @@ static VALUE run_safely_0(void *arg)
     targ.timeout = rsarg->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &targ);
     result = (*rsarg->func)(rsarg->arg);
-    protect_funcall(timeout_thread, rb_intern("kill"), NULL, 0);
+    rb_protect_funcall(timeout_thread, rb_intern("kill"), NULL, 0);
     return result;
 }
 
@@ -700,7 +710,7 @@ static int run_safely(int safe_level, int timeout,
     rb_thread_start_timer();
 #endif
     thread = rb_thread_create(run_safely_0, &rsarg);
-    ret = protect_funcall(thread, rb_intern("value"), &state, 0);
+    ret = rb_protect_funcall(thread, rb_intern("value"), &state, 0);
     rb_protect(kill_threads, Qnil, NULL);
 #if defined(HAVE_SETITIMER)
     rb_thread_stop_timer();
@@ -719,15 +729,12 @@ static void per_request_init(request_rec *r)
     for (i = 0; i < RARRAY(default_load_path)->len; i++) {
 	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
     }
-    ruby_errinfo = Qnil;
     ruby_debug = Qfalse;
     ruby_verbose = Qfalse;
     if (dconf->kcode)
 	rb_set_kcode(dconf->kcode);
-    if (NIL_P(rb_request)) {
-	rb_request = rb_apache_request_new(r);
-	rb_stdin = rb_stdout = rb_defout = rb_request;
-    }
+    rb_request = rb_get_request_object(r);
+    rb_stdin = rb_stdout = rb_defout = rb_request;
 }
 
 static VALUE exec_end_proc(VALUE arg)
@@ -741,8 +748,10 @@ static void per_request_cleanup(int flush)
     rb_protect(exec_end_proc, Qnil, NULL);
     if (flush)
 	rb_apache_request_flush(rb_request);
-
-    ruby_errinfo = Qnil;
+    rb_request = Qnil;
+    rb_stdin = orig_stdin;
+    rb_stdout = orig_stdout;
+    rb_defout = orig_defout;
     rb_set_kcode(default_kcode);
 }
 
@@ -761,15 +770,15 @@ static VALUE ruby_handler_0(void *arg)
     VALUE ret;
     int state;
 
-    ret = protect_funcall(rb_eval_string(handler), mid, &state,
-			  1, rb_request);
+    ret = rb_protect_funcall(rb_eval_string(handler), mid, &state,
+			     1, rb_request);
     if (state) {
 	if (state == TAG_RAISE &&
 	    rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	    ret = rb_iv_get(ruby_errinfo, "status");
 	}
 	else {
-	    ruby_log_error(r->server, state);
+	    handle_error(r, state);
 	    return INT2NUM(SERVER_ERROR);
 	}
     }
@@ -819,7 +828,7 @@ static int ruby_handler(request_rec *r,
 	    retval = NUM2INT(ret);
 	}
 	else {
-	    ruby_log_error(r->server, state);
+	    handle_error(r, state);
 	    retval = SERVER_ERROR;
 	}
 	ap_kill_timeout(r);
@@ -925,10 +934,6 @@ static void ruby_cleanup_handler(void *data)
 
     ruby_handler(r, dconf->ruby_cleanup_handler,
 		 rb_intern("cleanup"), 1, 0);
-    rb_request = Qnil;
-    rb_stdin = orig_stdin;
-    rb_stdout = orig_stdout;
-    rb_defout = orig_defout;
 }
 
 static int ruby_post_read_request_handler(request_rec *r)

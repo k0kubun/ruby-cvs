@@ -1,6 +1,13 @@
+2001-10-04  Shugo Maeda  <shugo@netlab.jp>
+
+	* request.c (apache_request_new): save request objects to
+	r->request_config.
+
+	* request.c (cleanup_request_object): new function.
+
 Thu Aug 30 18:28:46 2001 Sean Chittenden <sean-apache-modruby@chittenden.org>
 
-	* request.c(rb_apache_request_flush): call ap_rflush().
+	* request.c (rb_apache_request_flush): call ap_rflush().
 
 	* request.c: allow the path_info for the request to be changed.
 
