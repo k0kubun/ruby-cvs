@@ -540,6 +540,8 @@ class TestIO < Rubicon::TestCase
         count += 1
       end
       assert_equal(11, count)
+      file.rewind
+      assert_equal(1, count)
     end
 
     count = 1
