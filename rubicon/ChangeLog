@@ -1,3 +1,12 @@
+2001-11-15  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/FileInfoTest.rb: If run in a directory with g+s, the
+	Stat tests for gid and uid fail, so explicitly set the file's
+	owner. I'm worried this might not port to all systems: we'll see.
+
+	* builtin/TestFile__Stat.rb, TestFileTest: I'd never tried running
+	Rubicon as root!
+
 2001-11-14  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestThreadGroup.rb: Tidy up spawned threads. Not doing

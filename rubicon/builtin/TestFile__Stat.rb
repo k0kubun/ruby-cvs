@@ -143,7 +143,9 @@ class TestFile__Stat < FileInfoTest
     
     def test_grpowned?
       try(:grpowned?, @file1,        true)
-      try(:grpowned?, "/etc/passwd", false)
+      Unix.or_variant do
+        try(:grpowned?, "/etc/passwd", Process.egid == 0)
+      end
     end
   end
 
@@ -198,7 +200,9 @@ class TestFile__Stat < FileInfoTest
 
   def test_owned?
     try(:owned?, @file1,        true)
-    try(:owned?, "/etc/passwd", false)
+    Unix.or_variant do
+      try(:owned?, "/etc/passwd", Process.euid == 0)
+    end
   end
 
   def test_pipe?

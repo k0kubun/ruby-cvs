@@ -96,7 +96,7 @@ class TestFileTest < FileInfoTest
         [ :symlink?,    ?l,    @file1,              false ],
         [ nil,          ?M,    @file1,              mtime ],
         [ :owned?,      ?o,    @file1,              true  ],
-        [ :owned?,      ?o,    "/etc/passwd",       false ],
+        [ :owned?,      ?o,    "/etc/passwd",       Process.euid == 0 ],
         [ :pipe?,       ?p,    ".",                 false ],
         [ :readable?,   ?r,    @file1,              true  ],
         [ :size?,       ?s,    filez,               filez_size ],
@@ -104,7 +104,7 @@ class TestFileTest < FileInfoTest
         [ :socket?,     ?S,    ".",                 false ],
         [ :socket?,     ?S,    @file1,              false ],
         [ :setuid?,     ?u,    @file1,              false ],
-        [ :writable?,   ?w,    filew,               false ],
+        [ :writable?,   ?w,    filew,               Process.euid == 0 ],
         [ :writable?,   ?w,    @file2,              true  ],
         [ :executable?, ?x,    "/dev/fd0",          false ],
         [ :zero?,       ?z,    filez,               false ],
@@ -114,7 +114,7 @@ class TestFileTest < FileInfoTest
       Windows.dont do
         tests << [ :pipe?,       ?p,    filep,               true  ]
         tests << [ :symlink?,    ?l,    filel,               true  ]
-        tests << [ :readable?,   ?r,    filer,               false ]
+        tests << [ :readable?,   ?r,    filer,               Process.euid == 0 ]
         tests << [ :setuid?,     ?u,    fileu,               true  ]
       end
 
@@ -143,12 +143,12 @@ class TestFileTest < FileInfoTest
         tests << [ :chardev?,    ?c,    "/dev/fd0",          false ]
         tests << [ :blockdev?,   ?b,    "/dev/fd0",          true  ]
         tests << [ :grpowned?,   ?G,    @file1,              true  ]
-        tests << [ :grpowned?,   ?G,    "/etc/passwd",       false ]
+        tests << [ :grpowned?,   ?G,    "/etc/passwd",       Process.egid == 0 ]
       end
 
       for meth, t, file, result in tests
         if file
-          assert_equal(result, test(t, file), "test(?#{t}, #{file})")
+          assert_equal(result, test(t, file), "test(?#{t.chr}, #{file})")
           if meth
             assert_equal(result, FileTest.send(meth, file), 
                          "FileTest.#{meth}(#{file})")

@@ -18,6 +18,8 @@ class FileInfoTest < Rubicon::TestCase
     touch("-m -t 010112341997 #@file1")
     @mTime1 = Time.local(1997,  1,  1, 12, 34, 00)
 
+    File.chown(Process.euid, Process.egid, @file1)
+
     # File two is before file 1 in access time, and
     # after in modification time
 
