@@ -62,8 +62,6 @@ static mutex *mod_ruby_mutex = NULL;
 static int ruby_is_running = 0;
 static int exit_status;
 
-static VALUE wcb_thread;
-
 static const command_rec ruby_cmds[] =
 {
     {"RubyKanjiCode", ruby_cmd_kanji_code, NULL, OR_ALL, TAKE1,
@@ -226,8 +224,6 @@ static void ruby_startup(server_rec *s, pool *p)
 	    exit(1);
 	}
     }
-
-    rb_global_variable(&wcb_thread);
 
     ruby_is_running = 1;
 }
@@ -659,6 +655,7 @@ static VALUE open_null(VALUE arg)
 
 static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
+    VALUE wcb_thread = Qnil;
     VALUE load_thread;
     ruby_dir_config *dconf = NULL;
     int retval;
@@ -684,7 +681,6 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
 	return retval;
 
-    wcb_thread = Qnil;
     if (ap_should_client_block(r)) {
 	if (write_client_block(r, &wcb_thread) == -1)
 	    return SERVER_ERROR;

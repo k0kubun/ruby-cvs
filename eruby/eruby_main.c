@@ -31,7 +31,7 @@ EXTERN VALUE rb_defout;
 #define TAG_FATAL	0x8
 #define TAG_MASK	0xf
 
-#define ERUBY_VERSION "0.0.8"
+#define ERUBY_VERSION "0.0.9"
 
 #define MODE_UNKNOWN    1
 #define MODE_FILTER     2
@@ -653,7 +653,7 @@ int main(int argc, char **argv)
     rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
     eruby_init();
     script = eruby_load(eruby_filename, 0, &state);
-    if (state) {
+    if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	error_print(state, eruby_mode, script);
 	if (!NIL_P(script))
 	    unlink(RSTRING(script)->ptr);

@@ -1,3 +1,7 @@
+Wed Aug  2 14:14:32 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* version 0.1.9 released.
+
 Tue Aug  1 09:55:07 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* mod_ruby.c (load_eruby_script): don't override Content-Type.

@@ -1,3 +1,11 @@
+Wed Aug  2 14:15:17 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* version 0.0.9 released.
+
+Mon Jul 17 14:13:07 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby_main.c (main): exit quietly on SystemExit.
+
 Tue May 30 11:29:45 2000  Katsuyuki Komatsu <komatsu@sarion.co.jp>
 
 	* Makefile.RB: use CCDLFLAGS.
