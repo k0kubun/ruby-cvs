@@ -20,10 +20,6 @@
  * 02111-1307, USA
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -40,8 +36,16 @@
 
 #include "ruby.h"
 #include "rubyio.h"
+#define regoff_t ruby_regoff_t
+#define regex_t ruby_regex_t
+#define regmatch_t ruby_regmatch_t
+#include "re.h"
 #include "util.h"
 #include "version.h"
+
+#ifdef USE_ERUBY
+#include "eruby.h"
+#endif
 
 #include "ruby_module.h"
 #include "ruby_config.h"
@@ -76,10 +80,14 @@ static const command_rec ruby_cmds[] =
 };
 
 static int ruby_handler(request_rec*);
+static int eruby_handler(request_rec*);
 
 static const handler_rec ruby_handlers[] =
 {
     {"ruby-script", ruby_handler},
+#ifdef USE_ERUBY
+    {ERUBY_MIME_TYPE, eruby_handler},
+#endif
     {NULL}
 };
 
@@ -89,8 +97,8 @@ MODULE_VAR_EXPORT module ruby_module =
 {
     STANDARD_MODULE_STUFF,
     ruby_startup,		/* initializer */
-    ruby_create_dir_config,		/* dir config creater */
-    ruby_merge_dir_config,		/* dir merger --- default is to override */
+    ruby_create_dir_config,	/* dir config creater */
+    ruby_merge_dir_config,	/* dir merger --- default is to override */
     ruby_create_server_config,	/* create per-server config structure */
     NULL,			/* merge server config */
     ruby_cmds,			/* command table */
@@ -607,7 +615,7 @@ static VALUE do_timeout(struct to_arg *arg)
     return Qnil;
 }
 
-static VALUE load_script(request_rec *r)
+static VALUE load_ruby_script(request_rec *r)
 {
     ruby_server_config *sconf =
 	(ruby_server_config *) ap_get_module_config(r->server->module_config,
@@ -636,12 +644,61 @@ static VALUE load_script(request_rec *r)
     return Qnil;
 }
 
+#ifdef USE_ERUBY
+static char *get_charset()
+{
+    switch (rb_kcode()) {
+    case MBCTYPE_EUC:
+	return "EUC-JP";
+    case MBCTYPE_SJIS:
+	return "SHIFT_JIS";
+    case MBCTYPE_UTF8:
+	return "UTF8";
+    case MBCTYPE_ASCII:
+    default:
+	return "US-ASCII";
+    }
+}
+
+static VALUE load_eruby_script(request_rec *r)
+{
+    ruby_server_config *sconf =
+	(ruby_server_config *) ap_get_module_config(r->server->module_config,
+						    &ruby_module);
+    VALUE orig_defout = rb_defout;
+    VALUE timeout_thread;
+    int state;
+    request_data *data;
+    struct to_arg arg;
+
+    rb_defout = ruby_create_request(r);
+    arg.thread = rb_thread_current();
+    arg.timeout = sconf->timeout;
+    timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
+    ruby_errinfo = Qnil;
+    r->content_type = ap_psprintf(r->pool, "text/html; charset=%s", get_charset());
+    r->content_encoding = "7bit";
+    ap_send_http_header(r);
+    eruby_load(r->filename, 1, &state);
+    rb_funcall(timeout_thread, rb_intern("exit"), 0);
+    if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
+	Data_Get_Struct(rb_defout, request_data, data);
+	ruby_error_print(r, state, data->sync);
+    }
+    else {
+	rb_request_flush(rb_defout);
+    }
+    rb_defout = orig_defout;
+    return Qnil;
+}
+#endif
+
 static VALUE thread_join(VALUE thread)
 {
     return rb_funcall(thread, rb_intern("join"), 0);
 }
 
-static int ruby_handler(request_rec *r)
+static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
     VALUE thread;
     ruby_dir_config *dconf = NULL;
@@ -677,7 +734,7 @@ static int ruby_handler(request_rec *r)
     exit_status = -1;
 
     ap_soft_timeout("load ruby script", r);
-    thread = rb_thread_create(load_script, r);
+    thread = rb_thread_create(load, r);
     rb_protect(thread_join, thread, &state);
     ap_kill_timeout(r);
 
@@ -691,6 +748,18 @@ static int ruby_handler(request_rec *r)
 	return exit_status;
     }
 }
+
+static int ruby_handler(request_rec *r)
+{
+    return ruby_handler0(load_ruby_script, r);
+}
+
+#ifdef USE_ERUBY
+static int eruby_handler(request_rec *r)
+{
+    return ruby_handler0(load_eruby_script, r);
+}
+#endif
 
 /*
  * Local variables:

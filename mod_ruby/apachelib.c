@@ -43,6 +43,8 @@ VALUE rb_mApacheWritable;
 VALUE rb_cApacheRequest;
 VALUE rb_eApacheTimeoutError;
 
+#define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
+
 static VALUE apache_server_version(VALUE self)
 {
     return rb_str_new2(ap_get_server_version());
@@ -138,7 +140,7 @@ static VALUE request_print(int argc, VALUE *argv, VALUE out)
 	}
 	switch (TYPE(argv[i])) {
 	  case T_NIL:
-	    request_write(out, rb_str_new2("nil"));
+	    request_write(out, STRING_LITERAL("nil"));
 	    break;
 	  default:
 	    request_write(out, argv[i]);
@@ -168,7 +170,7 @@ static VALUE request_puts_ary(VALUE ary, VALUE out)
     for (i=0; i<RARRAY(ary)->len; i++) {
 	tmp = RARRAY(ary)->ptr[i];
 	if (rb_inspecting_p(tmp)) {
-	    tmp = rb_str_new2("[...]");
+	    tmp = STRING_LITERAL("[...]");
 	}
 	request_puts(1, &tmp, out);
     }
@@ -188,7 +190,7 @@ static VALUE request_puts(int argc, VALUE *argv, VALUE out)
     for (i=0; i<argc; i++) {
 	switch (TYPE(argv[i])) {
 	  case T_NIL:
-	    line = rb_str_new2("nil");
+	    line = STRING_LITERAL("nil");
 	    break;
 	  case T_ARRAY:
 	    rb_protect_inspect(request_puts_ary, argv[i], out);
