@@ -244,7 +244,7 @@ class StringBase < Rubicon::TestCase
     a.chomp!(S("\n"))
     assert_equal(S("hello"), a)
 
-    $/ = S("\n")
+    $/ = "\n"
     a = S("hello")
     a.chomp!
     assert_equal(S("hello"), a)
@@ -253,7 +253,7 @@ class StringBase < Rubicon::TestCase
     a.chomp!
     assert_equal(S("hello"), a)
 
-    $/ = S("!")
+    $/ = "!"
     a = S("hello")
     a.chomp!
     assert_equal(S("hello"), a)
@@ -262,7 +262,7 @@ class StringBase < Rubicon::TestCase
     a.chomp!
     assert_equal(S("hello"), a)
 
-    $/ = S("\n")
+    $/ = "\n"
 
     a = S("hello\n")
     b = a.dup
