@@ -173,7 +173,7 @@ RUBY = $(RUBY_INSTALL_NAME)
 
 DESTDIR = 
 
-prefix = $(DESTDIR)#{prefix}
+prefix = #{prefix}
 bindir = $(DESTDIR)#{prefixed("bindir")}
 libdir = $(DESTDIR)#{prefixed("libdir")}
 includedir = $(DESTDIR)#{prefixed("includedir")}
@@ -227,7 +227,7 @@ install: all
 	@-$(INSTALL_DIR) $(bindir)
 	@-$(INSTALL_DIR) $(libdir)
 	@-$(INSTALL_DIR) $(includedir)
-	@-$(INSTALL_DIR) $(mandir)
+	@-$(INSTALL_DIR) $(mandir)/man1
 	@-$(INSTALL_DIR) $(archdir)
 	@-$(INSTALL_PROGRAM) $(ERUBY) $(bindir)/$(ERUBY)
 	@-if [ -f $(LIBERUBY_SO) ]; then \
