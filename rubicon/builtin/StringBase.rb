@@ -411,7 +411,7 @@ class StringBase < Rubicon::TestCase
   end
 
   def test_each
-    $/ = S("\n")
+    $/ = "\n"
     res=[]
     S("hello\nworld").each {|x| res << x}
     assert_equal(S("hello\n"), res[0])
@@ -422,13 +422,13 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("hello\n\n\n"), res[0])
     assert_equal(S("world"),       res[1])
 
-    $/ = S("!")
+    $/ = "!"
     res=[]
     S("hello!world").each {|x| res << x}
     assert_equal(S("hello!"), res[0])
     assert_equal(S("world"),  res[1])
 
-    $/ = S("\n")
+    $/ = "\n"
   end
 
   def test_each_byte
@@ -440,7 +440,7 @@ class StringBase < Rubicon::TestCase
   end
 
   def test_each_line
-    $/ = S("\n")
+    $/ = "\n"
     res=[]
     S("hello\nworld").each {|x| res << x}
     assert_equal(S("hello\n"), res[0])
@@ -451,13 +451,13 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("hello\n\n\n"), res[0])
     assert_equal(S("world"),       res[1])
 
-    $/ = S("!")
+    $/ = "!"
     res=[]
     S("hello!world").each {|x| res << x}
     assert_equal(S("hello!"), res[0])
     assert_equal(S("world"),  res[1])
 
-    $/ = S("\n")
+    $/ = "\n"
   end
 
   def test_empty?
