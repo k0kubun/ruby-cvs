@@ -23,7 +23,8 @@ RUBY	  ?=	ruby
 default:	test
 
 
-test:		$(UTILSTUFF) Builtin Language
+test:		$(UTILSTUFF)
+		$(RUBY) AllTests.rb
 
 Builtin:	$(UTILSTUFF)
 		cd builtin && $(RUBY) AllBuiltinTests.rb

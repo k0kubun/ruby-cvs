@@ -4,6 +4,7 @@ require 'rubicon'
 class TestStruct < Rubicon::TestCase
   def test_00s_new
     myclass = Struct.new("TestStruct", :alpha, :bravo)
+    assert_equal(Struct::TestStruct, myclass)
     t1 = myclass.new
     t1.alpha = 1
     t1.bravo = 2
@@ -26,13 +27,13 @@ class TestStruct < Rubicon::TestCase
     t = Struct::TestStruct.new
     t.alpha = 64
     t.bravo = 112
-    assert_equals(64,t["alpha"])
-    assert_equals(64,t[0])
-    assert_equals(112,t[1])
-    assert_equals(112,t[-1])
-    assert_equals(t["alpha"],t[:alpha])
+    assert_equals(64,  t["alpha"])
+    assert_equals(64,  t[0])
+    assert_equals(112, t[1])
+    assert_equals(112, t[-1])
+    assert_equals(t["alpha"], t[:alpha])
   
-    assert_exception(NameError) { p t["gamma"] }
+    assert_exception(NameError)  { p t["gamma"] }
     assert_exception(IndexError) { p t[2] }
   end
 
@@ -66,19 +67,19 @@ class TestStruct < Rubicon::TestCase
 
         assert_equal(a, b)
         assert(a.id != b.id)
-        assert_equal(a.frozen?, b.frozen?)
+        assert_equal(a.frozen?,  b.frozen?)
         assert_equal(a.tainted?, b.tainted?)
-        assert_equal(a.alpha, b.alpha)
+        assert_equal(a.alpha,    b.alpha)
       end
     end
   end
 
   def test_each
     a=[]
-    Struct::TestStruct.new('a','b').each {|x|
+    Struct::TestStruct.new('a', 'b').each {|x|
       a << x
     }
-    assert_equal(['a','b'],a)
+    assert_equal(['a','b'], a)
   end
 
   def test_length
@@ -92,17 +93,17 @@ class TestStruct < Rubicon::TestCase
 
   def test_size
     t = Struct::TestStruct.new
-    assert_equal(2,t.length)
+    assert_equal(2, t.length)
   end
 
   def test_to_a
     t = Struct::TestStruct.new('a','b')
-    assert_equal(['a','b'],t.to_a)
+    assert_equal(['a','b'], t.to_a)
   end
 
   def test_values
     t = Struct::TestStruct.new('a','b')
-    assert_equal(['a','b'],t.values)
+    assert_equal(['a','b'], t.values)
   end
 
 

@@ -1,3 +1,13 @@
+2001-06-11  Dave Thomas  <Dave@Thomases.com>
+
+	* Fixed a couple of warnings resulting from running tests in one
+	pass. 
+
+	* Makefile: changed default target to run library and builtins
+	tests in a single pass, so we now get just one summary table
+	
+	
+
 2001-06-10  Dave Thomas  <Dave@Thomases.com>
 
 	* language/*: added all the tests from the standard test.rb

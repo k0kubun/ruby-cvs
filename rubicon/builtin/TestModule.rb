@@ -7,7 +7,7 @@ if $rubyVersion < "1.7"
   ExpectedException = NameError
 else
   ExpectedException = NoMethodError
-end
+end unless defined? ExpectedException
 
 
 class TestModule < Rubicon::TestCase
