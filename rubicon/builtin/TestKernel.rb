@@ -1008,7 +1008,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal("h<e>ll<o>", $_)
 
     $_ = "hello"
-    assert_equal("104 101 108 108 111 ", gsub('.') {
+    assert_equal("104 101 108 108 111 ", gsub(/./) {
                    |s| s[0].to_s+' '})
     assert_equal("104 101 108 108 111 ", $_)
 
@@ -1020,7 +1020,7 @@ class TestKernel < Rubicon::TestCase
 
     $_ = "hello"
     $_.taint
-    assert_equal(true, (gsub('.','X').tainted?))
+    assert_equal(true, (gsub(/./, 'X').tainted?))
     assert_equal(true, $_.tainted?)
   end
 
@@ -1034,7 +1034,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal("h<e>ll<o>", $_)
 
     $_ = "hello"
-    assert_equal("104 101 108 108 111 ", gsub!('.') {
+    assert_equal("104 101 108 108 111 ", gsub!(/./) {
                    |s| s[0].to_s+' '})
     assert_equal("104 101 108 108 111 ", $_)
 
@@ -1050,7 +1050,7 @@ class TestKernel < Rubicon::TestCase
 
     $_ = "hello"
     $_.taint
-    assert_equal(true, (gsub!('.','X').tainted?))
+    assert_equal(true, (gsub!(/./, 'X').tainted?))
     assert_equal(true, $_.tainted?)
   end
 
@@ -1966,7 +1966,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal("h<e>llo", $_)
 
     $_ = "hello"
-    assert_equal("104 ello", sub('.') { |s| s[0].to_s+' '})
+    assert_equal("104 ello", sub(/./) { |s| s[0].to_s+' '})
     assert_equal("104 ello", $_)
 
     $_ = "hello"
@@ -1974,7 +1974,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal("HELL-o", $_)
 
     $_ = "hello".taint
-    assert(sub('.','X').tainted?)
+    assert(sub(/./, 'X').tainted?)
   end
 
   def test_s_sub!
@@ -1991,7 +1991,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal("h<e>llo", $_)
 
     $_ = "hello"
-    assert_equal("104 ello", sub!('.') { |s| s[0].to_s+' '})
+    assert_equal("104 ello", sub!(/./) { |s| s[0].to_s+' '})
     assert_equal("104 ello", $_)
 
     $_ = "hello"
@@ -1999,7 +1999,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal("HELL-o", $_)
 
     $_ = "hello".taint
-    assert(sub!('.','X').tainted?)
+    assert(sub!(/./, 'X').tainted?)
   end
 
   def test_s_syscall

@@ -720,7 +720,6 @@ class ArrayBase < Rubicon::TestCase
         L & unsigned long\\
         l & long\\
 
-        m & string encoded in base64 (uuencoded)\\
         N & long, network (big-endian) byte order\\
         n & short, network (big-endian) byte-order\\
         P & pointer to a structure (fixed-length string)\\
