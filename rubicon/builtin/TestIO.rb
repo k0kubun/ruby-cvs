@@ -565,7 +565,7 @@ end
       end
       assert_equal(11, count)
       file.rewind
-      assert_equal(0, count)
+      assert_equal(0, file.lineno)
     end
 
     count = 1
@@ -585,9 +585,11 @@ end
       assert_equal(123, f.lineno)
       f.gets
       assert_equal(124, f.lineno)
-      f.lineno = -1
+      f.lineno = 0
       f.gets
-      assert_equal(0, f.lineno)
+      assert_equal(1, f.lineno)
+      f.gets
+      assert_equal(2, f.lineno)
     end
   end
 
