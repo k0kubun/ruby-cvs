@@ -171,7 +171,7 @@ class TestHash < Rubicon::TestCase
     assert_fail("untested")
   end
 
-  def test_s_[]
+  def test_s_aref
     assert_fail("untested")
   end
 

@@ -3,11 +3,11 @@ require '../rubicon'
 
 class TestNumeric < Rubicon::TestCase
 
-  def test_+@
+  def test_UPLUS
     assert_fail("untested")
   end
 
-  def test_-@
+  def test_UMINUS
     assert_fail("untested")
   end
 

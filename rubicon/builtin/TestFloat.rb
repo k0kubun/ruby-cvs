@@ -3,7 +3,7 @@ require '../rubicon'
 
 class TestFloat < Rubicon::TestCase
 
-  def test_-@
+  def test_UMINUS
     assert_fail("untested")
   end
 
