@@ -640,7 +640,7 @@ static VALUE load_eruby_script(request_rec *r)
 	if (!eruby_noheader) {
 	    int len = ruby_request_buffer_length(rb_defout);
 
-	    if (r->content_type == NULL) {
+	    if (strcmp(r->content_type, "text/html") == 0) {
 		r->content_type = ap_psprintf(r->pool,
 					      "text/html; charset=%s",
 					      ERUBY_CHARSET);

@@ -39,7 +39,8 @@ extern VALUE rb_defout;
 extern VALUE rb_stdin;
 
 VALUE rb_mApache;
-VALUE rb_mApacheWritable;
+VALUE rb_cApacheTable;
+VALUE rb_cApacheInTable;
 VALUE rb_cApacheRequest;
 VALUE rb_eApacheTimeoutError;
 
@@ -71,21 +72,276 @@ static VALUE apache_unescape_url(VALUE self, VALUE url)
     return rb_str_new2(buff);
 }
 
+static void free_table(table *tbl)
+{
+    /* do nothing */
+}
+
+static VALUE ruby_create_table(VALUE klass, table *tbl)
+{
+    return Data_Wrap_Struct(klass, 0, free_table, tbl);
+}
+
+static VALUE table_clear(VALUE self)
+{
+    table *tbl;
+
+    Data_Get_Struct(self, table, tbl);
+    ap_clear_table(tbl);
+    return Qnil;
+}
+
+static VALUE table_get(VALUE self, VALUE name)
+{
+    table *tbl;
+    const char *key, *res;
+
+    Check_Type(name, T_STRING);
+    key = RSTRING(name)->ptr;
+    Data_Get_Struct(self, table, tbl);
+    res = ap_table_get(tbl, key);
+    if (res == NULL)
+	return Qnil;
+    else
+	return rb_str_new2(res);
+}
+
+static VALUE table_set(VALUE self, VALUE name, VALUE val)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Check_Type(val, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_set(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    return val;
+}
+
+static VALUE table_setn(VALUE self, VALUE name, VALUE val)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Check_Type(val, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_setn(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    return val;
+}
+
+static VALUE table_merge(VALUE self, VALUE name, VALUE val)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Check_Type(val, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_merge(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    return val;
+}
+
+static VALUE table_mergen(VALUE self, VALUE name, VALUE val)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Check_Type(val, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_mergen(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    return val;
+}
+
+static VALUE table_unset(VALUE self, VALUE name)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_unset(tbl, RSTRING(name)->ptr);
+    return Qnil;
+}
+
+static VALUE table_add(VALUE self, VALUE name, VALUE val)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Check_Type(val, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_add(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    return val;
+}
+
+static VALUE table_addn(VALUE self, VALUE name, VALUE val)
+{
+    table *tbl;
+
+    Check_Type(name, T_STRING);
+    Check_Type(val, T_STRING);
+    Data_Get_Struct(self, table, tbl);
+    ap_table_addn(tbl, RSTRING(name)->ptr, RSTRING(val)->ptr);
+    return val;
+}
+
+static VALUE table_each(VALUE self)
+{
+    VALUE assoc;
+    table *tbl;
+    array_header *hdrs_arr;
+    table_entry *hdrs;
+    int i;
+
+    Data_Get_Struct(self, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+	if (hdrs[i].key == NULL)
+	    continue;
+	assoc = rb_assoc_new(rb_str_new2(hdrs[i].key),
+			     hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+	rb_yield(assoc);
+    }
+    return Qnil;
+}
+
+static VALUE table_each_key(VALUE self)
+{
+    table *tbl;
+    array_header *hdrs_arr;
+    table_entry *hdrs;
+    int i;
+
+    Data_Get_Struct(self, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+	if (hdrs[i].key == NULL)
+	    continue;
+	rb_yield(rb_str_new2(hdrs[i].key));
+    }
+    return Qnil;
+}
+
+static VALUE table_each_value(VALUE self)
+{
+    table *tbl;
+    array_header *hdrs_arr;
+    table_entry *hdrs;
+    int i;
+
+    Data_Get_Struct(self, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+	if (hdrs[i].key == NULL)
+	    continue;
+	rb_yield(hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+    }
+    return Qnil;
+}
+
+static VALUE in_table_get(VALUE self, VALUE name)
+{
+    table *tbl;
+    const char *key, *res;
+
+    Check_Type(name, T_STRING);
+    key = RSTRING(name)->ptr;
+    if (strcasecmp(key, "authorization") == 0 ||
+	strcasecmp(key, "proxy-authorization") == 0)
+	return Qnil;
+    Data_Get_Struct(self, table, tbl);
+    res = ap_table_get(tbl, key);
+    if (res == NULL)
+	return Qnil;
+    else
+	return rb_str_new2(res);
+}
+
+static VALUE in_table_each(VALUE self)
+{
+    VALUE assoc;
+    table *tbl;
+    array_header *hdrs_arr;
+    table_entry *hdrs;
+    int i;
+
+    Data_Get_Struct(self, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+	if (hdrs[i].key == NULL)
+	    continue;
+	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
+	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
+	    continue;
+	assoc = rb_assoc_new(rb_str_new2(hdrs[i].key),
+			     hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+	rb_yield(assoc);
+    }
+    return Qnil;
+}
+
+static VALUE in_table_each_key(VALUE self)
+{
+    table *tbl;
+    array_header *hdrs_arr;
+    table_entry *hdrs;
+    int i;
+
+    Data_Get_Struct(self, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+	if (hdrs[i].key == NULL)
+	    continue;
+	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
+	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
+	    continue;
+	rb_yield(rb_str_new2(hdrs[i].key));
+    }
+    return Qnil;
+}
+
+static VALUE in_table_each_value(VALUE self)
+{
+    table *tbl;
+    array_header *hdrs_arr;
+    table_entry *hdrs;
+    int i;
+
+    Data_Get_Struct(self, table, tbl);
+    hdrs_arr = ap_table_elts(tbl);
+    hdrs = (table_entry *) hdrs_arr->elts;
+    for (i = 0; i < hdrs_arr->nelts; i++) {
+	if (hdrs[i].key == NULL)
+	    continue;
+	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
+	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
+	    continue;
+	rb_yield(hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+    }
+    return Qnil;
+}
+
 static void request_mark(request_data *data)
 {
     rb_gc_mark(data->buff);
+    rb_gc_mark(data->headers_in);
+    rb_gc_mark(data->headers_out);
 }
 
 VALUE ruby_create_request(request_rec *r)
 {
     request_data *data;
     VALUE result;
-
+    
     r->content_type = "text/html";
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
 			      (void (*) _((void*))) request_mark, free, data);
     data->request = r;
     data->buff = rb_str_new("", 0);
+    data->headers_in = ruby_create_table(rb_cApacheInTable, r->headers_in);
+    data->headers_out = ruby_create_table(rb_cApacheTable, r->headers_out);
     data->send_http_header = 0;
     return result;
 }
@@ -442,6 +698,22 @@ static VALUE request_set_content_languages(VALUE self, VALUE ary)
     return ary;
 }
 
+static VALUE request_headers_in(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->headers_in;
+}
+
+static VALUE request_headers_out(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->headers_out;
+}
+
 static VALUE request_aref(VALUE self, VALUE vkey)
 {
     request_data *data;
@@ -564,6 +836,30 @@ void ruby_init_apachelib()
     rb_define_module_function(rb_mApache, "request", apache_request, 0);
     rb_define_module_function(rb_mApache, "unescape_url", apache_unescape_url, 1);
 
+    rb_cApacheTable = rb_define_class_under(rb_mApache, "Table", rb_cObject);
+    rb_include_module(rb_cApacheTable, rb_mEnumerable);
+    rb_undef_method(CLASS_OF(rb_cApacheTable), "new");
+    rb_define_method(rb_cApacheTable, "clear", table_clear, 0);
+    rb_define_method(rb_cApacheTable, "get", table_get, 1);
+    rb_define_alias(rb_cApacheTable, "[]", "get");
+    rb_define_method(rb_cApacheTable, "set", table_set, 2);
+    rb_define_alias(rb_cApacheTable, "[]=", "set");
+    rb_define_method(rb_cApacheTable, "setn", table_setn, 2);
+    rb_define_method(rb_cApacheTable, "merge", table_merge, 2);
+    rb_define_method(rb_cApacheTable, "mergen", table_mergen, 2);
+    rb_define_method(rb_cApacheTable, "unset", table_unset, 1);
+    rb_define_method(rb_cApacheTable, "add", table_add, 2);
+    rb_define_method(rb_cApacheTable, "addn", table_addn, 2);
+    rb_define_method(rb_cApacheTable, "each", table_each, 0);
+    rb_define_method(rb_cApacheTable, "each_key", table_each_key, 0);
+    rb_define_method(rb_cApacheTable, "each_value", table_each_value, 0);
+    rb_cApacheInTable = rb_define_class_under(rb_mApache, "InTable",
+					      rb_cApacheTable);
+    rb_define_method(rb_cApacheInTable, "get", in_table_get, 1);
+    rb_define_method(rb_cApacheInTable, "each", in_table_each, 0);
+    rb_define_method(rb_cApacheInTable, "each_key", in_table_each_key, 0);
+    rb_define_method(rb_cApacheInTable, "each_value", in_table_each_value, 0);
+
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
     rb_include_module(rb_cApacheRequest, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheRequest), "new");
@@ -600,6 +896,8 @@ void ruby_init_apachelib()
 		     request_get_content_languages, 0);
     rb_define_method(rb_cApacheRequest, "content_languages=",
 		     request_set_content_languages, 1);
+    rb_define_method(rb_cApacheRequest, "headers_in", request_headers_in, 0);
+    rb_define_method(rb_cApacheRequest, "headers_out", request_headers_out, 0);
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);
     rb_define_method(rb_cApacheRequest, "each_header", request_each_header, 0);

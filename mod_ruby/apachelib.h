@@ -26,6 +26,8 @@
 typedef struct request_data {
     request_rec *request;
     VALUE buff;
+    VALUE headers_in;
+    VALUE headers_out;
     int send_http_header;
 } request_data;
 
