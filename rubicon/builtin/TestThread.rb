@@ -89,8 +89,6 @@ class TestThread < Rubicon::TestCase
   class MyException < Exception; end
 
   def test_abort_on_exception=()
-    skipping("Can't find a test for all platforms")
-    return
     save_stderr = nil
     begin
       begin
@@ -102,21 +100,24 @@ class TestThread < Rubicon::TestCase
       rescue MyException
         assert_fail("Thread exception propogated to main thread")
       end
-      
+
+      msg = nil
       begin
-        Thread.new do
+        t = Thread.new do
           Thread.current.abort_on_exception = true
-          save_stderr = $stderr
-          $stderr = nil
+          save_stderr = $stderr.dup
+          $stderr.reopen(open("xyzzy.dat", "w"))
           raise MyException, "boom"
         end
-        Thread.pass
+        Thread.pass while t.alive?
         assert_fail("Exception should have interrupted main thread")
-      rescue TestThread::MyException
-        assert(true)
+      rescue SystemExit
+        msg = open("xyzzy.dat") {|f| f.gets}
       ensure
-        $stderr = save_stderr
+        $stderr.reopen(save_stderr)
+        File.unlink("xyzzy.dat")
       end
+      assert_match(msg, /\(TestThread::MyException\)$/)
     rescue Exception
       assert_fail($!.to_s)
     end
@@ -298,9 +299,9 @@ class TestThread < Rubicon::TestCase
       assert_equals(4, Thread.current.safe_level)
       Thread.pass
     end
+    t.join rescue nil
     assert_equals(0, Thread.current.safe_level)
     assert_equals(4, t.safe_level)
-    t.kill
   end
 
   def test_status
@@ -376,25 +377,30 @@ class TestThread < Rubicon::TestCase
       Thread.new do
 	raise "boom"
       end
+      Thread.pass
       assert(true)
     rescue Exception
       fail("Thread exception propagated to main thread")
     end
 
+    msg = nil
     begin
       Thread.abort_on_exception = true
-      Thread.new do
-	save_stderr = $stderr
-	$stderr = nil
-	raise "boom"
+      t = Thread.new do
+	save_stderr = $stderr.dup
+	$stderr.reopen(open("xyzzy.dat", "w"))
+	raise MyException, "boom"
       end
+      Thread.pass while t.alive?
       fail("Exception should have interrupted main thread")
-    rescue Exception
-      assert(true)
+    rescue SystemExit
+      msg = open("xyzzy.dat") {|f| f.gets}
     ensure
       Thread.abort_on_exception = false
-      $stderr = save_stderr
+      $stderr.reopen(save_stderr)
+      File.unlink("xyzzy.dat")
     end
+    assert_match(msg, /\(TestThread::MyException\)$/)
   end
 
   def test_s_critical
@@ -516,6 +522,32 @@ class TestThread < Rubicon::TestCase
     end
     assert_equals(false,   Thread.critical)
     assert_equals("sleep", t.status)
+  end
+
+  if Thread.instance_method(:join).arity != 0
+    def test_timeout
+      start = Time.now
+      t = Thread.new do
+	sleep 3
+      end
+      timeout = proc do |i|
+	s = Time.now
+	assert_nil(t.join(i))
+	e = Time.now
+	assert_equal(true, t.alive?)
+	e - s
+      end
+      assert(timeout[0] < 0.1)
+      i = timeout[1]
+      assert(0.5 < i && i < 1.5)
+      i = timeout[0.5]
+      assert(0.4 < i && i < 0.6)
+      assert_equal(t, t.join(nil))
+      i = Time.now - start
+      assert(2.5 < i && i < 3.5)
+    ensure
+      t.kill
+    end
   end
 
 end
