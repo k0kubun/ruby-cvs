@@ -1,3 +1,7 @@
+Mon Sep 11 16:06:25 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* version 0.2.0 released.
+
 Mon Sep 11 15:55:40 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* mod_ruby.c (ruby_startup): call ruby_init_loadpath().

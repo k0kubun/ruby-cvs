@@ -1,3 +1,7 @@
+Mon Sep 11 16:03:52 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* version 0.1.0 released.
+
 Mon Sep 11 15:53:00 2000  akira yamada <akira@ruby-lang.org>
 
 	* eruby_main.c (init): call ruby_init_loadpath().
