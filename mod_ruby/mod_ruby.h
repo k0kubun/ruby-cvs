@@ -76,7 +76,7 @@ typedef apr_table_entry_t table_entry;
 
 #endif
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.9"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/1.0.0"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
