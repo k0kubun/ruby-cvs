@@ -64,6 +64,8 @@ class BSD     < Unix;    end
 class FreeBSD < BSD;     end
 class Solaris < Unix;    end
 
+class JRuby   < OS;      end
+
 class Windows < OS;      end
 class Cygwin  < Windows; end
 
@@ -78,6 +80,7 @@ $os = case RUBY_PLATFORM
       when /cygwin/  then Cygwin
       when /mswin32/ then MsWin32
       when /mingw32/ then MinGW
+      when /Java/    then JRuby
       else OS
       end
 
@@ -116,10 +119,9 @@ raise "Cannot find 'util' directory" unless defined?(UTIL)
 CHECKSTAT = File.join(UTIL, "checkstat")
 TEST_TOUCH = File.join(UTIL, "test_touch")
 
-
-WindowsNative.or_variant do
-  CHECKSTAT << ".exe"
-  TEST_TOUCH << ".exe"
+if Config::CONFIG["EXEEXT"]
+CHECKSTAT << Config::CONFIG["EXEEXT"]
+TEST_TOUCH << Config::CONFIG["EXEEXT"]
 end
 
 for file in [CHECKSTAT, TEST_TOUCH]
