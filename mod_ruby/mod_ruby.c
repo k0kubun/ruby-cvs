@@ -660,7 +660,7 @@ static VALUE load_eruby_script(request_rec *r)
 
 static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
-    volatile VALUE wcb_thread = Qnil;
+    VALUE wcb_thread = Qnil;
     VALUE load_thread;
     ruby_dir_config *dconf = NULL;
     int retval;
