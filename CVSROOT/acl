@@ -44,6 +44,7 @@ group:rubicon:dave,andy,aleksi
 group:cvsmailer:knu
 group:rwiki:seki,nahi
 group:rwiki-installer:kazu
+group:drb:seki
 group:interbase:matz,bizenn
 group:irc:iga,knu,gnhurst
 group:metaruby:matju,aleksi
@@ -81,6 +82,7 @@ grant:@rubicon:rubicon
 grant:@cvsmailer:app/cvsmailer
 grant:@rwiki-installer:app/rwiki/installer
 grant:@rwiki:app/rwiki
+grant:@drb:lib/drb
 grant:@interbase:lib/interbase
 grant:@irc:lib/irc
 grant:@metaruby:lib/metaruby
