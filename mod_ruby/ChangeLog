@@ -1,3 +1,9 @@
+Thu Aug 30 18:28:46 2001 Sean Chittenden <sean-apache-modruby@chittenden.org>
+
+	* request.c(rb_apache_request_flush): call ap_rflush().
+
+	* request.c: allow the path_info for the request to be changed.
+
 Fri Aug 24 11:24:38 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.3 released.
