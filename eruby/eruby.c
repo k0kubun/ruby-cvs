@@ -5,6 +5,11 @@
 
 #include "ruby.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/stat.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -30,6 +35,94 @@ enum embedded_program_type {
 };
 
 #define EOP (-2)
+
+static int parse_options(FILE *in, FILE *out)
+{
+    int c;
+
+    do {
+	c = getc(in);
+	if (c == EOF) return 0;
+    } while (!isspace(c));
+
+    for (;;) {
+	c = getc(in);
+    again:
+	switch (c) {
+	case EOF:
+	    return 0;
+	case '\n':
+	    putc(c, out);
+	    return 0;
+	case '-':
+	    c = getc(in);
+	    switch (c) {
+	    case 'K':
+	    {
+		char tmp[1];
+
+		c = getc(in);
+		if (c == EOF || c == '\n')
+		    return -1;
+		tmp[0] = c;
+		rb_set_kcode(tmp);
+		while (c != EOF && !isspace(c)) {
+		    c = getc(in);
+		}
+		goto again;
+	    }
+	    case 'C':
+	    {
+		int term;
+		char tmp[1];
+		VALUE charset = rb_str_new("", 0);
+
+		c = getc(in);
+		while (isspace(c)) {
+		    if (c == '\n') return -1;
+		    c = getc(in);
+		}
+		if (c == EOF) {
+		    return -1;
+		}
+		else if (c == '"' || c == '\'') {
+		    term = c;
+		    c = getc(in);
+		    while (c != EOF && c != term) {
+			tmp[0] = c;
+			rb_str_cat(charset, tmp, 1);
+			c = getc(in);
+		    }
+		    eruby_charset = charset;
+		}
+		else {
+		    while (c != EOF && !isspace(c)) {
+			tmp[0] = c;
+			rb_str_cat(charset, tmp, 1);
+			c = getc(in);
+		    }
+		    eruby_charset = charset;
+		    goto again;
+		}
+		break;
+	    }
+	    default:
+		return -1;
+	    }
+	    break;
+	case ' ':
+	case '\t':
+	case '\v':
+	case '\f':
+	case '\r':
+	    break;
+	default:
+	    return -1;
+	}
+    }
+
+    return 0;
+}
 
 static int parse_embedded_program(FILE *in, FILE *out,
 				  enum embedded_program_type type)
@@ -122,13 +215,20 @@ int eruby_compile(FILE *in, FILE *out)
 
     c = getc(in);
     if (c == '#') {
-	do {
-	    c = getc(in);
-	    if (c == '\n') {
-		putc('\n', out);
-		break;
+	c = getc(in);
+	if (c == '!') {
+	    if (parse_options(in, out) == -1)
+		return ERUBY_INVALID_OPTION;
+	}
+	else {
+	    while (c != EOF) {
+		c = getc(in);
+		if (c == '\n') {
+		    putc(c, out);
+		    break;
+		}
 	    }
-	} while (c != EOF);
+	}
     }
     else {
 	ungetc(c, in);
@@ -276,6 +376,7 @@ VALUE eruby_compile_file(char *filename)
     char *tmp;
     VALUE scriptname;
     FILE *in, *out;
+    int fd;
     int err;
 
     if (strcmp(filename, "-") == 0) {
@@ -285,18 +386,29 @@ VALUE eruby_compile_file(char *filename)
 	if ((in = fopen(filename, "r")) == NULL)
 	    rb_sys_fail(filename);
     }
+ retry:
     if ((tmp = eruby_mktemp(filename)) == NULL)
-	rb_fatal("Can't mktemp");
+	rb_fatal("can't mktemp");
+    fd = open(tmp, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    if (fd < 0) {
+	free(tmp);
+	if (errno == EEXIST)
+	    goto retry;
+	rb_fatal("cannot open temporary file: %s", tmp);
+    }
     scriptname = rb_str_new2(tmp);
     free(tmp);
-    if ((out = fopen(RSTRING(scriptname)->ptr, "w")) == NULL)
-	rb_fatal("Cannot open temporary file: %s", RSTRING(scriptname)->ptr);
+    if ((out = fdopen(fd, "w")) == NULL)
+	rb_fatal("cannot open temporary file: %s", RSTRING(scriptname)->ptr);
     err = eruby_compile(in, out);
     if (in != stdin) fclose(in);
     fclose(out);
     switch (err) {
     case ERUBY_MISSING_END_DELIMITER:
 	rb_raise(rb_eSyntaxError, "missing end delimiter");
+	break;
+    case ERUBY_INVALID_OPTION:
+	rb_raise(rb_eSyntaxError, "invalid #! line");
 	break;
     case ERUBY_SYSTEM_ERROR:
 	rb_sys_fail(filename);

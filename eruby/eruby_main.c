@@ -433,7 +433,7 @@ static VALUE defout_write(VALUE self, VALUE str)
 
 static VALUE defout_cancel(VALUE self)
 {
-    if (RSTRING(self)->len == 0) return;
+    if (RSTRING(self)->len == 0) return Qnil;
     RSTRING(self)->len = 0;
     RSTRING(self)->ptr[0] = '\0';
     return Qnil;
@@ -483,6 +483,7 @@ usage: %s [switches] [inputfile]\n\n\
 			  f: filter mode\n\
 			  c: CGI mode\n\
 			  n: NPH-CGI mode\n\
+  -C [charset]		specifies charset parameter for Content-Type\n\
   -n, --noheader	disables CGI header output\n\
   -v, --verbose		enables verbose mode\n\
   --version		print version information and exit\n\
@@ -531,42 +532,29 @@ static void parse_options(int argc, char **argv)
 	    set_mode(++s);
 	    s++;
 	    goto again;
-#if 0
-	case 'B':
-	    if (*++s == '\0') {
-		s = argv[++i];
-		if (s == NULL) {
-		    fprintf(stderr, "%s: no delimiter given\n", argv[0]);
-		    exit(2);
-		}
-	    }
-	    if (strlen(s) > 2) {
-		fprintf(stderr, "%s: demiliter must be 1 or 2 characters\n", argv[0]);
-		exit(2);
-	    }
-	    eruby_begin_delimiter1 = *s++;
-	    eruby_begin_delimiter2 = *s;
-	    break;
-	case 'E':
-	    if (*++s == '\0') {
-		s = argv[++i];
-		if (s == NULL) {
-		    fprintf(stderr, "%s: no delimiter given\n", argv[0]);
-		    exit(2);
-		}
-	    }
-	    if (strlen(s) > 2) {
-		fprintf(stderr, "%s: demiliter must be 1 or 2 characters\n", argv[0]);
-		exit(2);
-	    }
-	    eruby_end_delimiter1 = *s++;
-	    eruby_end_delimiter2 = *s;
-	    break;
-#endif
 	case 'K':
-	    rb_set_kcode(++s);
+	    s++;
+	    if (*s == '\0') {
+		fprintf(stderr, "%s: no arg given for -K\n", argv[0]);
+		exit(2);
+	    }
+	    rb_set_kcode(s);
 	    s++;
 	    goto again;
+	case 'C':
+	    s++;
+	    if (*s == '\0') {
+		i++;
+		if (i == argc) {
+		    fprintf(stderr, "%s: no arg given for -C\n", argv[0]);
+		    exit(2);
+		}
+		eruby_charset = rb_str_new2(argv[i]);
+	    }
+	    else {
+		eruby_charset = rb_str_new2(s);
+	    }
+	    break;
 	case 'd':
 	    ruby_debug = Qtrue;
 	    s++;
@@ -625,6 +613,18 @@ int main(int argc, char **argv)
     char *out;
     int nout;
 
+    ruby_init();
+#if RUBY_VERSION_CODE >= 145
+    rb_ary_push(rb_load_path, rb_str_new2("."));
+#endif
+    if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)
+	rb_set_safe_level(1);
+
+    rb_defout = rb_str_new("", 0);
+    rb_define_singleton_method(rb_defout, "write", defout_write, 1);
+    rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
+    eruby_init();
+
     parse_options(argc, argv);
     if (eruby_mode == MODE_UNKNOWN)
 	eruby_mode = guess_mode();
@@ -643,17 +643,6 @@ int main(int argc, char **argv)
 	    eruby_filename = "-";
     }
 
-    ruby_init();
-#if RUBY_VERSION_CODE >= 145
-    rb_ary_push(rb_load_path, rb_str_new2("."));
-#endif
-    if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)
-	rb_set_safe_level(1);
-
-    rb_defout = rb_str_new("", 0);
-    rb_define_singleton_method(rb_defout, "write", defout_write, 1);
-    rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
-    eruby_init();
     script = eruby_load(eruby_filename, 0, &state);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	error_print(state, eruby_mode, script);

@@ -11,6 +11,7 @@
 enum eruby_compile_status {
     ERUBY_OK = 0,
     ERUBY_MISSING_END_DELIMITER,
+    ERUBY_INVALID_OPTION,
     ERUBY_SYSTEM_ERROR
 };
 
