@@ -7,42 +7,22 @@ class TestIO < Rubicon::TestCase
     setupTestDir
     @file  = "_test/_10lines"
     @file1 = "_test/_99lines"
-begin    
-
-    File.open(@file, "w") { |f|
-      10.times { |i| f.printf "%02d: This is a line\n", i }
-    }
-    File.open(@file1, "w") { |f|
+    begin    
+      
+      File.open(@file, "w") { |f|
+        10.times { |i| f.printf "%02d: This is a line\n", i }
+      }
+      File.open(@file1, "w") { |f|
         99.times { |i| f.printf "Line %02d\n", i }
-    }
-rescue Exception
-  puts 
-  puts '!' * 50
-  puts $!
-  exit!
-end
+      }
+    rescue Exception
+      puts $!
+      exit!
+    end
 
   end
 
   def teardown
-
-    begin
-      loop { Process.wait; puts "\n\nCHILD REAPED\n\n" }
-    rescue Errno::ECHILD
-    end
-
-    3.upto(255) { |fd|
-      begin
-        io = IO.new(fd)
-        $stderr.puts "FD #{fd} was not closed"
-        exit
-      rescue Errno::EBADF
-      rescue Exception
-        puts "Seen an exception: #{$!}"
-        exit!
-      end
-    }
-
     File.delete(@file) if File.exist?(@file)
     teardownTestDir
   end

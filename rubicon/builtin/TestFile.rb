@@ -181,8 +181,11 @@ class TestFile < Rubicon::TestCase
     # test block/non block forms
     
     f = File.open(file1)
-    assert_equal(File, f.type)
-    f.close
+    begin
+      assert_equal(File, f.type)
+    ensure
+      f.close
+    end
 
     assert_nil(File.open(file1) { |f| assert_equal(File, f.type)})
 

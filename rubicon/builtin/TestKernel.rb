@@ -124,20 +124,81 @@ class TestKernel < Rubicon::TestCase
     assert(!(o1.equal? o2))
   end
 
+  module ExtendTest1
+    def et1
+      "et1"
+    end
+    def et3
+      "et3.1"
+    end
+  end
+
+  module ExtendTest2
+    def et2
+      "et2"
+    end
+    def et3
+      "et3.2"
+    end
+  end
+
   def test_extend
-    assert_fail("untested")
+    s = "hello"
+    assert(!defined?(s.et1))
+    s.extend(ExtendTest1)
+    assert(defined?(s.et1))
+    assert(!defined?(s.et2))
+    assert_equal("et1", s.et1)
+    assert_equal("et3.1", s.et3)
+
+    s.extend(ExtendTest2)
+    assert(defined?(s.et2))
+    assert_equal("et1", s.et1)
+    assert_equal("et2", s.et2)
+    assert_equal("et3.2", s.et3)
+
+    t = "goodbye"
+    t.extend(ExtendTest1, ExtendTest2)
+    assert_equal("et1", t.et1)
+    assert_equal("et2", t.et2)
+    assert_equal("et3.2", t.et3)
+
+    t = "goodbye"
+    t.extend(ExtendTest2, ExtendTest1)
+    assert_equal("et1", t.et1)
+    assert_equal("et2", t.et2)
+    assert_equal("et3.1", t.et3)
   end
 
   def test_freeze
-    assert_fail("untested")
+    s = "hello"
+    s[3] = "x"
+    eval %q{ def s.m1() "m1" end }
+    assert_equal("m1", s.m1)
+    s.freeze
+    assert(s.frozen?)
+    assert_exception(TypeError) { s[3] = 'y' }
+    assert_exception(TypeError) { eval %q{ def s.m1() "m1" end } }
+    assert_equal("helxo", s)
   end
 
   def test_frozen?
-    assert_fail("untested")
+    s = "hello"
+    assert(!s.frozen?)
+    assert(!self.frozen?)
+    s.freeze
+    assert(s.frozen?)
   end
 
   def test_hash
-    assert_fail("untested")
+    assert_instance_of(Fixnum, "hello".hash)
+    s1 = "hello"
+    s2 = "hello"
+    assert(s1.id != s2.id)
+    assert(s1.eql?(s2))
+    assert(s1.hash == s2.hash)
+    s1[2] = 'x'
+    assert(s1.hash != s2.hash)
   end
 
   def test_id
@@ -151,55 +212,186 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_inspect
-    assert_fail("untested")
+    assert_instance_of(String, 1.inspect)
+    assert_instance_of(String, /a/.inspect)
+    assert_instance_of(String, "hello".inspect)
+    assert_instance_of(String, self.inspect)
   end
 
   def test_instance_eval
-    assert_fail("untested")
+    s = "hello"
+    assert_equal(s, s.instance_eval { self } ) 
+    assert_equal("HELLO", s.instance_eval("upcase"))
   end
 
   def test_instance_of?
-    assert_fail("untested")
+    s = "hello"
+    assert(s.instance_of?(String))
+    assert(!s.instance_of?(Object))
+    assert(!s.instance_of?(Class))
+    assert(self.instance_of?(TestKernel))
   end
 
+  class IVTest1
+  end
+  class IVTest2
+    def initialize
+      @var1 = 1
+      @var2 = 2
+    end
+  end
+    
   def test_instance_variables
-    assert_fail("untested")
+    o = IVTest1.new
+    assert_equal([], o.instance_variables)
+    o = IVTest2.new
+    assert_set_equal(%w(@var1 @var2), o.instance_variables)
   end
 
   def test_is_a?
-    assert_fail("untested")
+    s = "hello"
+    assert(s.is_a?(String))
+    assert(s.is_a?(Object))
+    assert(!s.is_a?(Class))
+    assert(self.is_a?(TestKernel))
+    assert(TestKernel.is_a?(Class))
+    assert(TestKernel.is_a?(Module))
+    assert(TestKernel.is_a?(Object))
+
+    a = []
+    assert(a.is_a?(Array))
+    assert(a.is_a?(Enumerable))
   end
 
   def test_kind_of?
-    assert_fail("untested")
+    s = "hello"
+    assert(s.kind_of?(String))
+    assert(s.kind_of?(Object))
+    assert(!s.kind_of?(Class))
+    assert(self.kind_of?(TestKernel))
+    assert(TestKernel.kind_of?(Class))
+    assert(TestKernel.kind_of?(Module))
+    assert(TestKernel.kind_of?(Object))
+
+    a = []
+    assert(a.kind_of?(Array))
+    assert(a.kind_of?(Enumerable))
+  end
+
+  def MethodTest1
+    "mt1"
+  end
+  def MethodTest2(a, b, c)
+    a + b + c
   end
 
   def test_method
-    assert_fail("untested")
+    assert_exception(NameError) { self.method(:wombat) }
+    m = self.method("MethodTest1")
+    assert_instance_of(Method, m)
+    assert_equal("mt1", m.call)
+    assert_exception(ArgumentError) { m.call(1, 2, 3) }
+
+    m = self.method("MethodTest2")
+    assert_instance_of(Method, m)
+    assert_equal(6, m.call(1, *[2, 3]))
+    assert_exception(ArgumentError) { m.call(1, 3) }
+  end
+
+  class MethodMissing
+    def method_missing(m, *a)
+      return [m, a]
+    end
+    def mm
+      return "mm"
+    end
+  end
+      
+  def test_method_missing
+    mm = MethodMissing.new
+    assert_equal("mm", mm.mm)
+    assert_equal([ :dave, []], mm.dave)
+    assert_equal([ :dave, [1, 2, 3]], mm.dave(1, *[2, 3]))
+  end
+
+  class MethodsTest
+    def MethodsTest.singleton
+    end
+    def one
+    end
+    def two
+    end
+    def three
+    end
+    def four
+    end
+    private :two
+    protected :three
   end
 
   def test_methods
-    assert_fail("untested")
+    assert_set_equal(TestKernel.instance_methods(true), self.methods)
+    assert_set_equal(%w(one four)  + Object.instance_methods(true), 
+        MethodsTest.new.methods)
   end
 
   def test_nil?
-    assert_fail("untested")
+    assert(!self.nil?)
+    assert(nil.nil?)
+    a = []
+    assert(a[99].nil?)
   end
 
+  class PrivateMethods < MethodsTest
+    def five
+    end
+    def six
+    end
+    def seven
+    end
+    private :six
+    protected :seven
+    end
+
   def test_private_methods
-    assert_fail("untested")
+    assert_set_equal(%w(two six) + Object.new.private_methods,
+                  PrivateMethods.new.private_methods)
   end
 
   def test_protected_methods
-    assert_fail("untested")
+    assert_set_equal(%w(three seven) + Object.new.protected_methods,
+                  PrivateMethods.new.protected_methods)
   end
 
   def test_public_methods
-    assert_fail("untested")
+    assert_set_equal(TestKernel.instance_methods(true), self.public_methods)
+    assert_set_equal(%w(one four)  + Object.instance_methods(true), 
+        MethodsTest.new.public_methods)
   end
 
   def test_respond_to?
-    assert_fail("untested")
+    assert(self.respond_to?(:test_respond_to?))
+    assert(!self.respond_to?(:TEST_respond_to?))
+           
+    mt = PrivateMethods.new
+    # public
+    assert(mt.respond_to?("five"))
+    assert(mt.respond_to?(:one))
+
+    assert(mt.respond_to?("five", true))
+    assert(mt.respond_to?(:one, false))
+    # protected
+    assert(mt.respond_to?("seven"))
+    assert(mt.respond_to?(:three))
+
+    assert(mt.respond_to?("seven", true))
+    assert(mt.respond_to?(:three, false))
+    #private
+    assert(!mt.respond_to?(:two))
+    assert(!mt.respond_to?("six"))
+ 
+    assert(mt.respond_to?(:two, true))
+    assert(mt.respond_to?("six", true))
   end
 
   def test_send
@@ -209,31 +401,58 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_singleton_methods
-    assert_fail("untested")
+    assert_equal(%w(singleton), MethodsTest.singleton_methods)
+    assert_equal(%w(singleton), PrivateMethods.singleton_methods)
+    
+    mt = MethodsTest.new
+    assert_equal([], mt.singleton_methods)
+    eval "def mt.wombat() end"
+    assert_equal(%w(wombat), mt.singleton_methods)
   end
 
   def test_taint
-    assert_fail("untested")
+    a = "hello"
+    assert(!a.tainted?)
+    assert_equal(a, a.taint)
+    assert(a.tainted?)
   end
 
   def test_tainted?
-    assert_fail("untested")
+    a = "hello"
+    assert(!a.tainted?)
+    assert_equal(a, a.taint)
+    assert(a.tainted?)
   end
 
   def test_to_a
-    assert_fail("untested")
+    o = Object.new
+    assert_equal([o], o.to_a)   # rest tested in individual classes
   end
 
   def test_to_s
-    assert_fail("untested")
+    o = Object.new
+    assert_match(o.to_s, /^#<Object:0x[0-9a-f]+>/)
   end
 
   def test_type
-    assert_fail("untested")
+    assert_instance_of(Class, self.type)
+    assert_equal(TestKernel, self.type)
+    assert_equal(String, "hello".type)
+    assert_equal(Bignum, (10**40).type)
   end
 
   def test_untaint
-    assert_fail("untested")
+    a = "hello"
+    assert(!a.tainted?)
+    assert_equal(a, a.taint)
+    assert(a.tainted?)
+    assert_equal(a, a.untaint)
+    assert(!a.tainted?)
+    
+    a = "hello"
+    assert(!a.tainted?)
+    assert_equal(a, a.untaint)
+    assert(!a.tainted?)
   end
 
   class Caster
@@ -794,28 +1013,297 @@ class TestKernel < Rubicon::TestCase
     assert_fail("untested")
   end
 
+  def local_variable_test(c)
+    d = 2
+    local_variables
+  end
+
   def test_s_local_variables
-    assert_fail("untested")
+    assert_set_equal(%w(a), local_variables)
+    eval "b = 1"
+    assert_set_equal(%w(a b), local_variables)
+    assert_set_equal(%w(c d), local_variable_test(1))
+    a = 1
   end
 
+  # This is a lame test--can we do better?
   def test_s_loop
-    assert_fail("untested")
+    a = 0
+    loop do
+      a += 1
+      break if a > 4
+    end
+    assert_equal(5, a)
   end
 
-  def test_s_method_missing
-    assert_fail("untested")
+  # regular files
+  def test_s_open1
+    setupTestDir
+    begin
+      file1 = "_test/_file1"
+      
+      assert_exception(Errno::ENOENT) { File.open("_gumby") }
+      
+      # test block/non block forms
+      
+      f = open(file1)
+      begin
+        assert_instance_of(File, f)
+      ensure
+        f.close
+      end
+      
+      assert_nil(open(file1) { |f| assert_equal(File, f.type)})
+      
+      # test modes
+      
+      modes = [
+        %w( r w r+ w+ a a+ ),
+        [ File::RDONLY, 
+          File::WRONLY | File::CREAT,
+          File::RDWR,
+          File::RDWR   + File::TRUNC + File::CREAT,
+          File::WRONLY + File::APPEND + File::CREAT,
+          File::RDWR   + File::APPEND + File::CREAT
+        ]]
+
+      for modeset in modes
+        sys("rm -f #{file1}")
+        sys("touch #{file1}")
+        
+        mode = modeset.shift      # "r"
+        
+        # file: empty
+        open(file1, mode) { |f| 
+          assert_nil(f.gets)
+          assert_exception(IOError) { f.puts "wombat" }
+        }
+        
+        mode = modeset.shift      # "w"
+        
+        # file: empty
+        open(file1, mode) { |f| 
+          assert_nil(f.puts "wombat")
+          assert_exception(IOError) { f.gets }
+        }
+        
+        mode = modeset.shift      # "r+"
+        
+        # file: wombat
+        open(file1, mode) { |f| 
+          assert_equal("wombat\n", f.gets)
+          assert_nil(f.puts "koala")
+          f.rewind
+          assert_equal("wombat\n", f.gets)
+          assert_equal("koala\n", f.gets)
+        }
+        
+        mode = modeset.shift      # "w+"
+        
+        # file: wombat/koala
+        open(file1, mode) { |f| 
+          assert_nil(f.gets)
+          assert_nil(f.puts "koala")
+          f.rewind
+          assert_equal("koala\n", f.gets)
+        }
+        
+        mode = modeset.shift      # "a"
+        
+        # file: koala
+        open(file1, mode) { |f| 
+          assert_nil(f.puts "wombat")
+          assert_exception(IOError) { f.gets }
+        }
+        
+        mode = modeset.shift      # "a+"
+        
+        # file: koala/wombat
+        open(file1, mode) { |f| 
+          assert_nil(f.puts "wallaby")
+          f.rewind
+          assert_equal("koala\n", f.gets)
+          assert_equal("wombat\n", f.gets)
+          assert_equal("wallaby\n", f.gets)
+        }
+        
+      end
+      
+      # Now try creating files
+      
+      filen = "_test/_filen"
+      
+      open(filen, "w") {}
+      assert(File.exists?(filen))
+      File.delete(filen)
+      
+      open(filen, "w", 0444) {}
+      assert(File.exists?(filen))
+      assert(0444, File.stat(filen).mode)
+      File.delete(filen)
+    ensure
+      teardownTestDir           # also does a chdir
+    end
   end
 
-  def test_s_open
-    assert_fail("untested")
+  def setup_s_open2
+    setupTestDir
+    @file  = "_test/_10lines"
+    begin    
+      File.open(@file, "w") { |f|
+        10.times { |i| f.printf "%02d: This is a line\n", i }
+      }
+    rescue Exception
+      puts $!
+      exit!
+    end
   end
 
+  # pipes
+  def test_s_open2
+    setup_s_open2
+
+    begin
+      assert_nil(open("| echo hello") do |f|
+                   assert_equal("hello\n", f.gets)
+                 end)
+      
+      # READ
+      p = open("|cat #@file")
+      begin
+        count = 0
+        p.each do |line|
+          num = line[0..1].to_i
+          assert_equal(count, num)
+          count += 1
+        end
+        assert_equal(10, count)
+      ensure
+        p.close
+      end
+
+      # READ with block
+    res = open("|cat #@file") do |p|
+        count = 0
+        p.each do |line|
+          num = line[0..1].to_i
+          assert_equal(count, num)
+          count += 1
+        end
+        assert_equal(10, count)
+      end
+      assert_nil(res)
+      p.close
+
+      # WRITE
+      p = open("|cat >#@file", "w")
+      begin
+        5.times { |i| p.printf "Line %d\n", i }
+      ensure
+        p.close
+      end
+      
+      count = 0
+      IO.foreach(@file) do |line|
+        num = line.chomp[-1,1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(5, count)
+      
+      # Spawn an interpreter
+      parent = $$
+      p = open("|-")
+      if p
+        begin
+          assert_equal(parent, $$)
+          assert_equal("Hello\n", p.gets)
+        ensure
+          p.close
+        end
+      else
+        assert_equal(parent, Process.ppid)
+        puts "Hello"
+        exit
+      end
+
+      # Spawn an interpreter - WRITE
+      parent = $$
+      pipe = open("|-", "w")
+      
+      if pipe
+        begin
+          assert_equal(parent, $$)
+          pipe.puts "12"
+          Process.wait
+          assert_equal(12, $?>>8)
+        ensure
+          pipe.close
+        end
+      else
+        buff = $stdin.gets
+        exit buff.to_i
+      end
+      
+      # Spawn an interpreter - READWRITE
+      parent = $$
+      p = open("|-", "w+")
+      
+      if p
+        begin
+          assert_equal(parent, $$)
+          p.puts "Hello\n"
+          assert_equal("Goodbye\n", p.gets)
+          Process.wait
+        ensure
+          p.close
+        end
+      else
+        puts "Goodbye" if $stdin.gets == "Hello\n"
+        exit
+      end
+    rescue
+      teardownTestDir
+    end
+  end
+
+  class PTest2
+    def inspect
+      "ptest2"
+    end
+  end
+    
   def test_s_p
-    assert_fail("untested")
+    IO.popen("-") do |pipe|
+      if !pipe
+        p 1
+        p PTest2.new
+        exit
+      end
+      assert_equal("1\n", pipe.gets)
+      assert_equal("ptest2\n", pipe.gets)
+    end
+  end
+
+  class PrintTest
+    def to_s
+      "printtest"
+    end
   end
 
   def test_s_print
-    assert_fail("untested")
+    IO.popen("-") do |pipe|
+      if !pipe
+        print 1
+        print PrintTest.new
+        print "\n"
+        $, = ":"
+        print 1, "cat", PrintTest.new, "\n"
+        exit
+      end
+      assert_equal("1printtest\n", pipe.gets)
+      assert_equal("1:cat:printtest:\n", pipe.gets)
+    end
   end
 
   def test_s_printf
