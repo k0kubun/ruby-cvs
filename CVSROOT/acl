@@ -42,6 +42,7 @@ group:rough:@all
 group:eruby:shugo
 group:mod_ruby:shugo
 group:rubicon:dave,andy,aleksi
+group:pocketruby:li-te_cheng,jack_kwok,ned
 group:cvsmailer:knu
 group:div:seki
 group:rwiki:seki,nahi
@@ -87,6 +88,7 @@ grant:@rough:rough
 grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
+grant:@pocketruby:pocketruby
 grant:@cvsmailer:app/cvsmailer
 grant:@div:app/div
 grant:@rwiki-installer:app/rwiki/installer
