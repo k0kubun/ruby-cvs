@@ -17,42 +17,25 @@ class TestStruct__Tms < Rubicon::TestCase
       Dir.rmdir(name)
     }
 
-    Process.wait if pid
-    puts Time.times.to_a if pid
+    exit unless pid
 
+    Process.wait
   end
 
-#     # find out how much it takes to burn up a couple of seconds or so
-#     n = 100
-#     loop do
-#       start = Time.now
-#       sillyCalculation(n)
-#       break if Time.now - start > 1
-#       n *= 2
-#     end
-#     fork { sillyCalculation(n) }
-#     Process.wait
-# #    200.times {
-# #      Dir.open(".") {}
-#       #fork { sillyCalculation(n/200) }
-# #      Process.wait
-# #    }
-#   end
-
   def cstime
-    assert(Time.times.cstime != 0)
+    assert(Time.times.cstime > 0.0)
   end
 
   def cutime
-    assert(Time.times.cutime != 0)
+    assert(Time.times.cutime > 0.0)
   end
 
   def stime
-    assert(Time.times.stime != 0)
+    assert(Time.times.stime > 0.0)
   end
 
   def utime
-    assert(Time.times.utime != 0)
+    assert(Time.times.utime > 0.0)
   end
 
   def s_aref
