@@ -396,10 +396,10 @@ class TestThread < Rubicon::TestCase
 
   def test_s_list
     t = []
-    100.times { |i| t[i] = Thread.new { sleep 1 } }
-    assert_equals(101,Thread.list.length)
-    100.times { |i| t[i].join }
-    assert_equals(1,Thread.list.length)
+    100.times { t << Thread.new { Thread.stop } }
+    assert_equals(101, Thread.list.length)
+    t.each { |i| i.run; i.join }
+    assert_equals(1, Thread.list.length)
   end
 
   def test_s_main
