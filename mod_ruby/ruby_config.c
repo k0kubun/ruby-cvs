@@ -47,6 +47,27 @@ void *ruby_create_server_config(pool *p, server_rec *s)
     return conf;
 }
 
+void *ruby_merge_server_config(pool *p, void *basev, void *addv)
+{
+    ruby_server_config *new =
+	(ruby_server_config *) ap_pcalloc(p, sizeof(ruby_server_config));
+    ruby_server_config *base = (ruby_server_config *) basev;
+    ruby_server_config *add = (ruby_server_config *) addv;
+
+    if (add->load_path == NULL) {
+	new->load_path = base->load_path;
+    }
+    else if (base->load_path == NULL) {
+	new->load_path = add->load_path;
+    }
+    else {
+	new->load_path = ap_append_arrays(p, base->load_path, add->load_path);
+    }
+    new->env = ap_overlay_tables(p, add->env, base->env);
+    new->timeout = add->timeout ? add->timeout : base->timeout;
+    return (void *) new;
+}
+
 void *ruby_create_dir_config(pool *p, char *dirname)
 {
     ruby_dir_config *conf =
@@ -183,7 +204,8 @@ const char *ruby_cmd_require(cmd_parms *cmd, ruby_dir_config *dconf, char *arg)
     }
     else {
 	if (ruby_required_libraries == NULL)
-	    ruby_required_libraries = ap_make_array(cmd->pool, 1, sizeof(char*));
+	    ruby_required_libraries =
+		ap_make_array(cmd->pool, 1, sizeof(ruby_library_context));
 	lib = (ruby_library_context *) ap_push_array(ruby_required_libraries);
 	lib->filename = arg;
 	lib->server_config = sconf;

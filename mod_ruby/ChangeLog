@@ -1,3 +1,10 @@
+Tue May 21 14:51:35 2002  Shugo Maeda <shugo@modruby.net>
+
+	* ruby_config.c (ruby_cmd_require): fixed the third argument of
+	ap_make_array().
+
+	* ruby_config.c (ruby_merge_server_config): new function.
+
 Tue May 21 14:15:27 2002  Shugo Maeda <shugo@modruby.net>
 
 	* ruby_config.c (ruby_cmd_require): push ruby_server_config* and

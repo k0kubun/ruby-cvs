@@ -178,7 +178,7 @@ module AP_MODULE_DECLARE_DATA ruby_module =
     ruby_create_dir_config,	/* dir config creater */
     ruby_merge_dir_config,	/* dir merger --- default is to override */
     ruby_create_server_config,	/* create per-server config structure */
-    NULL,			/* merge server config */
+    ruby_merge_server_config,	/* merge server config */
     ruby_cmds,			/* command apr_table_t */
     ruby_register_hooks		/* register hooks */
 };
@@ -201,7 +201,7 @@ MODULE_VAR_EXPORT module ruby_module =
     ruby_create_dir_config,	/* dir config creater */
     ruby_merge_dir_config,	/* dir merger --- default is to override */
     ruby_create_server_config,	/* create per-server config structure */
-    NULL,			/* merge server config */
+    ruby_merge_server_config,	/* merge server config */
     ruby_cmds,			/* command table */
     ruby_handlers,		/* handlers */
     ruby_trans_handler,		/* filename translation */

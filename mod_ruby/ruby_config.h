@@ -31,8 +31,9 @@
 #define RUBY_CONFIG_H
 
 void *ruby_create_server_config(pool*, server_rec*);
-void *ruby_merge_dir_config(pool*, void*, void*);
+void *ruby_merge_server_config(pool*, void*, void*);
 void *ruby_create_dir_config (pool*, char*);
+void *ruby_merge_dir_config(pool*, void*, void*);
 const char *ruby_cmd_kanji_code(cmd_parms*, ruby_dir_config*, char*);
 const char *ruby_cmd_add_path(cmd_parms*, ruby_dir_config*, char*);
 const char *ruby_cmd_require(cmd_parms*, ruby_dir_config*, char*);
