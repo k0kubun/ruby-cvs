@@ -686,7 +686,6 @@ VALUE eruby_load(char *filename, int wrap, int *state)
     else {
 	earg.src = code;
 	earg.filename = vfilename;
-	rb_gc(); /* why this break f? */
 	rb_protect(eval_string, (VALUE) &earg, &status);
     }
     if (state) *state = status;
