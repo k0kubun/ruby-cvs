@@ -187,6 +187,7 @@ static void ruby_startup(server_rec *s, pool *p)
 						    &ruby_module);
     static char ruby_version[BUFSIZ];
     char **list;
+    char *rubylib;
     int i;
 
 #if MODULE_MAGIC_NUMBER >= 19980507
@@ -210,8 +211,8 @@ static void ruby_startup(server_rec *s, pool *p)
 			   STRING_LITERAL(MOD_RUBY_STRING_VERSION));
 
     origenviron = environ;
-    ap_table_set(conf->env, "PATH", getenv("PATH"));
-    ap_table_set(conf->env, "RUBYLIB", getenv("RUBYLIB"));
+    if ((rubylib = getenv("RUBYLIB")) != NULL)
+	ap_table_set(conf->env, "RUBYLIB", rubylib);
 
     list = (char **) conf->required_files->elts;
     for (i = 0; i < conf->required_files->nelts; i++) {
@@ -294,82 +295,15 @@ static void setup_env(request_rec *r, ruby_dir_config *dconf)
     ruby_server_config *sconf =
 	(ruby_server_config *) ap_get_module_config(r->server->module_config,
 						    &ruby_module);
-    char server_port[BUFSIZ];
 
     mr_clearenv();
+    ap_add_common_vars(r);
+    ap_add_cgi_vars(r);
+    setenv_from_table(r->subprocess_env);
     setenv_from_table(sconf->env);
     if (dconf) setenv_from_table(dconf->env);
     mr_setenv("MOD_RUBY", MOD_RUBY_STRING_VERSION);
     mr_setenv("GATEWAY_INTERFACE", RUBY_GATEWAY_INTERFACE);
-    mr_setenv("HTTP_USER_AGENT", ap_table_get(r->headers_in, "User-Agent"));
-    mr_setenv("HTTP_REFERER", ap_table_get(r->headers_in, "Referer"));
-    mr_setenv("HTTP_COOKIE", ap_table_get(r->headers_in, "Cookie"));
-    mr_setenv("HTTP_FORWARDED", ap_table_get(r->headers_in, "Forwarded"));
-    mr_setenv("HTTP_HOST", ap_table_get(r->headers_in, "Host"));
-    mr_setenv("HTTP_CONNECTION", ap_table_get(r->headers_in, "Connection"));
-    mr_setenv("HTTP_PROXY_CONNECTION",
-	      ap_table_get(r->headers_in, "Proxy-Connection"));
-    mr_setenv("HTTP_ACCEPT", ap_table_get(r->headers_in, "Accept"));
-    mr_setenv("CONTENT_TYPE", ap_table_get(r->headers_in, "Content-Type"));
-    mr_setenv("CONTENT_LENGTH", ap_table_get(r->headers_in, "Content-Length"));
-    mr_setenv("REMOTE_ADDR", r->connection->remote_ip);
-    mr_setenv("REMOTE_HOST",
-	      ap_get_remote_host(r->connection, r->per_dir_config, REMOTE_NAME));
-    mr_setenv("REMOTE_USER", r->connection->user);
-    mr_setenv("REMOTE_IDENT", ap_get_remote_logname(r));
-    mr_setenv("REQUEST_METHOD", r->method);
-    mr_setenv("SCRIPT_FILENAME", r->filename);
-    mr_setenv("REQUEST_FILENAME", r->filename);
-    mr_setenv("REQUEST_URI", r->uri);
-    if (!strcmp(r->protocol, "INCLUDED")) {
-	mr_setenv("SCRIPT_NAME", r->uri);
-	mr_setenv("PATH_INFO", r->path_info);
-    }
-    else if (!r->path_info || !*r->path_info) {
-	mr_setenv("SCRIPT_NAME", r->uri);
-	ruby_unsetenv("PATH_INFO");
-    }
-    else {
-	int path_info_start = ap_find_path_info(r->uri, r->path_info);
-
-	mr_setenv("SCRIPT_NAME", ap_pstrndup(r->pool, r->uri, path_info_start));
-	mr_setenv("PATH_INFO", r->path_info);
-    }
-    if (r->path_info && *r->path_info) {
-#ifdef ap_escape_uri
-	request_rec *pa_req =
-	    ap_sub_req_lookup_uri(ap_escape_uri(r->pool, r->path_info), r);
-#else
-	request_rec *pa_req =
-	    ap_sub_req_lookup_uri(escape_uri(r->pool, r->path_info), r);
-#endif	
-
-	if (pa_req->filename) {
-	    char *pt = ap_pstrcat(r->pool, pa_req->filename, pa_req->path_info,
-				  NULL);
-#ifdef WIN32
-	    char buffer[HUGE_STRING_LEN];
-	    /* We need to make this a real Windows path name */
-	    GetFullPathName(pt, HUGE_STRING_LEN, buffer, NULL);
-	    mr_setenv("PATH_TRANSLATED", ap_pstrdup(r->pool, buffer));
-#else
-	    mr_setenv("PATH_TRANSLATED", pt);
-#endif
-	}
-	ap_destroy_sub_req(pa_req);
-    }
-    else {
-	ruby_unsetenv("PATH_TRANSLATED");
-    }
-    mr_setenv("QUERY_STRING", r->args);
-    mr_setenv("AUTH_TYPE", r->connection->ap_auth_type);
-    mr_setenv("DOCUMENT_ROOT", ap_document_root(r));
-    mr_setenv("SERVER_ADMIN", r->server->server_admin);
-    mr_setenv("SERVER_NAME", ap_get_server_name(r));
-    snprintf(server_port, BUFSIZ, "%u", ap_get_server_port(r));
-    mr_setenv("SERVER_PORT", server_port);
-    mr_setenv("SERVER_PROTOCOL", r->protocol);
-    mr_setenv("SERVER_SOFTWARE", ap_get_server_version());
 }
 
 static void get_error_pos(VALUE str)
@@ -676,7 +610,7 @@ static char *get_charset()
     case MBCTYPE_SJIS:
 	return "SHIFT_JIS";
     case MBCTYPE_UTF8:
-	return "UTF8";
+	return "UTF-8";
     case MBCTYPE_ASCII:
     default:
 	return "US-ASCII";

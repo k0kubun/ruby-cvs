@@ -3,8 +3,35 @@
 require "mkmf"
 require "getoptlong"
 
-ENV["PATH"] += ":/sbin:/usr/sbin:/usr/local/sbin:\
-/usr/apache/bin:/usr/local/apache/bin"
+$APXS = "apxs"
+
+parser = GetoptLong.new
+parser.set_options(['--help', GetoptLong::NO_ARGUMENT],
+		   ['--apxs', GetoptLong::OPTIONAL_ARGUMENT])
+
+def usage
+  $stderr.printf <<EOS, $0
+usage: %s [options]
+
+  --help                  print this message
+  --apxs=APXS             path to apxs command
+EOS
+end
+
+begin
+  parser.each_option do |name, arg|
+    case name
+    when "--apxs"
+      $APXS = arg
+    when "--help"
+      usage
+      exit(1)
+    end
+  end
+rescue
+  usage
+  exit(1)
+end
 
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $LIBRUBYARG =~ /\.a$/
@@ -49,14 +76,14 @@ else
   $DLDFLAGS = CONFIG["DLDFLAGS"]
 end
 
-$APACHE_CFLAGS = `apxs -q CFLAGS`
+$APACHE_CFLAGS = `#{$APXS} -q CFLAGS`
 if $APACHE_CFLAGS.size > 0
   $CFLAGS = ($APACHE_CFLAGS.split(/[ \t]+/) | CFLAGS.split(/[ \t]+/)).join(" ")
 else
   $CFLAGS = CFLAGS
 end
-$APACHE_INCLUDEDIR = `apxs -q INCLUDEDIR`
-$APACHE_LIBEXECDIR = `apxs -q LIBEXECDIR`
+$APACHE_INCLUDEDIR = `#{$APXS} -q INCLUDEDIR`
+$APACHE_LIBEXECDIR = `#{$APXS} -q LIBEXECDIR`
 
 mfile = open("Makefile", "w")
 begin
