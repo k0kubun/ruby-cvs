@@ -977,7 +977,7 @@ class TestIO < Rubicon::TestCase
       assert_equal(?0, file.getc)
       assert_equal(?0, file.getc)
       assert_equal(?:, file.getc)
-      assert_equal(? , file.getc)
+      assert_equal(?\s, file.getc)
       assert_nil(file.ungetc(?:))
       assert_equal(?:, file.getc)
       1 while file.getc
