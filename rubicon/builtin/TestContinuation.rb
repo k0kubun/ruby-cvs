@@ -19,7 +19,7 @@ class TestContinuation < Rubicon::TestCase
   # Tests proper
 
   def test_00_sanity
-    callcc { |cont| assert_equal(Continuation, cont.type) }
+    callcc { |cont| assert_equal(Continuation, cont.class) }
   end
 
   def test_call_no_args

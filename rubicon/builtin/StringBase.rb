@@ -229,12 +229,12 @@ class StringBase < Rubicon::TestCase
 
   def test_REV # '~'
     $_ = S("FeeFieFoo-Fum")
-    assert_equal(10,  ~/Fum$/)
-    assert_equal(nil, ~/FUM$/)
+    assert_equal(10,  ~S('Fum'))
+    assert_equal(nil, ~S('FUM'))
 
     pre_1_7_1 do
       $= = true
-      assert_equal(10, ~/FUM$/)
+      assert_equal(10, ~S('FUM'))
       $= = false
     end
   end
@@ -1001,12 +1001,8 @@ class StringBase < Rubicon::TestCase
   def test_sub
     assert_equal(S("h*llo"),    S("hello").sub(/[aeiou]/, S('*')))
     assert_equal(S("h<e>llo"),  S("hello").sub(/([aeiou])/, S('<\1>')))
-
-    Version.less_than("1.7.2") do
-      assert_equal(S("104 ello"), S("hello").sub(S('.')) {
-                     |s| s[0].to_s + S(' ')})
-    end
-
+    assert_equal(S("104 ello"), S("hello").sub(/./) {
+                   |s| s[0].to_s + S(' ')})
     assert_equal(S("HELL-o"),   S("hello").sub(/(hell)(.)/) {
                    |s| $1.upcase + S('-') + $2
                    })
@@ -1057,11 +1053,9 @@ class StringBase < Rubicon::TestCase
     a.sub!(/([aeiou])/, S('<\1>'))
     assert_equal(S("h<e>llo"), a)
 
-    Version.less_than("1.7.2") do
-      a = S("hello")
-      a.sub!(S('.')) { |s| s[0].to_s + S(' ')}
-      assert_equal(S("104 ello"), a)
-    end
+    a = S("hello")
+    a.sub!(/./) { |s| s[0].to_s + S(' ')}
+    assert_equal(S("104 ello"), a)
 
     a = S("hello")
     a.sub!(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 }

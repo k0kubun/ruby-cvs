@@ -8,7 +8,7 @@ class TestException < Rubicon::TestCase
 
   def test_s_exception
     e = Exception.exception
-    assert_equal(Exception, e.type)
+    assert_equal(Exception, e.class)
 
     e = Exception.exception(MSG)
     assert_equal(MSG, e.message)
@@ -19,7 +19,7 @@ class TestException < Rubicon::TestCase
     begin
       line=__LINE__; file=__FILE__; raise MSG
     rescue RuntimeError => detail
-      assert_equal(RuntimeError, detail.type)
+      assert_equal(RuntimeError, detail.class)
       assert_equal(MSG, detail.message)
       expected = "#{file}:#{line}:in `test_backtrace'"
       assert_equal(expected, detail.backtrace[0])
@@ -28,13 +28,13 @@ class TestException < Rubicon::TestCase
 
   def test_exception
     e = IOError.new
-    assert_equal(IOError, e.type)
-    assert_equal(IOError, e.exception.type)
+    assert_equal(IOError, e.class)
+    assert_equal(IOError, e.exception.class)
     assert_equal(e,       e.exception)
 
     e = IOError.new
     e1 = e.exception(MSG)
-    assert_equal(IOError, e1.type)
+    assert_equal(IOError, e1.class)
     assert_equal(MSG,     e1.message)
   end
 

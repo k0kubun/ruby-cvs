@@ -316,7 +316,7 @@ class TestBignum < Rubicon::TestCase
 
   def test_to_f
     f = @big1.to_f
-    assert(f.type == Float)
+    assert(f.class == Float)
     assert(f > 1e40)
     assert(f < (1e40 + 1e31))
   end

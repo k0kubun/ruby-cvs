@@ -17,7 +17,7 @@ class TestStruct < Rubicon::TestCase
     assert_equals(1,t1.alpha)
     assert_equals(2,t1.bravo)
     t2 = Struct::TestStruct.new
-    assert_equals(t1.type, t2.type)
+    assert_equals(t1.class, t2.class)
     t2.alpha = 3
     t2.bravo = 4
     assert_equals(3,t2.alpha)

@@ -26,8 +26,8 @@ class TestFalseClass < Rubicon::TestCase
   end
 
   def test_type
-    assert_equal(FalseClass, false.type)
-    assert_equal(FalseClass, FALSE.type)
+    assert_equal(FalseClass, false.class)
+    assert_equal(FalseClass, FALSE.class)
   end
 
 end

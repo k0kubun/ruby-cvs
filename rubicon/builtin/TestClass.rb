@@ -48,17 +48,17 @@ class TestClass < Rubicon::TestCase
 
   def test_s_new
     c = Class.new
-    assert_same(Class, c.type)
+    assert_same(Class, c.class)
     assert_same(Object, c.superclass)
 
     c = Class.new(Fixnum)
-    assert_same(Class, c.type)
+    assert_same(Class, c.class)
     assert_same(Fixnum, c.superclass)
   end
 
   def test_00_new_basic
     a = ClassOne.new
-    assert_equal(ClassOne, a.type)
+    assert_equal(ClassOne, a.class)
     assert_equal(0, a.num_args)
 
     a = ClassOne.new(1, 2, 3)
@@ -68,7 +68,7 @@ class TestClass < Rubicon::TestCase
 
   def test_01_new_inherited
     a = ClassTwo.new
-    assert_equal(ClassTwo, a.type)
+    assert_equal(ClassTwo, a.class)
     assert_equal(0, a.num_args)
 
     a = ClassTwo.new(1, 2, 3)

@@ -26,8 +26,8 @@ class TestTrueClass < Rubicon::TestCase
   end
 
   def test_type
-    assert_equal(TrueClass, true.type)
-    assert_equal(TrueClass, TRUE.type)
+    assert_equal(TrueClass, true.class)
+    assert_equal(TrueClass, TRUE.class)
   end
 
 end

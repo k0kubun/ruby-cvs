@@ -421,11 +421,11 @@ class TestThread < Rubicon::TestCase
 
     Thread.critical = true
     saved = count # Fixnum, will copy the value
-    100000.times { |i| Math.sin(i) ** Math.tan(i/2) }
+    10000.times { |i| Math.sin(i) ** Math.tan(i/2) }
     assert_equal(saved, count)
 
     Thread.critical = false
-    100000.times { |i| Math.sin(i) ** Math.tan(i/2) }
+    10000.times { |i| Math.sin(i) ** Math.tan(i/2) }
     assert(saved != count)
   end
 

@@ -252,12 +252,12 @@ class TestFile < Rubicon::TestCase
     
     f = File.open(file1)
     begin
-      assert_equal(File, f.type)
+      assert_equal(File, f.class)
     ensure
       f.close
     end
 
-    assert_nil(File.open(file1) { |f| assert_equal(File, f.type)})
+    assert_nil(File.open(file1) { |f| assert_equal(File, f.class)})
 
     # test modes
 

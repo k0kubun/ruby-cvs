@@ -87,7 +87,7 @@ class TestIO < Rubicon::TestCase
     ensure
       io.close
       begin
-        f.close
+	f.close
       rescue Exception
       end
     end

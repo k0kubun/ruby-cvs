@@ -35,11 +35,11 @@ class TestConstants < Rubicon::TestCase
   end
 
   def testConstInModule
-    type.instance_eval {include Const}
+    self.class.instance_eval {include Const}
 
     assert_equal([1, 2, 3, 4], [TEST1,TEST2,TEST3,TEST4])
 
-    type.instance_eval {include Const2}
+    self.class.instance_eval {include Const2}
     assert_equal([1, 2, 6, 8], [TEST1,TEST2,TEST3,TEST4])
   end
 

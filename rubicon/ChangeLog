@@ -1,3 +1,8 @@
+2002-10-07  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* replace "type" by "class" since Object#type is deprecated in
+	  1.7.3.
+
 2002-09-28  Tanaka Akira  <akr@m17n.org>
 
 	* rubicon.rb: recognize HP-UX to treat it as an Unix variant.

@@ -293,7 +293,7 @@ class ArrayBase < Rubicon::TestCase
 
   def test_collect
     a = @cls[ 1, 'cat', 1..1 ]
-    assert_equal([ Fixnum, String, Range], a.collect {|e| e.type} )
+    assert_equal([ Fixnum, String, Range], a.collect {|e| e.class} )
     assert_equal([ 99, 99, 99], a.collect { 99 } )
 
     assert_equal([], @cls[].collect { 99 })
@@ -304,7 +304,7 @@ class ArrayBase < Rubicon::TestCase
   # also update map!
   def test_collect!
     a = @cls[ 1, 'cat', 1..1 ]
-    assert_equal([ Fixnum, String, Range], a.collect! {|e| e.type} )
+    assert_equal([ Fixnum, String, Range], a.collect! {|e| e.class} )
     assert_equal([ Fixnum, String, Range], a)
    
     a = @cls[ 1, 'cat', 1..1 ]
@@ -630,7 +630,7 @@ class ArrayBase < Rubicon::TestCase
   # also update collect!
   def test_map!
     a = @cls[ 1, 'cat', 1..1 ]
-    assert_equal(@cls[ Fixnum, String, Range], a.map! {|e| e.type} )
+    assert_equal(@cls[ Fixnum, String, Range], a.map! {|e| e.class} )
     assert_equal(@cls[ Fixnum, String, Range], a)
    
     a = @cls[ 1, 'cat', 1..1 ]

@@ -139,7 +139,7 @@ class TestDir < Rubicon::TestCase
     assert_exception(ArgumentError) { Dir.new("a", "b") }
     assert_exception(Errno::ENOENT) { Dir.new("_wombat") }
 
-    assert_equal(Dir, Dir.new(".").type)
+    assert_equal(Dir, Dir.new(".").class)
   end
 
   def test_s_open
@@ -147,8 +147,8 @@ class TestDir < Rubicon::TestCase
     assert_exception(ArgumentError) { Dir.open("a", "b") }
     assert_exception(Errno::ENOENT) { Dir.open("_wombat") }
 
-    assert_equal(Dir, Dir.open(".").type)
-    assert_nil(Dir.open(".") { |d| assert_equal(Dir, d.type) } )
+    assert_equal(Dir, Dir.open(".").class)
+    assert_nil(Dir.open(".") { |d| assert_equal(Dir, d.class) } )
   end
 
   def test_s_pwd
@@ -217,7 +217,7 @@ class TestDir < Rubicon::TestCase
     d = Dir.new("_test")
     d.read
     pos = d.tell
-    assert_equal(Fixnum, pos.type)
+    assert_equal(Fixnum, pos.class)
     name = d.read
     assert_equal(d, d.seek(pos))
     assert_equal(name, d.read)
@@ -228,7 +228,7 @@ class TestDir < Rubicon::TestCase
     d = Dir.new("_test")
     d.read
     pos = d.tell
-    assert_equal(Fixnum, pos.type)
+    assert_equal(Fixnum, pos.class)
     name = d.read
     assert_equal(d, d.seek(pos))
     assert_equal(name, d.read)

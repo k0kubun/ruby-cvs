@@ -46,8 +46,8 @@ class TestSymbol < Rubicon::TestCase
   end
 
   def test_type
-    assert_equals(Symbol, :Fred.type)
-    assert_equals(Symbol, :fubar.type)
+    assert_equals(Symbol, :Fred.class)
+    assert_equals(Symbol, :fubar.class)
   end
 
   def test_taint
