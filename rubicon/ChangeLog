@@ -1,3 +1,8 @@
+2001-08-02  Dave Thomas  <Dave@Thomases.com>
+
+	* rubicon.rb (runChild): Fix typo (thanks to Yamada-san for
+	finding it)
+
 2001-07-27    <dave@pragmaticprogrammer.com>
 	Start getting stuff to work under Windows. First we get Cygwin working,
 	and then we attack the MSVC version.

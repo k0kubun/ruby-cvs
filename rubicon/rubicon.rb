@@ -248,7 +248,8 @@ module Rubicon
     def runChild(&block)
       pid = fork 
       if pid.nil?
-          block.call          exit 0
+        block.call
+        exit 0
       end
       Process.waitpid(pid, 0)
       return ($? >> 8) & 0xff
