@@ -212,7 +212,6 @@ static void ruby_startup(server_rec *s, pool *p)
 #endif
 
     ruby_init();
-    rb_set_safe_level(1);
     rb_define_global_function("p", f_p, -1);
     rb_define_global_function("exit", f_exit, -1);
     ruby_init_apachelib();
@@ -234,11 +233,17 @@ static void ruby_startup(server_rec *s, pool *p)
 	}
     }
 
+#if RUBY_VERSION_CODE >= 160
+    ruby_init_loadpath();
+#else
 #if RUBY_VERSION_CODE >= 145
     rb_ary_push(rb_load_path, rb_str_new2("."));
 #endif
+#endif
     orig_load_path = rb_load_path;
     rb_global_variable(&orig_load_path);
+
+    rb_set_safe_level(1);
 
     ruby_is_running = 1;
 }

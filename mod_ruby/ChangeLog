@@ -1,3 +1,7 @@
+Mon Sep 11 15:55:40 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* mod_ruby.c (ruby_startup): call ruby_init_loadpath().
+
 Wed Sep  6 19:02:32 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* mod_ruby.c (load_eruby_charset): use eruby_default_charset

@@ -1,3 +1,7 @@
+Mon Sep 11 15:53:00 2000  akira yamada <akira@ruby-lang.org>
+
+	* eruby_main.c (init): call ruby_init_loadpath().
+
 Wed Sep  6 19:01:31 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* eruby.c: new variable eruby_default_charset.
