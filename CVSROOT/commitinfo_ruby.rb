@@ -12,7 +12,7 @@
 # ..
 #
 # $Idaemons: /home/cvs/cvsmailer/commitinfo.rb,v 1.4 2001/01/19 17:22:53 knu Exp $
-# $devId: commitinfo.rb,v 1.6 2001/01/30 15:39:47 knu Exp $
+# $devId: commitinfo.rb,v 1.7 2001/01/31 05:18:14 knu Exp $
 # $Id$
 #
 
@@ -28,11 +28,14 @@ $modulename.tr_s!('/', '/')
 
 $aclfile = "#{$cvsroot}/CVSROOT/acl"
 
+require "socket"
+$hostname = Socket.gethostbyname(Socket.gethostname)[0]
+
 # ACL check:
 $:.unshift "#{$cvsroot}/CVSROOT"
 require "cvsacl"
 
-if File.exist?($aclfile) && !check_acl($aclfile, $cvsuser, $modulename)
+if File.exist?($aclfile) && !check_acl($aclfile, $hostname, $cvsuser, $modulename)
   exit 1	# No way!
 end
 

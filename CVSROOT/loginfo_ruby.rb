@@ -8,6 +8,7 @@
 # 0.12 subject_prefix, smtp_ipaddr, multiple-email-address. (2000/6/1)
 #
 # $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
+# $devId: loginfo.rb,v 1.5 2001/01/30 17:46:14 knu Exp $
 # $Id$
 #
 

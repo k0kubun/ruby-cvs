@@ -5,6 +5,15 @@
 #
 
 #
+# Turn debug output on/off
+#
+# Usage:
+#   debug:{on|off}
+#
+
+debug:on
+
+#
 # Restrict hosts on which one could commit
 #
 # Usage:

@@ -13,7 +13,7 @@
 # ARG6 : revision1
 # ..
 #
-# $devId: taginfo.rb,v 1.1 2001/01/30 15:39:47 knu Exp $
+# $devId: taginfo.rb,v 1.2 2001/01/31 05:18:14 knu Exp $
 # $Id$
 #
 
@@ -29,11 +29,14 @@ $modulename.tr_s!('/', '/')
 
 $aclfile = "#{$cvsroot}/acl"
 
+require "socket"
+$hostname = Socket.gethostbyname(Socket.gethostname)[0]
+
 # acl check:
 $:.unshift $cvsroot
 require "cvsacl"
 
-if File.exist?($aclfile) && !check_acl($aclfile, $cvsuser, $modulename)
+if File.exist?($aclfile) && !check_acl($aclfile, $hostname, $cvsuser, $modulename)
   exit 1	# No way!
 end
 

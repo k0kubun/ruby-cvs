@@ -1,7 +1,7 @@
 #
 # CVS ACL checker module
 #
-# $devId: cvsacl.rb,v 1.1 2001/01/30 15:39:47 knu Exp $
+# $devId: cvsacl.rb,v 1.2 2001/01/31 05:18:14 knu Exp $
 # $Id$
 #
 
@@ -10,7 +10,6 @@ class Group
 
   def Group::add(gid, obj)
     @@group_table[gid] = if obj.is_a?(Group) then obj else Group.new(obj) end
-    self
   end
 
   def Group::group(gid)
@@ -68,11 +67,23 @@ class Group
     @members
   end
 
+  def to_str
+    if all?
+      '<everyone>'
+    else
+      @members.join ' '
+    end
+  end
+
+  alias to_s to_str
+
   # Register a special group named 'all'
   add('all', new(nil).all!)
 end
 
-def check_acl(aclfile, user, modulename)
+def check_acl(aclfile, hostname, user, modulename)
+  debug = false
+
   File.open(aclfile) do |f|
     f.each_line do |line|
       line.strip!
@@ -81,26 +92,43 @@ def check_acl(aclfile, user, modulename)
 	next
       else
 	fields = line.split(':')
-	command = fields[0].intern
+	command, arg1, arg2 = *fields
+	
+	command = command.intern
 
 	case command
+	when :debug
+	  if arg1 != '0' || arg1 != 'off'
+	    debug = arg1
+	    puts "DEBUG: debug mode: " + debug
+	    puts "DEBUG: repo host: " + hostname
+	    puts "DEBUG: user: " + user
+	    puts "DEBUG: module: " + modulename
+	  else
+	    debug = false
+	    puts "DEBUG: debug mode: off" if debug
+	  end
 	when :host
-	  require 'socket'
-	  hostname = Socket.gethostbyname(Socket.gethostname)[0].downcase
+	  h = hostname.downcase
 
-	  repohosts = fields[1].split(',')
+	  repohosts = arg1.split(',')
 
-	  unless repohosts.find { |h| h.downcase == hostname }
+	  unless repohosts.find { |r| r.downcase == h }
 	    puts "ERROR: You are committing on `#{hostname}'!  Please specify CVSROOT properly and commit on `#{repohosts[0]}'."
 	    return false
 	  end
 	when :group
-	  Group.add(fields[1], fields[2].split(','))
+	  g = Group.add(arg1, arg2.split(','))
+	  puts "DEBUG: group added: <#{arg1}> = " + g if debug
 	when :deny, :grant
-	  if Group.new(fields[1].split(',')).member? user
-	    re = Regexp.new("^/?(?:#{fields[2]})(?:/|$)", 'i')
+	  g = Group.new(arg1.split(','))
+
+	  if g.member? user
+	    re = Regexp.new("^/?(?:#{arg2})(?:/|$)", 'i')
 
 	    if re =~ modulename
+	      puts "DEBUG: #{command.to_s}: " + g if debug
+
 	      if command == :deny
 		puts "ERROR: Access denied."
 		return false
@@ -114,5 +142,10 @@ def check_acl(aclfile, user, modulename)
     end
   end
 
+  puts "DEBUG: grant" if debug
   true		# Grant by default
+end
+
+if $0 == __FILE__
+  p check_acl(*ARGV)
 end
