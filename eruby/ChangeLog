@@ -1,3 +1,7 @@
+Fri Apr 20 18:28:36 2001  WATANABE Hirofumi <eban@os.rim.or.jp>
+
+	* Makefile.RB: use INSTALL_DLLIB instead of INSTALL_DATA.
+
 Fri Apr 20 17:04:35 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.1 released.

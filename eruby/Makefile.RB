@@ -241,7 +241,7 @@ install: all
 	@-$(INSTALL_DATA) $(LIBERUBY_A) $(libdir)/$(LIBERUBY_A)
 	@-$(INSTALL_DATA) #{srcdir}/eruby.h $(includedir)/eruby.h
 	@-$(INSTALL_DATA) #{srcdir}/$(MANPAGE) $(mandir)/man1/$(MANPAGE)
-	@-$(INSTALL_DATA) $(DLLIB) $(archdir)
+	@-$(INSTALL_DLLIB) $(DLLIB) $(archdir)
 
 clean:
 	$(RM) $(ERUBY)
