@@ -540,7 +540,10 @@ struct wcb_arg {
 
 static VALUE write_client_block0(struct wcb_arg *arg)
 {
-    char buff[HUGE_STRING_LEN];
+    request_rec *r = arg->r;
+    FILE *fp = arg->fp;
+#define BUFF_LEN 256
+    char buff[BUFF_LEN];
     int len;
 #ifdef SIGPIPE
     void (*handler) (int);
@@ -550,16 +553,17 @@ static VALUE write_client_block0(struct wcb_arg *arg)
 #ifdef SIGPIPE
     handler = signal(SIGPIPE, SIG_IGN);
 #endif
-    while ((len = ap_get_client_block(arg->r, buff, HUGE_STRING_LEN)) > 0) {
-	ap_reset_timeout(arg->r);
-	if (fwrite(buff, 1, len, arg->fp) == EOF)
+    while ((len = ap_get_client_block(r, buff, BUFF_LEN)) > 0) {
+	ap_reset_timeout(r);
+	rb_thread_fd_writable(fileno(fp));
+	if (fwrite(buff, 1, len, fp) == EOF)
 	    break;
     }
 #ifdef SIGPIPE
     signal(SIGPIPE, handler);
 #endif
-    ap_kill_timeout(arg->r);
-    fclose(arg->fp);
+    ap_kill_timeout(r);
+    fclose(fp);
     return Qnil;
 }
 

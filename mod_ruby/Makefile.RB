@@ -20,6 +20,14 @@ end
 $APACHE_INCLUDEDIR = `apxs -q INCLUDEDIR`
 $APACHE_LIBEXECDIR = `apxs -q LIBEXECDIR`
 
+$install = CONFIG["INSTALL_PROGRAM"]
+$install_data = CONFIG["INSTALL_DATA"]
+$install_dllib = CONFIG["INSTALL_DLLIB"] || $install_data
+if $install =~ %r!^[^\s/]+/! then
+  $install = CONFIG["compile_dir"]+"/"+$install
+  $install_dllib = CONFIG["compile_dir"]+"/"+$install_dllib
+end
+
 mfile = open("Makefile", "w")
 begin
   mfile.write <<EOMF
@@ -29,10 +37,11 @@ CC = #{CONFIG["CC"]}
 
 CFLAGS = #{CONFIG["CCDLFLAGS"]} -I#{$hdrdir} -I#{$APACHE_INCLUDEDIR} \\
 	 #{$CFLAGS}
+LIBS = #{CONFIG["LIBS"]}
 LDSHARED = #{CONFIG["LDSHARED"]}
 DLDFLAGS = #{CONFIG["DLDFLAGS"]}
-INSTALL = #{CONFIG["INSTALL"]}
-INSTALL_DATA = #{CONFIG["INSTALL_DATA"]}
+INSTALL = #{$install}
+INSTALL_DLLIB = #{$install_dllib}
 
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 LIBRUBYARG = #$LIBRUBYARG
@@ -45,7 +54,7 @@ TARGET = mod_ruby.so
 all: $(TARGET)
 
 install: $(TARGET)
-	$(INSTALL_DATA) $(TARGET) #{$APACHE_LIBEXECDIR}
+	$(INSTALL_DLLIB) $(TARGET) #{$APACHE_LIBEXECDIR}
 
 clean:
 	rm -f $(TARGET) $(OBJS) *~
@@ -54,7 +63,7 @@ distclean: clean
 	rm -f Makefile
 
 $(TARGET): $(OBJS)
-	$(LDSHARED) $(DLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG)
+	$(LDSHARED) $(DLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)
 
 mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h eruby.h
 ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h
