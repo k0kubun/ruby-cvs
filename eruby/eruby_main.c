@@ -31,10 +31,16 @@ extern VALUE rb_defout;
 #define TAG_FATAL	0x8
 #define TAG_MASK	0xf
 
+#define ERUBY_VERSION "0.0.4"
+
 #define MODE_UNKNOWN    1
 #define MODE_FILTER     2
 #define MODE_CGI        4
 #define MODE_NPHCGI     8
+
+static char *eruby_filename = NULL;
+static int eruby_mode = MODE_UNKNOWN;
+static int eruby_no_header = 0;
 
 static char *get_charset()
 {
@@ -207,10 +213,10 @@ static void exception_print(int cgi)
 		char buff[BUFSIZ];
 		if (cgi)
 		    snprintf(buff, BUFSIZ,
-			     "<div class=\"backtrace\">... %d levels...\n",
+			     "<div class=\"backtrace\">... %ld levels...\n",
 			     ep->len - TRACE_HEAD - TRACE_TAIL);
 		else
-		    snprintf(buff, BUFSIZ, "         ... %d levels...<br></div>\n",
+		    snprintf(buff, BUFSIZ, "         ... %ld levels...<br></div>\n",
 			     ep->len - TRACE_HEAD - TRACE_TAIL);
 		if (cgi)
 		    write_escaping_html(buff, strlen(buff));
@@ -474,86 +480,201 @@ static void give_img_logo(int mode)
     fwrite(eruby_logo_data, eruby_logo_size, 1, stdout);
 }
 
-static char *parse_options(int argc, char **argv)
+static void usage(char *progname)
 {
-    char *filename = NULL;
+    fprintf(stderr, "\
+usage: %s [switches] [inputfile]\n\n\
+  -d, --debug		set debugging flags (set $DEBUG to true)\n\
+  -B[str]		set begin block delimiter\n\
+  -E[str]		set end block delimiter\n\
+  -K[kcode]		specifies KANJI (Japanese) code-set\n\
+  -M[mode]		specifies runtime mode\n\
+			  f: filter mode\n\
+			  c: CGI mode\n\
+			  n: NPH-CGI mode\n\
+  -n, --noheader	disables CGI header output\n\
+  -v, --verbose		enables verbose mode\n\
+  --version		print version information and exit\n\
+\n", progname);
+}
+
+static void show_version()
+{
+    fprintf(stderr, "eRuby version %s\n", ERUBY_VERSION);
+    ruby_show_version();
+}
+
+static void set_mode(char *mode)
+{
+    switch (*mode) {
+    case 'f':
+	eruby_mode = MODE_FILTER;
+	break;
+    case 'c':
+	eruby_mode = MODE_CGI;
+	break;
+    case 'n':
+	eruby_mode = MODE_NPHCGI;
+	break;
+    default:
+	fprintf(stderr, "invalid mode -- %s\n", mode);
+	exit(2);
+    }
+}
+
+static void parse_options(int argc, char **argv)
+{
     int i;
+    char *s;
 
     for (i = 1; i < argc; i++) {
-	if (*argv[i] == '-') {
-	    char *opt = argv[i] + 1;
+	if (argv[i][0] != '-' || argv[i][1] == '\0') {
+	    eruby_filename = argv[i];
+	    break;
+	}
 
-	    if (*opt == '\0') {
-		if (filename == NULL)
-		    filename = argv[i];
+	s = argv[i] + 1;
+    again:
+	switch (*s) {
+	case 'M':
+	    set_mode(++s);
+	    s++;
+	    goto again;
+	case 'B':
+	    if (*++s == '\0') {
+		s = argv[++i];
+		if (s == NULL) {
+		    fprintf(stderr, "%s: no delimiter given\n", argv[0]);
+		    exit(2);
+		}
 	    }
-	    else if (strcmp(opt, "d") == 0) {
-		ruby_debug = 1;
+	    if (strlen(s) > 2) {
+		fprintf(stderr, "%s: demiliter must be 1 or 2 characters\n", argv[0]);
+		exit(2);
 	    }
-	    else if (strcmp(opt, "v") == 0) {
-		ruby_verbose = 1;
+	    eruby_begin_delimiter1 = *s++;
+	    eruby_begin_delimiter2 = *s;
+	    break;
+	case 'E':
+	    if (*++s == '\0') {
+		s = argv[++i];
+		if (s == NULL) {
+		    fprintf(stderr, "%s: no delimiter given\n", argv[0]);
+		    exit(2);
+		}
+	    }
+	    if (strlen(s) > 2) {
+		fprintf(stderr, "%s: demiliter must be 1 or 2 characters\n", argv[0]);
+		exit(2);
+	    }
+	    eruby_end_delimiter1 = *s++;
+	    eruby_end_delimiter2 = *s;
+	    break;
+	case 'K':
+	    rb_set_kcode(++s);
+	    s++;
+	    goto again;
+	case 'd':
+	    ruby_debug = Qtrue;
+	    s++;
+	    goto again;
+	case 'v':
+	    ruby_verbose = Qtrue;
+	    s++;
+	    goto again;
+	case 'n':
+	    eruby_no_header = 1;
+	    s++;
+	    goto again;
+	case '\0':
+	    break;
+	case 'h':
+	    usage(argv[0]);
+	    exit(0);
+	case '-':
+	    s++;
+	    if (strcmp("debug", s) == 0) {
+		ruby_debug = Qtrue;
+	    }
+	    else if (strcmp("noheader", s) == 0) {
+		eruby_no_header = 1;
+	    }
+	    else if (strcmp("version", s) == 0) {
+		show_version();
+		exit(0);
+	    }
+	    else if (strcmp("verbose", s) == 0) {
+		ruby_verbose = Qtrue;
+	    }
+	    else if (strcmp("help", s) == 0) {
+		usage(argv[0]);
+		exit(0);
 	    }
 	    else {
-		fprintf(stderr, "usage: %s [-dv] [file]\n", argv[0]);
-		exit(1);
+		fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
+		fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
+		exit(2);
 	    }
-	}
-	else {
-	    if (filename == NULL)
-		filename = argv[i];
+	    break;
+	default:
+	    fprintf(stderr, "%s: invalid option -- %s\n", argv[0], s);
+	    fprintf(stderr, "try `%s --help' for more information.\n", argv[0]);
+	    exit(2);
 	}
     }
-    return filename;
 }
 
 int main(int argc, char **argv)
 {
     char *path;
-    char *filename = NULL;
     VALUE script;
     int state;
-    int mode = MODE_UNKNOWN;
     char *out;
     int nout;
 
-    if (mode == MODE_UNKNOWN)
-	mode = guess_mode();
 
-    if (mode == MODE_CGI || mode == MODE_NPHCGI) {
+    parse_options(argc, argv);
+    if (eruby_mode == MODE_UNKNOWN)
+	eruby_mode = guess_mode();
+
+    if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI) {
 	if ((path = getenv("PATH_INFO")) != NULL &&
 	    strcmp(path, "/logo.gif") == 0) {
-	    give_img_logo(mode);
+	    give_img_logo(eruby_mode);
 	    return 0;
 	}
-	if ((filename = getenv("PATH_TRANSLATED")) == NULL)
-	    filename = "";
+	if (eruby_filename == NULL) {
+	    if ((eruby_filename = getenv("PATH_TRANSLATED")) == NULL)
+		eruby_filename = "";
+	}
     }
     else {
-	if ((filename = parse_options(argc, argv)) == NULL)
-	    filename = "-";
+	if (eruby_filename == NULL)
+	    eruby_filename = "-";
     }
 
     ruby_init();
-    if (mode == MODE_CGI || mode == MODE_NPHCGI)
+    if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)
 	rb_set_safe_level(1);
 
     rb_defout = rb_str_new("", 0);
     rb_define_singleton_method(rb_defout, "write", str_write, 1);
-    script = eruby_load(filename, 0, &state);
+    script = eruby_load(eruby_filename, 0, &state);
     if (state) {
-	error_print(state, mode, script);
+	error_print(state, eruby_mode, script);
 	if (!NIL_P(script))
 	    unlink(RSTRING(script)->ptr);
 	return 0;
     }
-    if (mode == MODE_FILTER && (ruby_debug || ruby_verbose)) {
+    if (eruby_mode == MODE_FILTER && (ruby_debug || ruby_verbose)) {
 	print_generated_code(script, 0);
     }
     unlink(RSTRING(script)->ptr);
     out = RSTRING(rb_defout)->ptr;
     nout = RSTRING(rb_defout)->len;
-    if (mode == MODE_CGI || mode == MODE_NPHCGI) {
-	if (mode == MODE_NPHCGI)
+    if (!eruby_no_header &&
+	(eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)) {
+	if (eruby_mode == MODE_NPHCGI)
 	    print_http_headers();
 
 	printf("Content-Type: text/html; charset=%s\n", get_charset());

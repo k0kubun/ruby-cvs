@@ -6,6 +6,8 @@ require "getoptlong"
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $LIBRUBYARG =~ /\.a$/
   $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
+else
+  $LIBRUBYARG.gsub!(/-L\./, "-L#{CONFIG['prefix']}/lib")
 end
 
 mfile = open("Makefile", "w")
@@ -15,7 +17,7 @@ begin
 
 CC = #{CONFIG["CC"]}
 
-prefix = CONFIG["prefix"]
+prefix = #{CONFIG["prefix"]}
 bindir = $(prefix)/bin
 libdir = $(prefix)/lib
 
@@ -24,11 +26,10 @@ hdrdir = #{$hdrdir}
 CFLAGS = -I$(hdrdir) #{CFLAGS}
 LDFLAGS = #{CONFIG["LDFLAGS"]}
 LIBS = #{CONFIG["LIBS"]}
+XLDFLAGS = #{CONFIG["XLDFLAGS"]}
 DLDFLAGS = #{$DLDFLAGS} #{$LDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
-INSTALL = #{CONFIG["INSTALL"]}
-INSTALL_PROGRAM = #{CONFIG["INSTALL_PROGRAM"]}
-INSTALL_DATA = #{CONFIG["INSTALL_DATA"]}
+INSTALL_PROGRAM = ruby -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
 
 OBJS = eruby.o eruby_logo.o eruby_main.o
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
@@ -44,13 +45,13 @@ install: all
 	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
 
 clean:
-	rm -f $(TARGET) $(LIBERUBY) $(OBJS) *~
+	rm -f $(TARGET) $(OBJS) *~
 
 distclean: clean
 	rm -f Makefile
 
 $(TARGET): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) $(LIBRUBYARG) $(LIBS) -o $@
+	$(CC) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBRUBYARG) $(LIBS) -o $@
 
 eruby_logo.c: eruby_logo.gif
 	./bin2c eruby_logo.gif

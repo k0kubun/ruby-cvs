@@ -86,6 +86,20 @@ int eruby_compile(FILE *in, FILE *out)
     int c, prevc = EOF;
     int err;
 
+    c = getc(in);
+    if (c == '#') {
+	do {
+	    c = getc(in);
+	    if (c == '\n') {
+		putc('\n', out);
+		break;
+	    }
+	} while (c != EOF);
+    }
+    else {
+	ungetc(c, in);
+    }
+
     for (;;) {
 	c = getc(in);
     again:
@@ -104,18 +118,18 @@ int eruby_compile(FILE *in, FILE *out)
 		    continue;
 		}
 		else if (c == eruby_comment_char) {
-		    if (err = compile_embedded_string(in, out, EMBEDDED_COMMENT))
-			return err;
+		    err = compile_embedded_string(in, out, EMBEDDED_COMMENT);
+		    if (err) return err;
 		}
 		else if (c == eruby_expr_char) {
-		    if (err = compile_embedded_string(in, out, EMBEDDED_EXPR))
-			return err;
+		    err = compile_embedded_string(in, out, EMBEDDED_EXPR);
+		    if (err) return err;
 		}
 		else {
 		    if (ungetc(c, in) == EOF)
 			return SYSTEM_ERROR;
-		    if (err = compile_embedded_string(in, out, EMBEDDED_STMT))
-			return err;
+		    err = compile_embedded_string(in, out, EMBEDDED_STMT);
+		    if (err) return err;
 		}
 		prevc = EOF;
 	    } else {
