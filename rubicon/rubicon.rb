@@ -112,9 +112,7 @@ module Rubicon
     def setupTestDir
       @start = Dir.getwd
  
-      Dir.mkdir("_test", 0644)
-      system("ls -ld _test")
-      exit
+      Dir.mkdir("_test")
       if $? != 0 && false
         $stderr.puts "Cannot run a file or directory test: " + 
           "will destroy existing directory _test"
@@ -129,10 +127,12 @@ module Rubicon
     
     def teardownTestDir
       Dir.chdir(@start)
-      Dir.chdir("_test")
-      Dir.foreach { |f| File.delete(f) unless f[0] = ?. }
-      Dir.chdir("..")
-      Dir.rmdir("_test")
+      if (File.exists?("_test"))
+        Dir.chdir("_test")
+        Dir.foreach(".") { |f| File.delete(f) unless f[0] == ?. }
+        Dir.chdir("..")
+        Dir.rmdir("_test")
+      end
     end
 
   end
