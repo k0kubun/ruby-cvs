@@ -128,10 +128,10 @@ install: $(TARGET)
 	$(INSTALL_DLLIB) $(TARGET) #{$APACHE_LIBEXECDIR}
 
 clean:
-	rm -f config.h $(TARGET) $(OBJS) *~
+	rm -f $(TARGET) $(OBJS) *~
 
 distclean: clean
-	rm -f mod_ruby.imp Makefile
+	rm -f config.h mod_ruby.imp Makefile
 
 $(TARGET): $(OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)

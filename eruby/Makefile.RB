@@ -85,10 +85,10 @@ install: all
 	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
 
 clean:
-	rm -f config.h $(TARGET) $(OBJS) *~
+	rm -f $(TARGET) $(OBJS) *~
 
 distclean: clean
-	rm -f Makefile
+	rm -f config.h Makefile
 
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBRUBYARG) $(LIBS) -o $@
