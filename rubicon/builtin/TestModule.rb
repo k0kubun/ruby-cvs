@@ -19,12 +19,14 @@ class TestModule < Rubicon::TestCase
     def mixin
     end
   end
+
   module User
     USER = 2
     include Mixin
     def user
     end
   end
+
   module Other
     def other
     end
@@ -208,6 +210,8 @@ class TestModule < Rubicon::TestCase
     User.module_eval("MODULE_EVAL = 1")
     assert_equal(1, User::MODULE_EVAL)
     assert(User.constants.include?("MODULE_EVAL"))
+    User.instance_eval("remove_const(:MODULE_EVAL)")
+    assert(!User.constants.include?("MODULE_EVAL"))
   end
 
   def test_name
