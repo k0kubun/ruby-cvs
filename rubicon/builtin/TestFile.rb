@@ -8,10 +8,12 @@ class TestFile < Rubicon::TestCase
 
     @file = "_test/_touched"
 
-    sys("touch -a -t 122512341999 #@file")
+    #sys("touch -a -t 122512341999 #@file")
+    sys_touch("a", "1225", "1234", "1999", @file)
     @aTime = Time.local(1999, 12, 25, 12, 34, 00)
 
-    sys("touch -m -t 010112341997 #@file")
+    #sys("touch -m -t 010112341997 #@file")
+    sys_touch("m", "0101", "1234", "1997", @file)
     @mTime = Time.local(1997,  1,  1, 12, 34, 00)
   end
 

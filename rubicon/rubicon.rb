@@ -106,6 +106,25 @@ module Rubicon
     end
 
     #
+    # Gotta love standards...
+    # GNU touch changed position of Century+Year between 3.16 and 4.0p
+    #
+    def sys_touch(type, moday, hourmin, year, file)
+      if @touch_order == nil
+        which = `touch --version`
+        case which 
+          when /4.0p/ 
+            @touch_order= proc { |m,h,y| "#{y}#{m}#{h}" }
+          when /3.16/
+            @touch_order= proc { |m,h,y| "#{m}#{h}#{y}" }
+          else
+            @touch_order= proc { |m,h,y| "#{m}#{h}#{y}" }
+        end
+      end
+      sys ("touch -#{type} -t #{@touch_order.call(moday,hourmin,year)} #{file}")
+    end
+
+    #
     # Check two arrays for set equality
     #
     def assert_set_equal(expected, actual)
