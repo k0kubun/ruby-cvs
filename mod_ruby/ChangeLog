@@ -1,3 +1,11 @@
+Tue May  7 16:33:55 2002  Shugo Maeda <shugo@modruby.net>
+
+	* table.c (table_set): use ap_pstrndup().
+
+	* table.c (table_merge): ditto.
+
+	* table.c (table_add): ditto.
+
 Tue May  7 14:27:27 2002  Shugo Maeda <shugo@modruby.net>
 
 	* Makefile.in: added datadir.

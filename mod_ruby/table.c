@@ -62,18 +62,24 @@ static VALUE table_get(VALUE self, VALUE name)
 static VALUE table_set(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
+    char *s;
 
+    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_set(tbl, STR2CSTR(name), STR2CSTR(val));
+    s = ap_pstrndup(ap_table_elts(tbl)->pool, RSTRING(val)->ptr, RSTRING(val)->len);
+    ap_table_setn(tbl, STR2CSTR(name), s);
     return val;
 }
 
 static VALUE table_merge(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
+    char *s;
 
+    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_merge(tbl, STR2CSTR(name), STR2CSTR(val));
+    s = ap_pstrndup(ap_table_elts(tbl)->pool, RSTRING(val)->ptr, RSTRING(val)->len);
+    ap_table_mergen(tbl, STR2CSTR(name), s);
     return val;
 }
 
@@ -89,9 +95,12 @@ static VALUE table_unset(VALUE self, VALUE name)
 static VALUE table_add(VALUE self, VALUE name, VALUE val)
 {
     table *tbl;
+    char *s;
 
+    Check_Type(val, T_STRING);
     Data_Get_Struct(self, table, tbl);
-    ap_table_add(tbl, STR2CSTR(name), STR2CSTR(val));
+    s = ap_pstrndup(ap_table_elts(tbl)->pool, RSTRING(val)->ptr, RSTRING(val)->len);
+    ap_table_addn(tbl, STR2CSTR(name), s);
     return val;
 }
 
