@@ -52,7 +52,6 @@ $MAJOR, $MINOR, $TEENY =
 
 $CFLAGS = CFLAGS
 
-$RM = "rm -f"
 $AR = "ar"
 $AROPT = "rcu $@"
 
@@ -139,8 +138,7 @@ if PLATFORM =~ /-mswin32/
   $AROPT = "/out:$@"
   $LIBERUBY_A = "liberuby.lib"
   $LIBERUBY = "$(LIBERUBY_A)"
-  $LIBRUBYARG.gsub!(/ruby\.mswin32\.lib/, "libruby.lib")
-  $RM = "del"
+  $LIBRUBYARG.gsub!(CONFIG["RUBY_SO_NAME"] + ".lib", CONFIG["LIBRUBY_A"])
 end
 
 mfile = open("Makefile", "w")
@@ -170,6 +168,8 @@ LDSHARED = #{CONFIG["LDSHARED"]}
 INSTALL_PROGRAM = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
 INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
 LIBRUBYARG = #{$LIBRUBYARG}
+
+RM = ruby -e "ARGV.each {|f|File.unlink(f) rescue Errno}"
 
 TARGET = eruby#{CONFIG["EXEEXT"]}
 MANPAGE = eruby.1
@@ -208,17 +208,17 @@ install: all
 	@-$(INSTALL_DATA) $(MANPAGE) $(mandir)/man1/$(MANPAGE)
 
 clean:
-	#{$RM} $(TARGET)
-	#{$RM} $(LIBERUBY_A)
-	#{$RM} $(LIBERUBY_SO)
-	#{$RM} $(LIBERUBY_ALIASES)
-	#{$RM} $(ERUBY_OBJS)
-	#{$RM} $(OBJS)
-	#{$RM} eruby.imp
-	#{$RM} *~
+	$(RM) $(TARGET)
+	$(RM) $(LIBERUBY_A)
+	$(RM) $(LIBERUBY_SO)
+	$(RM) $(LIBERUBY_ALIASES)
+	$(RM) $(ERUBY_OBJS)
+	$(RM) $(OBJS)
+	$(RM) eruby.imp
+	$(RM) *~
 
 distclean: clean
-	#{$RM} config.h Makefile
+	$(RM) config.h Makefile
 
 $(LIBERUBY_A): $(ERUBY_OBJS)
 	#{$AR} #{$AROPT} $(ERUBY_OBJS)
