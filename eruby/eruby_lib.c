@@ -38,6 +38,7 @@
 #include "config.h"
 
 EXTERN VALUE rb_stdin;
+EXTERN VALUE ruby_top_self;
 
 static VALUE mERuby;
 static VALUE cERubyCompiler;
@@ -569,6 +570,7 @@ static VALUE eruby_compile(eruby_compiler_t *compiler)
 VALUE eruby_compiler_compile_string(VALUE self, VALUE s)
 {
     eruby_compiler_t *compiler;
+    VALUE code;
 
     Check_Type(s, T_STRING);
     Data_Get_Struct(self, eruby_compiler_t, compiler);
@@ -579,7 +581,9 @@ VALUE eruby_compiler_compile_string(VALUE self, VALUE s)
     compiler->lex_pbeg = compiler->lex_p = compiler->lex_pend = 0;
     compiler->buf_len = 0;
     compiler->sourceline = 0;
-    return eruby_compile(compiler);
+    code = eruby_compile(compiler);
+    OBJ_INFECT(code, s);
+    return code;
 }
 
 VALUE eruby_compiler_compile_file(VALUE self, VALUE file)
@@ -619,7 +623,8 @@ typedef struct eval_arg {
 
 static VALUE eval_string(eval_arg_t *arg)
 {
-    return rb_funcall(Qnil, rb_intern("eval"), 3, arg->src, Qnil, arg->filename);
+    return rb_funcall(ruby_top_self, rb_intern("eval"), 3,
+		      arg->src, Qnil, arg->filename);
 }
 
 VALUE eruby_load(char *filename, int wrap, int *state)
@@ -718,7 +723,7 @@ static VALUE eruby_import(VALUE self, VALUE filename)
     compiler = eruby_compiler_new();
     file = rb_file_open(STR2CSTR(filename), "r");
     code = eruby_compiler_compile_file(compiler, file);
-    rb_funcall(Qnil, rb_intern("eval"), 3, code, Qnil, filename);
+    rb_funcall(ruby_top_self, rb_intern("eval"), 3, code, Qnil, filename);
     return Qnil;
 }
 
