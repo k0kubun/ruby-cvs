@@ -1,3 +1,8 @@
+2002-02-26  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestMarshal.rb (TestMarshal::test_s_dump_load3): new
+	  Marshal.load calls proc for Fixnums.
+
 2002-01-30  Nobuyoshi Nakada  <nobu.nakada@nifty.ne.jp>
 
 	* builtin/TestKanjiIndex.rb: new tests.

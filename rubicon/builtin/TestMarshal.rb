@@ -68,7 +68,7 @@ class TestMarshal < Rubicon::TestCase
     s = Marshal.dump(b)
 
     res = []
-    newb = Marshal.load(s, proc { |obj| res << obj })
+    newb = Marshal.load(s, proc { |obj| res << obj unless obj.kind_of?(Fixnum)})
 
     assert_equal(10,       newb.b1.a1)
     assert_equal(20,       newb.b1.a2)
