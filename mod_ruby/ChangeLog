@@ -1,3 +1,9 @@
+Thu Apr  4 15:16:34 2002  Sean Chittenden <sean@chittenden.org>
+
+	* lib/apache/eruby-run.rb: do not send header on sync mode.
+
+	* lib/apache/erb-run.rb: ditto.
+
 Wed Mar 27 14:12:21 2002  Shugo Maeda <shugo@modruby.net>
 
 	* request.c (request_set_user): new method.
