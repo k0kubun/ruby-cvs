@@ -340,7 +340,6 @@ class TestTime < Rubicon::TestCase
 
   def test_wday
     t = Time.local(2001, 4, 1)
-    puts "Original t is #{t.asctime}"
 
     6.times {|i|
       assert_equal(i,t.wday)

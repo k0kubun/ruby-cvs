@@ -3,6 +3,31 @@ require '../rubicon'
 
 class TestIO < Rubicon::TestCase
 
+
+  def test_s_foreach
+    assert_fail("untested")
+  end
+
+  def test_s_new
+    assert_fail("untested")
+  end
+
+  def test_s_pipe
+    assert_fail("untested")
+  end
+
+  def test_s_popen
+    assert_fail("untested")
+  end
+
+  def test_s_readlines
+    assert_fail("untested")
+  end
+
+  def test_s_select
+    assert_fail("untested")
+  end
+
   def test_LSHIFT # '<<'
     assert_fail("untested")
   end
@@ -184,30 +209,6 @@ class TestIO < Rubicon::TestCase
   end
 
   def test_write
-    assert_fail("untested")
-  end
-
-  def test_s_foreach
-    assert_fail("untested")
-  end
-
-  def test_s_new
-    assert_fail("untested")
-  end
-
-  def test_s_pipe
-    assert_fail("untested")
-  end
-
-  def test_s_popen
-    assert_fail("untested")
-  end
-
-  def test_s_readlines
-    assert_fail("untested")
-  end
-
-  def test_s_select
     assert_fail("untested")
   end
 
