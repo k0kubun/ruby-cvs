@@ -516,12 +516,8 @@ class TestKernel < Rubicon::TestCase
     assert_instance_of(String, String(123))
     assert_equal("123", String(123))
     assert_equal("123.45", String(123.45))
-    if $rubyVersion < "1.7.2"
-      assert_equal("123",    String([1, 2, 3]))
-    else
-      assert_equal("1\n2\n3",    String([1, 2, 3]))
-    end
-    assert_equal("Hello",    String(Caster.new))
+    assert_equal("123",    String([1, 2, 3]))
+    assert_equal("Hello",  String(Caster.new))
   end
 
   def test_s_BACKTICK
@@ -1495,7 +1491,8 @@ class TestKernel < Rubicon::TestCase
     begin
       File.open(fname, "w") do |file|
         file.puts "line 1", "line 2"
-        file.puts [ PrintTest.new, 4 ]
+        file.puts PrintTest.new
+        file.puts 4
       end
       
       File.open(fname) do |file|
