@@ -2,10 +2,16 @@ $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 
 class TestStruct < Rubicon::TestCase
+
+  def setup
+    if !defined? Struct::TestStruct
+      @@myclass = Struct.new("TestStruct", :alpha, :bravo)
+    end
+  end
+
   def test_00s_new
-    myclass = Struct.new("TestStruct", :alpha, :bravo)
-    assert_equal(Struct::TestStruct, myclass)
-    t1 = myclass.new
+    assert_equal(Struct::TestStruct, @@myclass)
+    t1 = @@myclass.new
     t1.alpha = 1
     t1.bravo = 2
     assert_equals(1,t1.alpha)
@@ -18,7 +24,7 @@ class TestStruct < Rubicon::TestCase
     assert_equals(4,t2.bravo)
     assert_exception(ArgumentError) { Struct::TestStruct.new(1,2,3) }
 
-    t3 = myclass.new(5,6)
+    t3 = @@myclass.new(5,6)
     assert_equals(5,t3.alpha)
     assert_equals(6,t3.bravo)
   end
