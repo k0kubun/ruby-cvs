@@ -190,12 +190,15 @@ class TestHash < Rubicon::TestCase
 
     h = base.dup
     assert_equal(h1, h.delete_if {|k,v| k.instance_of?(String) })
+    assert_equal(h1, h)
 
     h = base.dup
     assert_equal(h2, h.delete_if {|k,v| v.instance_of?(String) })
+    assert_equal(h2, h)
 
     h = base.dup
     assert_equal(h3, h.delete_if {|k,v| v })
+    assert_equal(h3, h)
   end
 
   def test_dup
@@ -224,131 +227,368 @@ class TestHash < Rubicon::TestCase
   end
 
   def test_each
-    assert_fail("untested")
+    count = 0
+    {}.each { |k, v| count + 1 }
+    assert_equal(0, count)
+
+    h = @h
+    h.each do |k, v|
+      assert_equal(v, h.delete(k))
+    end
+    assert_equal({}, h)
   end
 
   def test_each_key
-    assert_fail("untested")
+    count = 0
+    {}.each_key { |k| count + 1 }
+    assert_equal(0, count)
+
+    h = @h
+    h.each_key do |k|
+      h.delete(k)
+    end
+    assert_equal({}, h)
   end
 
   def test_each_pair
-    assert_fail("untested")
+    count = 0
+    {}.each_pair { |k, v| count + 1 }
+    assert_equal(0, count)
+
+    h = @h
+    h.each_pair do |k, v|
+      assert_equal(v, h.delete(k))
+    end
+    assert_equal({}, h)
   end
 
   def test_each_value
-    assert_fail("untested")
+    res = []
+    {}.each_value { |v| res << v }
+    assert_equal(0, [].length)
+
+    @h.each_value { |v| res << v }
+    assert_equal(0, [].length)
+
+    expected = []
+    @h.each { |k, v| expected << v }
+
+    assert_equal([], expected - res)
+    assert_equal([], res - expected)
   end
 
   def test_empty?
-    assert_fail("untested")
+    assert({}.empty?)
+    assert(!@h.empty?)
   end
 
   def test_fetch
-    assert_fail("untested")
+    assert_exception(IndexError) { {}.fetch(1) }
+    assert_exception(IndexError) { @h.fetch('gumby') }
+    assert_equal('gumbygumby',     @h.fetch('gumby') {|k| k*2} )
+    assert_equal('pokey',          @h.fetch('gumby', 'pokey'))
+
+    assert_equal('one', @h.fetch(1))
+    assert_equal(nil,   @h.fetch('nil'))
+    assert_equal('nil', @h.fetch(nil))
   end
 
+
   def test_has_key?
-    assert_fail("untested")
+    assert(!{}.has_key?(1))
+    assert(!{}.has_key?(nil))
+    assert(@h.has_key?(nil))
+    assert(@h.has_key?(1))
+    assert(!@h.has_key?('gumby'))
   end
 
   def test_has_value?
-    assert_fail("untested")
+    assert(!{}.has_value?(1))
+    assert(!{}.has_value?(nil))
+    assert(@h.has_value?('one'))
+    assert(@h.has_value?(nil))
+    assert(!@h.has_value?('gumby'))
   end
 
   def test_include?
-    assert_fail("untested")
+    assert(!{}.include?(1))
+    assert(!{}.include?(nil))
+    assert(@h.include?(nil))
+    assert(@h.include?(1))
+    assert(!@h.include?('gumby'))
   end
 
   def test_index
-    assert_fail("untested")
+    assert_equal(1,     @h.index('one'))
+    assert_equal(nil,   @h.index('nil'))
+    assert_equal('nil', @h.index(nil))
+
+    assert_equal(nil,   @h.index('gumby'))
+    assert_equal(nil,   {}.index('gumby'))
   end
 
   def test_indexes
-    assert_fail("untested")
+    res = @h.indexes( *%w( dog cat horse ) )
+    assert(res.length == 3)
+    assert_equal([nil, nil, nil], res)
+
+    res = @h.indexes()
+    assert(res.length == 0)
+
+    res = @h.indexes( 3, 2, 1, nil )
+    assert(res.length == 4)
+    assert_equal(%w( three two one nil ), res)
+
+    res = @h.indexes( 3, 99, 1, nil )
+    assert(res.length == 4)
+    assert_equal([ 'three', nil, 'one', 'nil' ], res)
   end
 
   def test_indices
-    assert_fail("untested")
-  end
+    res = @h.indices( *%w( dog cat horse ) )
+    assert(res.length == 3)
+    assert_equal([nil, nil, nil], res)
 
-  def test_inspect
-    assert_fail("untested")
+    res = @h.indices()
+    assert(res.length == 0)
+
+    res = @h.indices( 3, 2, 1, nil )
+    assert(res.length == 4)
+    assert_equal(%w( three two one nil ), res)
+
+    res = @h.indices( 3, 99, 1, nil )
+    assert(res.length == 4)
+    assert_equal([ 'three', nil, 'one', 'nil' ], res)
   end
 
   def test_invert
-    assert_fail("untested")
+    h = @h.invert
+    assert_equal(1, h['one'])
+    assert_equal(true, h['true'])
+    assert_equal(nil,  h['nil'])
+
+    h.each do |k, v|
+      assert(@h.has_key?(v))    # not true in general, but works here
+    end
+
+    h = { 'a' => 1, 'b' => 2, 'c' => 1}.invert
+    assert_equal(2, h.length)
+    assert(h[1] == 'a' || h[1] == 'c')
+    assert_equal('b', h[2])
   end
 
   def test_key?
-    assert_fail("untested")
+    assert(!{}.key?(1))
+    assert(!{}.key?(nil))
+    assert(@h.key?(nil))
+    assert(@h.key?(1))
+    assert(!@h.key?('gumby'))
   end
 
   def test_keys
-    assert_fail("untested")
+    assert_equal([], {}.keys)
+
+    keys = @h.keys
+    expected = []
+    @h.each { |k, v| expected << k }
+    assert_equal([], keys - expected)
+    assert_equal([], expected - keys)
   end
 
   def test_length
-    assert_fail("untested")
+    assert_equal(0, {}.length)
+    assert_equal(7, @h.length)
   end
 
   def test_member?
-    assert_fail("untested")
+    assert(!{}.member?(1))
+    assert(!{}.member?(nil))
+    assert(@h.member?(nil))
+    assert(@h.member?(1))
+    assert(!@h.member?('gumby'))
   end
 
   def test_rehash
-    assert_fail("untested")
+    a = [ "a", "b" ]
+    c = [ "c", "d" ]
+    h = { a => 100, c => 300 }
+    assert_equal(100, h[a])
+    a[0] = "z"
+    assert_nil(h[a])
+    h.rehash
+    assert_equal(100, h[a])
   end
 
   def test_reject
-    assert_fail("untested")
+    base = { 1 => 'one', 2 => false, true => 'true', 'cat' => 99 }
+    h1   = { 1 => 'one', 2 => false, true => 'true' }
+    h2   = { 2 => false, 'cat' => 99 }
+    h3   = { 2 => false }
+
+    h = base.dup
+    assert_equal(h, h.reject { false })
+    assert_equal({}, h.reject { true })
+
+    h = base.dup
+    assert_equal(h1, h.reject {|k,v| k.instance_of?(String) })
+
+    assert_equal(h2, h.reject {|k,v| v.instance_of?(String) })
+
+    assert_equal(h3, h.reject {|k,v| v })
+    assert_equal(base, h)
   end
 
   def test_reject!
-    assert_fail("untested")
+    base = { 1 => 'one', 2 => false, true => 'true', 'cat' => 99 }
+    h1   = { 1 => 'one', 2 => false, true => 'true' }
+    h2   = { 2 => false, 'cat' => 99 }
+    h3   = { 2 => false }
+
+    h = base.dup
+    assert_equal(h, h.reject! { false })
+    assert_equal({}, h.reject! { true })
+
+    h = base.dup
+    assert_equal(h1, h.reject! {|k,v| k.instance_of?(String) })
+    assert_equal(h1, h)
+
+    h = base.dup
+    assert_equal(h2, h.reject! {|k,v| v.instance_of?(String) })
+    assert_equal(h2, h)
+
+    h = base.dup
+    assert_equal(h3, h.reject! {|k,v| v })
+    assert_equal(h3, h)
   end
 
   def test_replace
-    assert_fail("untested")
+    h = { 1 => 2, 3 => 4 }
+    h1 = h.replace({ 9 => 8, 7 => 6 })
+    assert_equal(h, h1)
+    assert_equal(8, h[9])
+    assert_equal(6, h[7])
+    assert_nil(h[1])
+    assert_nil(h[2])
   end
 
   def test_shift
-    assert_fail("untested")
+    h = @h.dup
+    
+    @h.length.times {
+      k, v = h.shift
+      assert(@h.has_key?(k))
+      assert_equal(@h[k], v)
+    }
+
+    assert_equal(0, h.length)
   end
 
   def test_size
-    assert_fail("untested")
+    assert_equal(0, {}.length)
+    assert_equal(7, @h.length)
   end
 
   def test_sort
-    assert_fail("untested")
+    h = {}.sort
+    assert_equal([], h)
+
+    h = { 1 => 1, 2 => 1}.sort
+    assert_equal([[1,1], [2,1]], h)
+
+    h = { 'cat' => 'feline', 'ass' => 'asinine', 'bee' => 'beeline' }
+    h1 = h.sort
+    assert_equal([ %w(ass asinine), %w(bee beeline), %w(cat feline)], h1)
   end
 
   def test_store
-    assert_fail("untested")
+    t = Time.now
+    h = Hash.new
+    h.store(1, 'one')
+    h.store(2, 'two')
+    h.store(3, 'three')
+    h.store(self, 'self')
+    h.store(t,  'time')
+    h.store(nil, 'nil')
+    h.store('nil', nil)
+    assert_equal('one',   h[1])
+    assert_equal('two',   h[2])
+    assert_equal('three', h[3])
+    assert_equal('self',  h[self])
+    assert_equal('time',  h[t])
+    assert_equal('nil',   h[nil])
+    assert_equal(nil,     h['nil'])
+    assert_equal(nil,     h['koala'])
+
+    h.store(1, 1)
+    h.store(nil,  99)
+    h.store('nil', nil)
+    assert_equal(1,       h[1])
+    assert_equal('two',   h[2])
+    assert_equal('three', h[3])
+    assert_equal('self',  h[self])
+    assert_equal('time',  h[t])
+    assert_equal(99,      h[nil])
+    assert_equal(nil,     h['nil'])
+    assert_equal(nil,     h['koala'])
   end
 
   def test_to_a
-    assert_fail("untested")
+    assert_equal([], {}.to_a)
+    assert_equal([[1,2]], { 1=>2 }.to_a)
+    a = { 1=>2, 3=>4, 5=>6 }.to_a
+    assert_equal([1,2], a.delete([1,2]))
+    assert_equal([3,4], a.delete([3,4]))
+    assert_equal([5,6], a.delete([5,6]))
+    assert_equal(0, a.length)
   end
 
   def test_to_hash
-    assert_fail("untested")
+    h = @h.to_hash
+    assert_equal(@h, h)
   end
 
   def test_to_s
-    assert_fail("untested")
+    h = { 1 => 2, "cat" => "dog", 1.5 => :fred }
+    assert_equal(h.to_a.join, h.to_s)
+    $, = ":"
+    assert_equal(h.to_a.join, h.to_s)
+    h = {}
+    assert_equal(h.to_a.join, h.to_s)
   end
 
   def test_update
-    assert_fail("untested")
+    h1 = { 1 => 2, 2 => 3, 3 => 4 }
+    h2 = { 2 => 'two', 4 => 'four' }
+
+    ha = { 1 => 2, 2 => 'two', 3 => 4, 4 => 'four' }
+    hb = { 1 => 2, 2 => 3, 3 => 4, 4 => 'four' }
+
+    assert_equal(ha, h1.update(h2))
+    assert_equal(ha, h1)
+
+    h1 = { 1 => 2, 2 => 3, 3 => 4 }
+    h2 = { 2 => 'two', 4 => 'four' }
+
+    assert_equal(hb, h2.update(h1))
+    assert_equal(hb, h2)
   end
 
   def test_value?
-    assert_fail("untested")
+    assert(!{}.value?(1))
+    assert(!{}.value?(nil))
+    assert(@h.value?(nil))
+    assert(@h.value?('one'))
+    assert(!@h.value?('gumby'))
   end
 
   def test_values
-    assert_fail("untested")
+    assert_equal([], {}.values)
+
+    vals = @h.values
+    expected = []
+    @h.each { |k, v| expected << v }
+    assert_equal([], vals - expected)
+    assert_equal([], expected - vals)
   end
 
 end
