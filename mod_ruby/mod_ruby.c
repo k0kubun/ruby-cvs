@@ -461,11 +461,13 @@ static void init_loadpath()
 
 int ruby_require(char *filename)
 {
-    VALUE exit_status;
+    VALUE fname, exit_status;
     int state;
 
     init_loadpath();
     rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
+    fname = rb_str_new2(filename);
+    rb_protect_funcall(Qnil, rb_intern("require"), &state, 1, fname);
     if (state == TAG_RAISE &&
 	rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	exit_status = rb_iv_get(ruby_errinfo, "status");
@@ -802,10 +804,13 @@ static int run_safely(int safe_level, int timeout,
 
 static void per_request_init(request_rec *r)
 {
-    ruby_dir_config *dconf = get_dir_config(r);
+    ruby_server_config *sconf;
+    ruby_dir_config *dconf;
     char **paths;
     int i, n;
 
+    dconf = get_dir_config(r);
+    sconf = get_server_config(r->server);
     rb_load_path = rb_ary_new();
     for (i = 0; i < RARRAY(default_load_path)->len; i++) {
 	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
@@ -813,6 +818,13 @@ static void per_request_init(request_rec *r)
     if (dconf->load_path) {
 	paths = (char **) dconf->load_path->elts;
 	n = dconf->load_path->nelts;
+	for (i = 0; i < n; i++) {
+	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
+	}
+    }
+    if (sconf->load_path) {
+	paths = (char **) sconf->load_path->elts;
+	n = sconf->load_path->nelts;
 	for (i = 0; i < n; i++) {
 	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
 	}

@@ -1,3 +1,11 @@
+Thu May 16 14:15:49 2002  Sean Chittenden <sean@chittenden.org>
+
+	* mod_ruby.c (per_request_init): use sconf->load_path.
+
+Thu May 16 14:14:54 2002  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_require): call require method.
+
 Tue May  7 16:33:55 2002  Shugo Maeda <shugo@modruby.net>
 
 	* table.c (table_set): use ap_pstrndup().
