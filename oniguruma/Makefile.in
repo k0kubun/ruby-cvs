@@ -1,0 +1,112 @@
+# Oni Guruma Makefile
+
+product_name = oniguruma
+dist_tag     = `date '+%Y%m%d'`
+
+SHELL = /bin/sh
+AUTOCONF = autoconf
+
+CPPFLAGS = 
+CFLAGS = @CFLAGS@
+LDFLAGS =
+LOADLIBES =
+AR = ar
+ARFLAGS = rc
+RANLIB = @RANLIB@
+INSTALL = install -c
+CC = @CC@
+DEFS = @DEFS@
+
+srcdir = @srcdir@
+VPATH  = @srcdir@
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+libdir     = $(exec_prefix)/lib
+includedir = $(prefix)/include
+
+subdirs = 
+
+libname = libregex.a
+libobjs = regex.o
+headers = regex.h
+patchfiles = *.patch
+distfiles = README Makefile.in configure.in config.h.in configure \
+	    $(headers) regex.c onigtest.rb $(patchfiles)
+
+makeargs = $(MFLAGS) CPPFLAGS='$(CPPFLAGS)' CFLAGS='$(CFLAGS)' CC='$(CC)'
+
+.SUFFIXES:
+.SUFFIXES: .o .c .h .ps .dvi .info .texinfo
+
+.c.o:
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(DEFS) -I. -I$(srcdir) -c $<
+
+# targets
+default: all
+
+all: $(libname)
+
+$(libname): $(libobjs)
+	rm -f $(libname)
+	$(AR) $(ARFLAGS) $(libname) $(libobjs)
+	$(RANLIB) $(libname)
+
+regex.o: regex.c $(headers)
+
+install: all
+	test -d $(libdir) || mkdir $(libdir)
+	test -d $(includedir) || mkdir $(includedir)
+	$(INSTALL) $(libname) $(libdir)/$(libname)
+	$(RANLIB)  $(libdir)/$(libname)
+	$(INSTALL) $(srcdir)/$(headers) $(includedir)/$(headers)
+
+uninstall:
+	-rm -f $(libdir)/$(libname)
+	-rm -f $(includedir)/$(headers)
+
+clean:
+	rm -f *.o $(libname)
+
+distclean: clean
+	rm -f Makefile config.status
+
+
+rubydir = ..
+
+166: cpruby
+	patch -d $(rubydir) -p0 < re.c.166.patch
+
+172: cpruby
+	patch -d $(rubydir) -p0 < re.c.172.patch
+
+cpruby:
+	cp -p $(rubydir)/regex.c $(rubydir)/regex.c.orig
+	cp -p $(rubydir)/regex.h $(rubydir)/regex.h.orig
+	cp -p $(rubydir)/re.c    $(rubydir)/re.c.orig
+	cp -p regex.c regex.h $(rubydir)
+
+
+configure: configure.in
+	$(AUTOCONF)
+
+config.status: configure
+	$(SHELL) ./config.status --recheck
+
+Makefile: Makefile.in config.status
+	$(SHELL) ./config.status
+
+# Prevent GNU make 3 from overflowing arg limit on system V.
+.NOEXPORT:
+
+manifest:
+	for file in $(distfiles); do echo $$file; done
+
+
+distdir = $(product_name)
+
+dist: configure
+	rm -rf $(distdir)
+	mkdir $(distdir)
+	ln $(distfiles) $(distdir)
+	tar chf - $(distdir) | gzip > onigd$(dist_tag).tar.gz
+	rm -rf $(distdir)

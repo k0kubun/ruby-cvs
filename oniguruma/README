@@ -1,32 +1,58 @@
-README  2002/03/06
+README  2002/03/13
 
-Oni Guruma (regular expression library)
+OniGuruma (regular expression library)
 
 Copyright (C) 2002  K.Kosako (kosako@sofnec.co.jp)
 
 
-Install into Ruby
+There are two ways of using of it in this program.
 
-   1. Copy regex.h and regex.c into ruby source directory.
-   2. Apply a patch file to re.c.
-      re.c.166.patch for Ruby 1.6.6
-      re.c.172.patch for Ruby 1.7.2
-   3. make clean
-   4. make
+  A. built-in regular expression engine of Ruby
+  B. C library
+
+
+Install
+
+  A. Install into Ruby
+
+     1. Copy regex.h and regex.c into ruby source directory.
+     2. Apply a patch file to re.c.
+
+        re.c.166.patch for Ruby 1.6.6 or 1.6.7
+        re.c.172.patch for Ruby 1.7.2
+
+     3. make clean     (in ruby source directory)
+     4. make           (in ruby source directory)
+
+    If you extracted this archive in ruby source directory
+    (i.e. this file is ruby/oniguruma/README),
+    then step 1 and 2 can be replaced with the following.
+
+     1. ./configure             (in oniguruma directory)
+     2. make 166 (or make 172)  (in oniguruma directory)
+
+
+  B. Install library (and header file)
+
+     1. ./configure
+     2. make
+     3. make install
+
+     (* uninstall:  make uninstall)
 
 
 Differences with GNU regex(version 0.12)
 
    + has a original native API. (Thread safe?  I hope so.)
    + has modified GNU regex API.
-      - re_compile_fastmap() is removed. (no needs to call)
-      - re_recompile_pattern() is added.
-      - re_alloc_pattern() is added.
-      - error messages are different.
+      * re_compile_fastmap() is removed. (no needs to call)
+      * re_recompile_pattern() is added.
+      * re_alloc_pattern() is added.
+      * error messages are different.
 
    + look-behind (?<=fixed-char-length-pattern) and
                  (?<!fixed-char-length-pattern) are added.
-     (char-class, anychar(.) and anchor(^$ only) are allowed.)
+     (char-class, anychar(.) and anchor(^,$,\A only) are allowed.)
    + Octal or hexadecimal number sequence can be treated as 
      a multibyte code char in char-class, if multibyte encoding is specified.
      (ex. [\xa1\xa2], [\xa1\xa7-\xa4\xa1])
@@ -35,32 +61,63 @@ Differences with GNU regex(version 0.12)
    + Negative POSIX bracket [:^xxxx:] is supported.
    + POSIX bracket [:ascii:] is added.
 
+   + OniGuruma Extension  (*** It is invalid with Ruby in default. ***)
+     * \k(single-byte word char), \K(multi-byte char). [experimental]
+
 
 ToDo
 
-   + expand repeated exact string. ex. /(?:aaa){10}/
-   + GNU Autoconf
-   + Add a new opcode for anystar(.*) and exact combination.
-     [anystar, exact, ...] -> [anystar-peek-next, exact, ...]
-   + Add a new stack type for anystar(.*) matching process.
-     [STK_ANYCHAR_STAR, address, str-low, str-now]
-   + get tail exact string optimizing info. ex. /X((.*).)+X/
-     (by adding backward link to NCONS ?)
+   + serialize integer in bytecode. (switch at compile time)
    + script program for test and benchmark.
 
+   ? get tail string optimizing info. ex. /X((.*).)+X/
+     (add backward link to NCONS)
    ? reduce null-check range in compile time.
-     (add new opcode OP_NULL_CHECK_END_JUMP ?)
-   ? add a new opcode for exact pattern in look-behind.
-   ? merge re_alloc_pattern() with re_compile_pattern().
-  ?? convert function name style from CamelCase to underline_separation.
-  ?? postponed regular subexpression. /(?p{Ruby code...})/
- ??? POSIX compatible API
+   ? add a new stack type for anystar(.*) matching process.
+     [STK_ANYCHAR_STAR, address, str-low, str-now]
+  ?? POSIX compatible API.
 
  and I'm thankful to Akinori MUSHA.
 
 
+Problem
+
+   + AC_PROG_INSTALL in configure.in  is not used.
+     (Why configure script can't find /usr/bin/install in my box?)
+
+
 History
 
+2002/03/13: Version 1.2
+
+2002/03/13: [test] success in rubicon/builtin/AllBuiltinTests.rb.
+                   (thanks rubicon)
+2002/03/13: [bug]  OP_EXACTMBN process in matchAt() is wrong.
+2002/03/13: [bug]  start argument of BackwardSearchRange() is wrong.
+2002/03/12: [spec] change function name style from CamelCase
+                   to underline_separation. (includes API)
+2002/03/12: [bug]  if pattern has nested null-check, cause infinite loop.
+                   correct STACK_NULL_CHECK() macro. (thanks Guy Decoux)
+2002/03/11: [bug]  it is wrong that four numbers to continue as
+                   an octal value in scanBackSlash(). ex. /\0111/
+                   (thanks matz)
+2002/03/11: [new]  \k (single-byte word char), \K (multi-byte char).
+2002/03/09: [inst] add two targets to Makefile.in (166 and 177).
+2002/03/09: [spec] decrease REG_MAX_BACKREF_NUM, REG_MAX_REPEAT_NUM
+                   values.
+2002/03/08: [spec] allow use of "\A"(begin-buf) in look-behind.
+2002/03/08: [impl] add a new opcode OP_PUSH_IF_PEEK_NEXT.
+2002/03/08: [impl] add a new opcode OP_ANYCHAR_STAR_PEEK_NEXT.
+2002/03/07: [spec] prohibit use of memory group "(...)"
+                   in negative look-behind.
+2002/03/07: [inst] add configure.in, config.h.in, Makefile.in.
+2002/03/07: [impl] call Init_REGEX_STAT() in RegexInit().
+2002/03/07: [spec] less length string match with negative look-behind.
+                   ex. /(?<!XXX)a/.match("Xa").    (thanks nobu)
+2002/03/06: [impl] expand repeated string, if expanded length <= 100.
+                   ex. /(?:abc){10}/
+2002/03/06: [new]  add a symbol REG_TRANSTABLE_USE_DEFAULT in regex.h.
+2002/03/06: [impl] rename RegDefaultCharCode to RegDefaultCharEncoding.
 2002/03/06: [bug]  if pattern has NULL(\000) char, infinite loop happens 
                    in ScanMakeNode(). (beware of strchr(). thanks nobu)
 2002/03/06: [bug]  range argument of ForwardSearchRange() is wrong.
