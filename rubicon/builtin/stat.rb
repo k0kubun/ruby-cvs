@@ -11,8 +11,8 @@ module RubiconStat
     return res.split
   end
 
-  def ctime(file)   stat(file)[10] end
-  def blksize(file) stat(file)[11] end
+  def ctime(file)   stat(file)[10].to_i end
+  def blksize(file) stat(file)[11].to_i end
 
   module_function :stat, :ctime, :blksize
 end

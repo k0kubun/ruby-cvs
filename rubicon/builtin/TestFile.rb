@@ -8,10 +8,6 @@ class TestFile < Rubicon::TestCase
 
     @file = "_test/_touched"
 
-    sys("touch  #@file")
-    xxxx = RubiconStat::ctime(@file)
-    @cTime = Time.at(xxxx)
-
     sys("touch -a -t 122512341999 #@file")
     @aTime = Time.local(1999, 12, 25, 12, 34, 00)
 
@@ -20,7 +16,6 @@ class TestFile < Rubicon::TestCase
   end
 
   def teardown
-    puts "!!!!"
     File.delete @file if File.exist?(@file)
     teardownTestDir
   end
@@ -55,6 +50,10 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_ctime
+    sys("touch  #@file")
+    ctime = RubiconStat::ctime(@file)
+    @cTime = Time.at(ctime)
+
     assert_equal(@cTime, File.ctime(@file))
   end
 
@@ -391,6 +390,10 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_ctime
+    sys("touch  #@file")
+    ctime = RubiconStat::ctime(@file)
+    @cTime = Time.at(ctime)
+
     File.open(@file) { |f| assert_equal(@cTime, f.ctime) }
   end
 
