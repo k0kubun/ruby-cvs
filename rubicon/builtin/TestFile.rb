@@ -79,6 +79,12 @@ class TestFile < Rubicon::TestCase
     assert_equal(base,                 File.expand_path(''))
     assert_equal(File.join(base, 'a'), File.expand_path('a'))
     assert_equal(File.join(base, 'a'), File.expand_path('a', nil)) # V0.1.1
+    # Because of Ruby-Talk:18512
+    assert_equal(File.join(base, 'a.'), File.expand_path('a.')) 
+    assert_equal(File.join(base, '.a'), File.expand_path('.a')) 
+    assert_equal(File.join(base, 'a..'), File.expand_path('a..')) 
+    assert_equal(File.join(base, '..a'), File.expand_path('..a')) 
+    assert_equal(File.join(base, 'a../b'), File.expand_path('a../b')) 
     b1 = File.join(base.split(File::SEPARATOR)[0..-2])
     assert_equal(b1, File.expand_path('..'))
 

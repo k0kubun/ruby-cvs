@@ -1,3 +1,11 @@
+2001-07-25  Hugh Sasse
+
+	* FileTest.rb: Add File.join tests in light of ruby-talk:18512
+
+2001-07-23  Patrick Cheng <pcyc@hotmail.com>
+
+	* rubicon.rb: Make files r/w before deleting.
+
 2001-06-11  Dave Thomas  <Dave@Thomases.com>
 
 	* Fixed a couple of warnings resulting from running tests in one
