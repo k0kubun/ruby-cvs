@@ -122,7 +122,9 @@ module Apache
         elsif r.sync_output or r.sync_header
           # Do nothing: header has already been sent
 	else
-	  r.content_type = format("text/html; charset=%s", ERuby.charset)
+	  unless r.content_type
+	    r.content_type = format("text/html; charset=%s", ERuby.charset)
+	  end
 	  r.send_http_header
 	end
       end

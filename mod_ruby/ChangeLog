@@ -1,3 +1,7 @@
+Thu Aug 29 13:30:40 2002  Shugo Maeda <shugo@modruby.net>
+	
+	* lib/apache/eruby-run.rb (postrun): do not overwrite r.content_type.
+
 Fri Aug 23 12:06:53 2002  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c: RubyTransHandler and RubyPostReadRequestHandler
