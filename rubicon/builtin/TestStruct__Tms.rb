@@ -8,19 +8,36 @@ class TestStruct__Tms < Rubicon::TestCase
   end
 
   def setup
-    # find out how much it takes to burn up a couple of seconds or so
-    n = 100
-    loop do
-      start = Time.now
-      sillyCalculation(n)
-      break if Time.now - start > 1
-      n *= 2
-    end
-    200.times {
-      fork { sillyCalculation(n/200) }
-      Process.wait
+    pid = fork
+
+    name = pid ? "_parent" : "_child"
+
+    5000.times {
+      Dir.mkdir(name)
+      Dir.rmdir(name)
     }
+
+    Process.wait if pid
+    puts Time.times.to_a if pid
+
   end
+
+#     # find out how much it takes to burn up a couple of seconds or so
+#     n = 100
+#     loop do
+#       start = Time.now
+#       sillyCalculation(n)
+#       break if Time.now - start > 1
+#       n *= 2
+#     end
+#     fork { sillyCalculation(n) }
+#     Process.wait
+# #    200.times {
+# #      Dir.open(".") {}
+#       #fork { sillyCalculation(n/200) }
+# #      Process.wait
+# #    }
+#   end
 
   def cstime
     assert(Time.times.cstime != 0)
