@@ -7,6 +7,11 @@ class TestFixnum < Rubicon::TestCase
   MAX = 2**(1.size*8 - 2) - 1
   MIN = -MAX - 1
 
+  def test_s_induced_from
+    assert_equal(1, Fixnum.induced_from(1))
+    assert_equal(1, Fixnum.induced_from(1.0))
+  end
+
   def test_UMINUS
     [ -99, -1, 0, +1 , +99].each { |n| assert_equal(0, -n + n) }
   end
@@ -133,15 +138,42 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_MINUS # '-'
-    assert_fail("untested")
+    assert_equal(0, 0-0)
+    assert_equal(0, 1-1)
+    assert_equal(0, -1 - (-1))
+    
+    assert_equal(77, 100 - 20 - 3)
+
+    a = MIN - 1
+    assert_instance_of(a, Bignum)
   end
 
   def test_MOD # '%'
-    assert_fail("untested")
+    assert_equal(0,  0%123)
+    assert_equal(1,  13%4)
+    assert_equal(-3, 13%(-4))
+    assert_equal(3,  (-13)%4)
+    assert_equal(-1, (-13)%(-4))
   end
 
   def test_MUL # '*'
-    assert_fail("untested")
+    assert_equal(0, 0*MAX)
+    a = 1 * MAX
+    assert_equal(MAX, a)
+    assert_instance_of(a, Fixnum)
+    a = 1 * MIN
+    assert_equal(MIN, a)
+    assert_instance_of(a, Fixnum)
+    
+    a = -1 * MAX
+    assert_equal(-MAX, a)
+    assert_instance_of(a, Fixnum)
+
+    a = -1 * MIN
+    assert_equal(-MIN, a)
+    assert_instance_of(a, Bignum)
+
+    assert_equal(9.5, 19 * 0.5)
   end
 
   def test_OR # '|'
@@ -153,11 +185,29 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_PLUS # '+'
-    assert_fail("untested")
+    assert_equal(MIN, 0 + MIN)
+    assert_equal(MIN, MIN + 0)
+
+    a = MIN + 1
+    assert(a > MIN)
+    assert_instance_of(a, Fixnum)
+
+    a = MAX + 1
+    assert(a > MAX)
+    assert_instance_of(a, Bignum)
   end
 
   def test_POW # '**'
-    assert_fail("untested")
+    assert_equal(0, 0**1)
+    assert_equal(1, 0**0)
+    assert_equal("Infinity", (0**-1).to_s)
+
+    assert_equal(1, 1**1)
+    assert_equal(1, 1**0)
+    assert_equal(1, 1**-1)
+
+    assert_equal(81, 9**2)
+    assert_equal(9,  81**.5)
   end
 
   def test_REV # '~'
@@ -169,7 +219,14 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_RSHIFT # '>>'
-    assert_fail("untested")
+    assert_equal(0, 0 >> 1)
+    assert_equal(0, 1 >> 1)
+    assert_equal(1, 8 >> 3)
+    assert_equal(1, 2**20 >> 20)
+
+    assert_equal(-1, (-2) >> 1)
+    assert_equal(-1, (-8) >> 3)
+    assert_equal(-64, (-8) << 3)
   end
 
   def test_XOR # '^'
@@ -181,67 +238,155 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_abs
-    assert_fail("untested")
+    assert_equal(1, 1.abs)
+    assert_equal(1, (-1).abs)
+    assert_equal(0, 0.abs)
+
+    a = MAX.abs
+    assert_equal(a, MAX)
+    assert_instance_of(a, Fixnum)
+
+    a = MIN.abs
+    assert_equal(a, MAX+1)
+    assert_instance_of(a, Bignum)
   end
 
   def test_downto
-    assert_fail("untested")
+    vals = [ 7,6,5,4 ]
+    7.downto(4) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ -4, -5, -6, -7 ]
+    (-4).downto(-7) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ 2, 1, 0, -1, -2 ]
+    2.downto(-2) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ ]
+    -4.downto(-2) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
   end
 
   def test_id2name
-    assert_fail("untested")
+    a = :Wombat
+    assert_instance_of(a, Symbol)
+    ai = a.to_i
+    assert_instance_of(ai, Fixnum)
+    assert_equals("Wombat", ai.id2name)
+
+    a = :<<
+    assert_instance_of(a, Symbol)
+    ai = a.to_i
+    assert_instance_of(ai, Fixnum)
+    assert_equals("<<", ai.id2name)
   end
 
   def test_next
-    assert_fail("untested")
+    assert_equal(1, 0.next)
+    assert_equal(0, (-1).next)
+    assert(MIN.next > MIN)
+    a = MAX.next
+    assert_instance_of(a, Bignum)
   end
 
   def test_remainder
-    assert_fail("untested")
+    assert_equal(1, 13.remainder(4))
+    assert_equal(1, 13.remainder(-4))
+    assert_equal(-1, (-13).remainder(4))
+    assert_equal(-1, (-13).remainder(-4))
   end
 
   def test_size
-    assert_fail("untested")
+    assert((1.size == 4) || (1.size == 8))
   end
 
   def test_step
-    assert_fail("untested")
+    vals = [1, 4, 7, 10 ]
+    1.step(10, 3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
+
+    vals = [1, 4, 7, 10 ]
+    1.step(12, 3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
+
+    vals = [10, 7, 4, 1 ]
+    10.step(1, -3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
+
+    vals = [10, 7, 4, 1 ]
+    10.step(-1, -3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
+
+    vals = [ 1 ]
+    1.step(1, 3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
+
+    vals = [ 1 ]
+    1.step(1, -3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
+
+    vals = [  ]
+    1.step(0, 3) { |i| assert_equal(i, vals.shift) }
+    assert_equal(0, vals.length)
   end
 
   def test_succ
-    assert_fail("untested")
+    assert_equal(1, 0.succ)
+    assert_equal(0, (-1).succ)
+    assert(MIN.succ > MIN)
+    a = MAX.succ
+    assert_instance_of(a, Bignum)
   end
 
   def test_times
-    assert_fail("untested")
+    vals = [ 0, 1, 2, 3, 4 ]
+    5.times {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ ]
+    0.times {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
   end
 
   def test_to_f
-    assert_fail("untested")
+    f = MAX.to_f
+    assert_instance_of(f, Float)
+    assert((f - MAX).abs < .5)
   end
 
   def test_to_i
-    assert_fail("untested")
+    assert(MAX.to_i == MAX)
   end
 
   def test_to_s
-    assert_fail("untested")
-  end
-
-  def test_type
-    assert_fail("untested")
+    assert_equals("123", 123.to_s)
+    assert_equals("-123", (-123).to_s)
   end
 
   def test_upto
-    assert_fail("untested")
+    vals = [ 4,5,6,7 ]
+    4.upto(7) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ -7, -6, -5, -4 ]
+    (-7).upto(-4) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ -2, -1, 0, 1, 2 ]
+    (-2).upto(2) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
+    vals = [ ]
+    (-2).upto(-4) {|i| assert_equals(vals.shift, i) }
+    assert_equals(0, vals.length)
+
   end
 
   def test_zero?
-    assert_fail("untested")
-  end
-
-  def test_s_induced_from
-    assert_fail("untested")
+    assert(0.zero?)
+    assert(!1.zero?)
   end
 
 end
