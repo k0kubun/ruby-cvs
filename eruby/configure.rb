@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated automatically using autoconf.rb version 0.2
+# Generated automatically using autoconf.rb version 0.2.1
 
 require "mkmf"
 
@@ -109,6 +109,11 @@ end
 
 def AC_CONFIG_HEADER(header)
   $AC_LIST_HEADER = header
+end
+
+def AC_CHECK(feature)
+  AC_MSG_CHECKING(feature)
+  AC_MSG_RESULT(yield)
 end
 
 def AC_MSG_CHECKING(feature)
@@ -274,7 +279,11 @@ $AR = CONFIG["AR"]
 $LD = "$(CC)"
 $RANLIB = CONFIG["RANLIB"]
 
-$CFLAGS = CFLAGS + " " + CONFIG["CCDLFLAGS"]
+if CFLAGS.index(CONFIG["CCDLFLAGS"])
+  $CFLAGS = CFLAGS
+else
+  $CFLAGS = CFLAGS + " " + CONFIG["CCDLFLAGS"]
+end
 $LDFLAGS = CONFIG["LDFLAGS"]
 $LIBS = CONFIG["LIBS"]
 $XLDFLAGS = CONFIG["XLDFLAGS"]
@@ -286,8 +295,6 @@ $DLEXT = CONFIG["DLEXT"]
 
 $RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
 $RUBY_SHARED = (CONFIG["ENABLE_SHARED"] == "yes")
-p $RUBY_SHARED
-p CONFIG["ENABLE_SHARED"]
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $RUBY_SHARED
   $LIBRUBYARG.gsub!(/-L\./, "-L$(libdir)")
@@ -353,6 +360,15 @@ AC_SUBST("RUBY_INSTALL_NAME")
 AC_SUBST("LIBRUBYARG")
 AC_SUBST("LIBRUBY_A")
 AC_SUBST("RUBY_SO_NAME")
+
+AC_MSG_CHECKING("whether we are using gcc")
+if $CC == "gcc" || `#{$CC} -v 2>&1` =~ /gcc/
+  $using_gcc = true
+  $CFLAGS += " -Wall"
+else
+  $using_gcc = false
+end
+AC_MSG_RESULT($using_gcc)
 
 AC_MSG_CHECKING("Ruby version")
 AC_MSG_RESULT(RUBY_VERSION)

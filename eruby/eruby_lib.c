@@ -224,6 +224,7 @@ int eruby_parse_options(int argc, char **argv)
 
 typedef struct eruby_compiler {
     VALUE output;
+    VALUE sourcefile;
     int   sourceline;
     VALUE (*lex_gets)(struct eruby_compiler *compiler);
     VALUE lex_input;
@@ -238,9 +239,10 @@ typedef struct eruby_compiler {
 
 static void eruby_compiler_mark(eruby_compiler_t *compiler)
 {
+    rb_gc_mark(compiler->output);
+    rb_gc_mark(compiler->sourcefile);
     rb_gc_mark(compiler->lex_input);
     rb_gc_mark(compiler->lex_lastline);
-    rb_gc_mark(compiler->output);
 }
 
 static VALUE eruby_compiler_s_new(VALUE self)
@@ -251,6 +253,7 @@ static VALUE eruby_compiler_s_new(VALUE self)
     obj = Data_Make_Struct(self, eruby_compiler_t,
 			   eruby_compiler_mark, free, compiler);
     compiler->output = Qnil;
+    compiler->sourcefile = Qnil;
     compiler->sourceline = 0;
     compiler->lex_gets = NULL;
     compiler->lex_input = Qnil;
@@ -266,6 +269,24 @@ static VALUE eruby_compiler_s_new(VALUE self)
 VALUE eruby_compiler_new()
 {
     return eruby_compiler_s_new(cERubyCompiler);
+}
+
+VALUE eruby_compiler_get_sourcefile(VALUE self)
+{
+    eruby_compiler_t *compiler;
+
+    Data_Get_Struct(self, eruby_compiler_t, compiler);
+    return compiler->sourcefile;
+}
+
+VALUE eruby_compiler_set_sourcefile(VALUE self, VALUE filename)
+{
+    eruby_compiler_t *compiler;
+
+    Check_Type(filename, T_STRING);
+    Data_Get_Struct(self, eruby_compiler_t, compiler);
+    compiler->sourcefile = filename;
+    return filename;
 }
 
 static VALUE lex_str_gets(eruby_compiler_t *compiler)
@@ -356,6 +377,12 @@ static inline void output_char(eruby_compiler_t *compiler, int c)
 
 #define output_literal(compiler, s) output(compiler, s, sizeof(s) - 1)
 
+static void compile_error(eruby_compiler_t *compiler, char *msg)
+{
+    rb_raise(eERubyCompileError, "%s:%d:%s",
+	     STR2CSTR(compiler->sourcefile), compiler->sourceline, msg);
+}
+
 static void parse_embedded_program(eruby_compiler_t *compiler,
 				   enum embedded_program_type type)
 {
@@ -382,8 +409,7 @@ static void parse_embedded_program(eruby_compiler_t *compiler,
 		return;
 	    }
 	    else if (c == EOF) {
-		rb_raise(eERubyCompileError, "%d:missing end delimiter",
-			 compiler->sourceline);
+		compile_error(compiler, "missing end delimiter");
 	    }
 	    else {
 		if (type != EMBEDDED_COMMENT)
@@ -395,8 +421,7 @@ static void parse_embedded_program(eruby_compiler_t *compiler,
 	else {
 	    switch (c) {
 	    case EOF:
-		rb_raise(eERubyCompileError, "%d:missing end delimiter",
-			 compiler->sourceline);
+		compile_error(compiler, "missing end delimiter");
 		break;
 	    case '\n':
 		output_char(compiler, c);
@@ -410,8 +435,7 @@ static void parse_embedded_program(eruby_compiler_t *compiler,
 	    }
 	}
     }
-    rb_raise(eERubyCompileError, "%d:missing end delimiter",
-	     compiler->sourceline);
+    compile_error(compiler, "missing end delimiter");
 }
 
 static void parse_embedded_line(eruby_compiler_t *compiler)
@@ -422,8 +446,8 @@ static void parse_embedded_line(eruby_compiler_t *compiler)
 	c = nextc(compiler);
 	switch (c) {
 	case EOF:
-	    rb_raise(eERubyCompileError, "%d:missing end delimiter",
-		     compiler->sourceline);
+	    compile_error(compiler, "missing end of line");
+	    break;
 	case '\n':
 	    output_char(compiler, c);
 	    return;
@@ -432,8 +456,7 @@ static void parse_embedded_line(eruby_compiler_t *compiler)
 	    break;
 	}
     }
-    rb_raise(eERubyCompileError, "%d:missing end delimiter",
-	     compiler->sourceline);
+    compile_error(compiler, "missing end of line");
 }
 
 static VALUE eruby_compile(eruby_compiler_t *compiler)
@@ -480,8 +503,7 @@ static VALUE eruby_compile(eruby_compiler_t *compiler)
 	    if (c == ERUBY_BEGIN_DELIMITER[1]) {
 		c = nextc(compiler);
 		if (c == EOF) {
-		    rb_raise(eERubyCompileError, "%d:missing end delimiter",
-			     compiler->sourceline);
+		    compile_error(compiler, "missing end delimiter");
 		}
 		else if (c == ERUBY_BEGIN_DELIMITER[1]) { /* <%% => <% */
 		    if (prevc < 0) output_literal(compiler, "print \"");
@@ -514,8 +536,7 @@ static VALUE eruby_compile(eruby_compiler_t *compiler)
 	else if (c == ERUBY_LINE_BEG_CHAR && prevc == EOF) {
 	    c = nextc(compiler);
 	    if (c == EOF) {
-		rb_raise(eERubyCompileError, "%d:missing end delimiter",
-			 compiler->sourceline);
+		compile_error(compiler, "missing end delimiter");
 	    }
 	    else if (c == ERUBY_LINE_BEG_CHAR) { /* %% => % */
 		if (prevc < 0) output_literal(compiler, "print \"");
@@ -632,7 +653,6 @@ static VALUE eval_string(VALUE arg)
 
 VALUE eruby_load(char *filename, int wrap, int *state)
 {
-    char src[BUFSIZ];
     VALUE compiler;
     VALUE code;
     VALUE f;
@@ -653,6 +673,7 @@ VALUE eruby_load(char *filename, int wrap, int *state)
     eruby_noheader = 0;
     eruby_charset = eruby_default_charset;
     compiler = eruby_compiler_new();
+    eruby_compiler_set_sourcefile(compiler, rb_str_new2(filename));
     carg.compiler = compiler;
     carg.input = f;
     code = rb_protect(eruby_compile_file, (VALUE) &carg, &status);
@@ -747,6 +768,10 @@ void eruby_init()
 
     cERubyCompiler = rb_define_class_under(mERuby, "Compiler", rb_cObject);
     rb_define_singleton_method(cERubyCompiler, "new", eruby_compiler_s_new, 0);
+    rb_define_method(cERubyCompiler, "sourcefile",
+		     eruby_compiler_get_sourcefile, 0);
+    rb_define_method(cERubyCompiler, "sourcefile=",
+		     eruby_compiler_set_sourcefile, 1);
     rb_define_method(cERubyCompiler, "compile_string",
 		     eruby_compiler_compile_string, 1);
     rb_define_method(cERubyCompiler, "compile_file",

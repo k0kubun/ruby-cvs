@@ -1,3 +1,12 @@
+AC_MSG_CHECKING("whether we are using gcc")
+if $CC == "gcc" || `#{$CC} -v 2>&1` =~ /gcc/
+  $using_gcc = true
+  $CFLAGS += " -Wall"
+else
+  $using_gcc = false
+end
+AC_MSG_RESULT($using_gcc)
+
 AC_MSG_CHECKING("Ruby version")
 AC_MSG_RESULT(RUBY_VERSION)
 if RUBY_VERSION < "1.6"

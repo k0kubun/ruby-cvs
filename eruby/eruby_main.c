@@ -448,6 +448,8 @@ static void init()
 
 static void proc_args(int argc, char **argv)
 {
+    ruby_script(argv[0]);
+
     switch (eruby_parse_options(argc, argv)) {
     case 1:
 	exit(0);
