@@ -11,7 +11,7 @@
 #   debug:{on|off}
 #
 
-debug:on
+debug:off
 
 #
 # Restrict hosts on which one could commit
@@ -49,6 +49,7 @@ group:interbase:matz,bizenn
 group:irc:iga,knu,gnhurst
 group:metaruby:matju,aleksi
 group:xlib:matju
+group:gnome-ruby-old:iga
 
 group:www:@all
 
@@ -87,6 +88,7 @@ grant:@interbase:lib/interbase
 grant:@irc:lib/irc
 grant:@metaruby:lib/metaruby
 grant:@xlib:lib/xlib
+grant:@gnome-ruby-old:lib/gnome-ruby-old
 
 grant:@www:www
 
