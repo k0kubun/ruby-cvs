@@ -1989,26 +1989,36 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_trap
+
+    # 1. Check that an exception s thrown if we wait for a child and
+    # there is no child.
+
     # "IGNORE" discards child termination status
     trap "CHLD", "IGNORE"
     pid = fork
     exit unless pid
+    sleep 1                     # ensure child has exited (ish)
     assert_exception(Errno::ECHILD) { Process.wait }
     res = nil
 
+    # 2. check that we run a proc as a handler when a child
+    # terminates
     lastProc = proc { res = 1 }
     trap("SIGCHLD", lastProc)
     fork { ; }
     Process.wait
     assert_equal(1, res)
-    assert_equal(lastProc, trap("SIGCHLD", "DEFAULT"))
 
+    # 3. Reset the signal handler (checking it returns the previous
+    # value) and ensure that the proc doesn't get called
+
+    assert_equal(lastProc, trap("SIGCHLD", "DEFAULT"))
     res = nil
     fork { ; }
     Process.wait
     assert_nil(res)
     
-    # test EXIT handling
+    # 4. test EXIT handling
     fork {
       trap "EXIT", "exit!"      # sets return code to -1
       exit 99

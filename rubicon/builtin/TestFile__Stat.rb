@@ -43,7 +43,9 @@ class TestFile__Stat < FileInfoTest
   def test_blockdev?
     try(:blockdev?, "/dev/tty", false)
     try(:blockdev?, ".",        false)
-    try(:blockdev?, "/dev/fd0", true)
+    if $os == Linux
+      try(:blockdev?, "/dev/fd0", true)
+    end
   end
 
   def test_blocks
@@ -58,7 +60,9 @@ class TestFile__Stat < FileInfoTest
   def test_chardev?
     try(:chardev?, "/dev/tty", true)
     try(:chardev?, ".",        false)
-    try(:chardev?, "/dev/fd0", false)
+    if $os == Linux
+      try(:chardev?, "/dev/fd0", false)
+    end
   end
 
   def test_ctime
@@ -98,27 +102,42 @@ class TestFile__Stat < FileInfoTest
     File.symlink("_file1", "_file3") # may fail
     system("mkfifo _fifo") # may fail
 
-    {
+    tests = {
       "../_test"          => "directory",
       "_file1"            => "file",
       "/dev/tty"          => "characterSpecial",
-      "/dev/fd0"          => "blockSpecial",
       "/tmp/.X11-unix/X0" => "socket",
       "_file3"            => "file",   # try uses stat
       "_fifo"             => "fifo" 
-    }.each { |file, type|
-      try(:ftype, file, type)
     }
+
+    if $os == Linux
+      tests["/dev/fd0"] = "blockSpecial"
+    end
+
+    tests.each do |file, type|
+      try(:ftype, file, type)
+    end
     assert_equal("link", File.lstat("_file3").ftype)
   end
 
-  def test_gid
-    assert_equal(Process.gid, @s1.gid)
-  end
-
-  def test_grpowned?
-    try(:grpowned?, @file1,        true)
-    try(:grpowned?, "/etc/passwd", false)
+  if $os == Linux
+    def test_gid
+      assert_equal(Process.gid, @s1.gid)
+    end
+    
+    def test_grpowned?
+      try(:grpowned?, @file1,        true)
+      try(:grpowned?, "/etc/passwd", false)
+    end
+  else
+    def test_gid
+      skipping "Behavior unknown (feel free up update!)"
+    end
+    
+    def test_grpowned?
+      skipping "Behavior unknown (feel free up update!)"
+    end
   end
 
   def test_ino
@@ -214,10 +233,15 @@ class TestFile__Stat < FileInfoTest
 
   def test_sticky?
     Dir.chdir("_test")
-    File.chmod(01644, "_file1")
+    m = File.stat(".").mode
+    begin
+      File.chmod(m | 01000, ".")
+      try(:sticky?, ".",      true)
+    ensure
+      File.chmod(m, ".")
+    end
     try(:sticky?, ".",        false)
     try(:sticky?, "/dev/tty", false)
-    try(:sticky?, "_file1",   true)
     try(:sticky?, "_file2",   false)
   end
 

@@ -12,25 +12,29 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_aref
-    assert_equal(%w( _test ),                     Dir["_test"])
-    assert_equal(%w( _test/ ),                    Dir["_test/"])
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["_test/*"])
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["_test/_file*"])
-    assert_equal(%w(  ),                          Dir["_test/frog*"])
-
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["**/_file*"])
-
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["_test/_file[0-9]*"])
-    assert_equal(%w( ),                           Dir["_test/_file[a-z]*"])
-
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["_test/_file{0,1,2,3}"])
-    assert_equal(%w( ),                           Dir["_test/_file{4,5,6,7}"])
-    
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]l*"])
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]e[0-9]"])
-    assert_equal(%w( _test/_file1              ), Dir["**/_f*[il]e[01]"])
-    assert_equal(%w( _test/_file1              ), Dir["**/_f*[il]e[01]*"])
-    assert_equal(%w( _test/_file1              ), Dir["**/_f*[^ie]e[01]*"])
+    [
+      [ %w( _test ),                     Dir["_test"] ],
+      [ %w( _test/ ),                    Dir["_test/"] ],
+      [ %w( _test/_file1 _test/_file2 ), Dir["_test/*"] ],
+      [ %w( _test/_file1 _test/_file2 ), Dir["_test/_file*"] ],
+      [ %w(  ),                          Dir["_test/frog*"] ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir["**/_file*"] ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir["_test/_file[0-9]*"] ],
+      [ %w( ),                           Dir["_test/_file[a-z]*"] ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir["_test/_file{0,1,2,3}"] ],
+      [ %w( ),                           Dir["_test/_file{4,5,6,7}"] ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]l*"] ],
+      [ %w( _test/_file1 _test/_file2 ), Dir["**/_f*[il]e[0-9]"] ],
+      [ %w( _test/_file1              ), Dir["**/_f*[il]e[01]"] ],
+      [ %w( _test/_file1              ), Dir["**/_f*[il]e[01]*"] ],
+      [ %w( _test/_file1              ), Dir["**/_f*[^ie]e[01]*"] ],
+    ].each do |expected, got|
+      assert_set_equal(expected, got)
+    end
   end
 
   def test_s_chdir
@@ -59,16 +63,17 @@ class TestDir < Rubicon::TestCase
   def test_s_entries
     assert_exception(Errno::ENOENT)      { Dir.entries "_wombat" } 
     assert_exception(Errno::ENOENT)      { Dir.entries "_test/file*" } 
-    assert_equal(@files, Dir.entries("_test"))
-    assert_equal(@files, Dir.entries("_test/."))
-    assert_equal(@files, Dir.entries("_test/../_test"))
+    assert_set_equal(@files, Dir.entries("_test"))
+    assert_set_equal(@files, Dir.entries("_test/."))
+    assert_set_equal(@files, Dir.entries("_test/../_test"))
   end
 
   def test_s_foreach
-    expected = @files
+    got = []
+    entry = nil
     assert_exception(Errno::ENOENT) { Dir.foreach("_wombat") {}}
-    assert_nil(Dir.foreach("_test") { |f|
-                   assert_equal(expected.shift, f) } )
+    assert_nil(Dir.foreach("_test") { |f| got << f } )
+    assert_set_equal(@files, got)
   end
 
   def test_s_getwd
@@ -76,25 +81,29 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_glob
-    assert_equal(%w( _test ),                     Dir.glob("_test"))
-    assert_equal(%w( _test/ ),                    Dir.glob("_test/"))
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("_test/*"))
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("_test/_file*"))
-    assert_equal(%w(  ),                          Dir.glob("_test/frog*"))
-
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("**/_file*"))
-
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("_test/_file[0-9]*"))
-    assert_equal(%w( ),                           Dir.glob("_test/_file[a-z]*"))
-
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("_test/_file{0,1,2,3}"))
-    assert_equal(%w( ),                           Dir.glob("_test/_file{4,5,6,7}"))
-    
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("**/_f*[il]l*"))
-    assert_equal(%w( _test/_file1 _test/_file2 ), Dir.glob("**/_f*[il]e[0-9]"))
-    assert_equal(%w( _test/_file1              ), Dir.glob("**/_f*[il]e[01]"))
-    assert_equal(%w( _test/_file1              ), Dir.glob("**/_f*[il]e[01]*"))
-    assert_equal(%w( _test/_file1              ), Dir.glob("**/_f*[^ie]e[01]*"))
+    [
+      [ %w( _test ),                     Dir.glob("_test") ],
+      [ %w( _test/ ),                    Dir.glob("_test/") ],
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("_test/*") ],
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("_test/_file*") ],
+      [ %w(  ),                          Dir.glob("_test/frog*") ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("**/_file*") ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("_test/_file[0-9]*") ],
+      [ %w( ),                           Dir.glob("_test/_file[a-z]*") ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("_test/_file{0,1,2,3}") ],
+      [ %w( ),                           Dir.glob("_test/_file{4,5,6,7}") ],
+      
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("**/_f*[il]l*") ],
+      [ %w( _test/_file1 _test/_file2 ), Dir.glob("**/_f*[il]e[0-9]") ],
+      [ %w( _test/_file1              ), Dir.glob("**/_f*[il]e[01]") ],
+      [ %w( _test/_file1              ), Dir.glob("**/_f*[il]e[01]*") ],
+      [ %w( _test/_file1              ), Dir.glob("**/_f*[^ie]e[01]*") ],
+    ].each do |expected, got|
+      assert_set_equal(expected, got)
+    end
   end
 
   def test_s_mkdir
@@ -154,24 +163,32 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_each
-    expected = @files
+    got = []
     d = Dir.new("_test")
-    assert_equal(d, d.each { |f|
-                   assert_equal(expected.shift, f) } )
+    assert_equal(d, d.each { |f| got << f })
+    assert_set_equal(@files, got)
   end
 
   def test_read
     d = Dir.new("_test")
-    @files.each { |expected| assert_equal(expected, d.read);  }
+    got = []
+    entry = nil
+    got << entry while entry = d.read
+    assert_set_equal(@files, got)
     assert_nil(d.read)
   end
 
   def test_rewind
     d = Dir.new("_test")
-    @files.each { |expected| assert_equal(expected, d.read); }
+    entry = nil
+    got = []
+    got << entry while entry = d.read
+    assert_set_equal(@files, got)
     assert_nil(d.read)
     d.rewind
-    @files.each { |expected| assert_equal(expected, d.read); }
+    got = []
+    got << entry while entry = d.read
+    assert_set_equal(@files, got)
     assert_nil(d.read)
   end
 

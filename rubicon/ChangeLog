@@ -1,3 +1,34 @@
+2000-10-23  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestKernel.rb (test_s_trap): Fix a race condition.
+
+	* builtin/TestDir.rb: Remove dependence on order of entries
+	returned by directory operations.
+
+	* builtin/TestIO.rb: Brian Feldman: Make exception returned by
+ 	File#pos=-1 and seek(-1) less system specific. Use .read, not
+ 	.sysread, in reopen tests.
+
+	* builtin/TestFile__Stat.rb: Brian Feldman: make /dev/fd0 tests
+	Linux specific. Make group tests (gid, grpowned) Linux specific.
+	Check stickiness using a directory, not file.
+
+	* builtin/TestFileTest.rb: Brian Feldman: sticky test now checks a 
+	directory for portability. Make /dev/fd0 Linux specific. Make
+	grpowned and /dev/fd0 tests Linux specific
+
+	* rubicon.rb: Add classification routines for operating systems 
+
+	* builtin/TestArray.rb: Brian Feldman/Aleksi Niemlä: retain test
+	for pre 1.6.2 push behavior.
+
+	* rubicon.rb (tidyup): Brian Feldman: delete directories as well
+	as files out of _test (used by above).
+
+	* util/checkstat.c (main): Brian Feldman: Make checkstat more
+	portable to systems where the fields in a struct stat don't fit in 
+	to an int.
+
 2000-10-20  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestArray.rb: Aleksi again. Add test for array.push with 

@@ -25,7 +25,7 @@ Prerequisites:
 Installation:
 =============
 
-  You're done it. Simply untar the files into a convenient directory.
+  You've done it. Simply untar the files into a convenient directory.
 
 
 Structure:
@@ -82,6 +82,33 @@ Changing:
     line first: I've got some ideas of how to integrate this cleanly
     which I'd like to talk through with folks.
 
+
+Environmental Tests
+===================
+
+    Some tests depend on the environment in which they run. Guard
+    these with appropriate conditions:
+
+    - if your test depends on the Ruby version, using the $rubyVersion
+      global. Always compare it against a string or the form
+      "1.6.2". $rubyVersion is actually an object of class
+      VersionNumber (defined in rubicon.rb).
+
+    - if your test depends on the operating system type, use the
+      global $os, and compare it against the OS class hierarchy (also
+      defined in rubicon.rb). For example, Linux is a type of Unix,
+      which is a type of OS, so the following tests succeed on a Linux box:
+
+          $os == Linux
+          $os <  Unix
+          $os <  OS
+
+      The following fail:
+
+          $os == BSD
+          $os <= FreeBSD
+
+      Feel free to add to the OS hierarchy as needed.
 
 
 Contacts:

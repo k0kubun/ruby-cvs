@@ -122,15 +122,20 @@ class TestFile < Rubicon::TestCase
     sock = UNIXServer.open("_sock")
 
     begin
-      {
+      tests = {
         "../_test" => "directory",
         "_file1"   => "file",
         "/dev/tty" => "characterSpecial",
-        "/dev/fd0" => "blockSpecial",
         "_sock"    => "socket",
         "_file3"   => "link",
         "_fifo"    => "fifo" 
-      }.each { |file, type|
+      }
+
+      if $os == Linux
+        tests["/dev/fd0"] = "blockSpecial"
+      end
+
+      tests.each { |file, type|
         if File.exists?(file)
           assert_equal(type, File.ftype(file), file.dup)
         else

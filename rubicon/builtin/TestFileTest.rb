@@ -38,7 +38,8 @@ class TestFileTest < FileInfoTest
     File.open(fileg, File::CREAT, 02644) { }
     
     filek = "_test/_filek"
-    File.open(filek, File::CREAT, 01644) { }
+    Dir.mkdir(filek, 01644)
+    File.chmod(01644, filek)
 
     filel = "_test/_filel"
     File.symlink(@file1, filel)
@@ -71,10 +72,8 @@ class TestFileTest < FileInfoTest
         [ nil,          ?A,    @file1,              atime ],
         [ :blockdev?,   ?b,    "/dev/tty",          false ],
         [ :blockdev?,   ?b,    ".",                 false ],
-        [ :blockdev?,   ?b,    "/dev/fd0",          true  ],
         [ :chardev?,    ?c,    "/dev/tty",          true  ],
         [ :chardev?,    ?c,    ".",                 false ],
-        [ :chardev?,    ?c,    "/dev/fd0",          false ],
         [ nil,          ?C,    @file1,              ctime ],
         [ :directory?,  ?d,    "/dev/tty",          false ],
         [ :directory?,  ?d,    ".",                 true  ],
@@ -88,8 +87,6 @@ class TestFileTest < FileInfoTest
         [ :file?,       ?f,    @file1,              true  ],
         [ :setgid?,     ?g,    @file1,              false ],
         [ :setgid?,     ?g,    fileg,               true  ],
-        [ :grpowned?,   ?G,    @file1,              true  ],
-        [ :grpowned?,   ?G,    "/etc/passwd",       false ],
         [ :sticky?,     ?k,    ".",                 false ],
         [ :sticky?,     ?k,    "/dev/tty",          false ],
         [ :sticky?,     ?k,    @file1,              false ],
@@ -122,6 +119,13 @@ class TestFileTest < FileInfoTest
         [ :zero?,       ?z,    filez,               false ],
         [ :zero?,       ?z,    @file2,              true  ],
       ]
+
+      if $os == Linux
+        tests << [ :chardev?,    ?c,    "/dev/fd0",          false ]
+        tests << [ :blockdev?,   ?b,    "/dev/fd0",          true  ]
+        tests << [ :grpowned?,   ?G,    @file1,              true  ]
+        tests << [ :grpowned?,   ?G,    "/etc/passwd",       false ]
+      end
 
       for meth, t, file, result in tests
         if file

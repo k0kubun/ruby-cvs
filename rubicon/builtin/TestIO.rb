@@ -603,7 +603,7 @@ class TestIO < Rubicon::TestCase
     File.open(@file) do |file|
       file.pos = 999
       assert_nil(file.gets)
-      assert_exception(Errno::EINVAL) { file.pos = -1 }
+      assert_kindof_exception(SystemCallError) { file.pos = -1 }
       for pos in nums
         assert_equal(0, file.pos = 19*pos)
         line = file.gets
@@ -769,18 +769,18 @@ class TestIO < Rubicon::TestCase
     f2.close
   end
 
-  def test_reopen2
+  def test_reopen2 
     f1 = File.new(@file)
-    assert_equal("00: This is a line\n", f1.sysread(19))
-    assert_equal("01: This is a line\n", f1.sysread(19))
+    assert_equal("00: This is a line\n", f1.read(19))
+    assert_equal("01: This is a line\n", f1.read(19))
 
     f2 = File.new(@file1)
-    assert_equal("Line 00\n", f2.sysread(8))
-    assert_equal("Line 01\n", f2.sysread(8))
+    assert_equal("Line 00\n", f2.read(8))
+    assert_equal("Line 01\n", f2.read(8))
 
     f2.reopen(f1)
-    assert_equal("02: This is a line\n", f2.sysread(19))
-    assert_equal("03: This is a line\n", f2.sysread(19))
+    assert_equal("02: This is a line\n", f2.read(19))
+    assert_equal("03: This is a line\n", f2.read(19))
 
     f1.close
     f2.close
@@ -807,7 +807,7 @@ class TestIO < Rubicon::TestCase
     File.open(@file) do |file|
       file.seek(999, IO::SEEK_SET)
       assert_nil(file.gets)
-      assert_exception(Errno::EINVAL) { file.seek(-1) }
+      assert_kindof_exception(SystemCallError) { file.seek(-1) }
       for pos in nums
         assert_equal(0, file.seek(19*pos))
         line = file.gets

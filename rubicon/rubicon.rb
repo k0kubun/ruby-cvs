@@ -3,32 +3,73 @@
 # statsistics and report them at the end.
 #
 
-RUBICON_VERSION = "V0.1.2"
+RUBICON_VERSION = "V0.1.3"
 
+
+#
+# Classification routines. We use these so that the code can
+# test for operating systems, ruby versions, and other features
+# without being platform specific
+#
+
+# -------------------------------------------------------
+# Class to manipulate Ruby version numbers. We use this to 
+# insulate ourselves from changes in version number format.
+# Independent of the internal representation, we always allow 
+# comparison against a string.
+#
+# Use in the code with stuff like:
+#
+#    if $rubyVersion <= "1.6.2" 
+#       asert(...)
+#    end
+#
+
+class VersionNumber
+  include Comparable
+  
+  def initialize(version)
+    @version = version
+  end
+  
+  def <=>(other)
+    @version <=> other
+  end
+end
+
+$rubyVersion = VersionNumber.new(VERSION)
+
+
+# -------------------------------------------------------------
+#
+# Operating system classification. We use classes for this, as 
+# we get lots of flexibility with comparisons.
+#
+# Use with
+#
+#   if $os <= Unix           # operating system is some Unix variant
+#
+#   if $os == Linux          # operating system is Linux
+
+class OS;             end
+class Unix    < OS;   end
+class Linux   < Unix; end
+class BSD     < Unix; end
+class FreeBSD < BSD;  end
+
+$os = OS
+$os = Linux if RUBY_PLATFORM =~ /linux/
+$os = BSD   if RUBY_PLATFORM =~ /bsd/
+
+#
+# This is the main Rubicon module, implemented as a module to
+# protect the namespace a tad
+#
 
 module Rubicon
 
   require 'runit/testcase'
   require 'runit/cui/testrunner'
-
-  # -------------------------------------------------------
-  # Class to manipulate Ruby version numbers. We use this to 
-  # insulate ourselves from changes in version number format
-  #
-
-  class VersionNumber
-    include Comparable
-
-    def initialize(version)
-      @version = version
-    end
-
-    def <=>(other)
-      @version <=> other
-    end
-  end
-
-  $rubyVersion = VersionNumber.new(VERSION)
 
   # -------------------------------------------------------
 
@@ -200,7 +241,13 @@ module Rubicon
       Dir.chdir(@start)
       if (File.exists?("_test"))
         Dir.chdir("_test")
-        Dir.foreach(".") { |f| File.delete(f) unless f[0] == ?. }
+        Dir.foreach(".") { |f|
+          begin
+            File.delete(f)
+          rescue
+            Dir.delete(f)
+          end unless f[0] == ?.
+        }
         Dir.chdir("..")
         Dir.rmdir("_test")
       end
