@@ -1,4 +1,6 @@
-2001-10-04  Shugo Maeda  <shugo@netlab.jp>
+Wed Oct 10 12:15:16 2001  Shugo Maeda  <shugo@modruby.net>
+
+	* ruby_config.c (ruby_cmd_output_mode): new directive RubyOutputMode.
 
 	* request.c (apache_request_new): save request objects to
 	r->request_config.

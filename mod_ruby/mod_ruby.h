@@ -43,6 +43,7 @@ typedef struct {
     char *kcode;
     table *env;
     int safe_level;
+    int output_mode;
     array_header *ruby_handler;
     array_header *ruby_trans_handler;
     array_header *ruby_authen_handler;
@@ -56,6 +57,14 @@ typedef struct {
     array_header *ruby_init_handler;
     array_header *ruby_cleanup_handler;
 } ruby_dir_config;
+
+#define MR_DEFAULT_TIMEOUT 270
+#define MR_DEFAULT_SAFE_LEVEL 1
+
+#define MR_OUTPUT_DEFAULT	0
+#define MR_OUTPUT_NOSYNC	1
+#define MR_OUTPUT_SYNC		2
+#define MR_OUTPUT_SYNC_HEADER	3
 
 extern MODULE_VAR_EXPORT module ruby_module;
 extern array_header *ruby_required_libraries;

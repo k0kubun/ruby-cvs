@@ -42,9 +42,6 @@
 #include "mod_ruby.h"
 #include "ruby_config.h"
 
-#define MOD_RUBY_DEFAULT_TIMEOUT 270
-#define MOD_RUBY_DEFAULT_SAFE_LEVEL 1
-
 #define push_handler(p, handler, arg) { \
     if ((handler) == NULL) \
 	(handler) = ap_make_array(p, 1, sizeof(char*)); \
@@ -58,7 +55,7 @@ void *ruby_create_server_config(pool *p, server_rec *s)
 
     conf->load_path = ap_make_array(p, 1, sizeof(char*));
     conf->env = ap_make_table(p, 1);
-    conf->timeout = MOD_RUBY_DEFAULT_TIMEOUT;
+    conf->timeout = MR_DEFAULT_TIMEOUT;
     return conf;
 }
 
@@ -69,7 +66,8 @@ void *ruby_create_dir_config(pool *p, char *dirname)
 
     conf->kcode = NULL;
     conf->env = ap_make_table(p, 5); 
-    conf->safe_level = MOD_RUBY_DEFAULT_SAFE_LEVEL;
+    conf->safe_level = MR_DEFAULT_SAFE_LEVEL;
+    conf->output_mode = MR_OUTPUT_DEFAULT;
     conf->ruby_handler = NULL;
     conf->ruby_trans_handler = NULL;
     conf->ruby_authen_handler = NULL;
@@ -112,6 +110,7 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
 	fprintf(stderr, "mod_ruby: can't decrease RubySafeLevel\n");
 	new->safe_level = base->safe_level;
     }
+    new->output_mode = add->output_mode ? add->output_mode : base->output_mode;
 
     new->ruby_handler =
 	merge_handlers(p, base->ruby_handler, add->ruby_handler);
@@ -220,6 +219,23 @@ const char *ruby_cmd_timeout(cmd_parms *cmd, void *dummy, char *arg)
 const char *ruby_cmd_safe_level(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
 {
     conf->safe_level = atoi(arg);
+    return NULL;
+}
+
+const char *ruby_cmd_output_mode(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    if (strcasecmp(arg, "nosync") == 0) {
+	conf->output_mode = MR_OUTPUT_NOSYNC;
+    }
+    else if (strcasecmp(arg, "sync") == 0) {
+	conf->output_mode = MR_OUTPUT_SYNC;
+    }
+    else if (strcasecmp(arg, "syncheader") == 0) {
+	conf->output_mode = MR_OUTPUT_SYNC_HEADER;
+    }
+    else {
+	return "unknown mode";
+    }
     return NULL;
 }
 

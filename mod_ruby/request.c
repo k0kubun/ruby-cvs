@@ -111,6 +111,7 @@ static void cleanup_request_object(void *data)
 
 static VALUE apache_request_new(request_rec *r)
 {
+    ruby_dir_config *dconf = get_dir_config(r);
     request_data *data;
     VALUE obj;
 
@@ -131,6 +132,18 @@ static VALUE apache_request_new(request_rec *r)
     ap_set_module_config(r->request_config, &ruby_module, (void *) obj);
     ap_register_cleanup(r->pool, (void *) r,
 			cleanup_request_object, ap_null_cleanup);
+    switch (dconf->output_mode) {
+    case MR_OUTPUT_SYNC_HEADER:
+	FL_SET(obj, REQ_SYNC_HEADER);
+	break;
+    case MR_OUTPUT_SYNC:
+	FL_SET(obj, REQ_SYNC_HEADER);
+	FL_SET(obj, REQ_SYNC_OUTPUT);
+	break;
+    case MR_OUTPUT_NOSYNC:
+    default:
+	break;
+    }
     return obj;
 }
 

@@ -115,6 +115,8 @@ static const command_rec ruby_cmds[] =
      "time to wait execution of ruby script"},
     {"RubySafeLevel", ruby_cmd_safe_level, NULL, OR_ALL, TAKE1,
      "set default $SAFE"},
+    {"RubyOutputMode", ruby_cmd_output_mode, NULL, OR_ALL, TAKE1,
+     "set output mode (nosync|sync|syncheader)"},
     {"RubyHandler", ruby_cmd_handler, NULL, OR_ALL, TAKE1,
      "set ruby handler object"},
     {"RubyTransHandler", ruby_cmd_trans_handler, NULL, OR_ALL, TAKE1,
