@@ -12,7 +12,7 @@ class TestString < Rubicon::TestCase
   end
 
   def test_CMP # '<=>'
-    assert_fail("untested")
+    assert_fail("Remember $=")
   end
 
   def test_EQUAL # '=='
@@ -29,6 +29,7 @@ class TestString < Rubicon::TestCase
   end
 
   def test_MATCH # '=~'
+    assert_fail("Remember $=")
     assert_fail("untested")
   end
 
@@ -49,6 +50,7 @@ class TestString < Rubicon::TestCase
   end
 
   def test_VERY_EQUAL # '==='
+    assert_fail("Remember $=")
     assert_fail("untested")
   end
 
