@@ -13,18 +13,17 @@ class TestProc < Rubicon::TestCase
   end
 
   def test_arity
-    a = Proc.new { "hello" }
-    assert_equal(-1, a.arity)
-    a = Proc.new { |x| "hello #{x}" }
-    assert_equal(-2, a.arity)
-    a = Proc.new { |x,y| "hello #{x}" }
-    assert_equal(2, a.arity)
-    a = Proc.new { |x,y,z| "hello #{x}" }
-    assert_equal(3, a.arity)
-    a = Proc.new { |x,*z| "hello #{x}" }
-    assert_equal(-2, a.arity)
-    a = Proc.new { |*x| "hello #{x}" }
-    assert_equal(-1, a.arity)
+    [ [Proc.new {          }, -1],
+      [Proc.new { ||       }, -1],
+      [Proc.new { |x|      }, -1],
+      [Proc.new { |x,y|    },  2],
+      [Proc.new { |x,y,z|  },  3],
+      [Proc.new { |*z|     }, -1],
+      [Proc.new { |x,*z|   }, -2],
+      [Proc.new { |x,y,*z| }, -3],
+    ].each do |proc, expected_arity|
+      assert_equal(expected_arity, proc.arity)
+    end
   end
 
   def test_call

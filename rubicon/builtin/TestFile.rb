@@ -1,5 +1,6 @@
 require '../rubicon'
 require 'stat'
+require 'socket'
 
 class TestFile < Rubicon::TestCase
 
@@ -118,22 +119,27 @@ class TestFile < Rubicon::TestCase
     Dir.chdir("_test")
     File.symlink("_file1", "_file3") # may fail
     system("mkfifo _fifo") # may fail
+    sock = UNIXServer.open("_sock")
 
-    {
-      "../_test"          => "directory",
-      "_file1"            => "file",
-      "/dev/tty"          => "characterSpecial",
-      "/dev/fd0"          => "blockSpecial",
-      "/tmp/.X11-unix/X0" => "socket",
-      "_file3"            => "link",
-      "_fifo"             => "fifo" 
-    }.each { |file, type|
-      if File.exists?(file)
-        assert_equal(type, File.ftype(file), file.dup)
-      else
-        skipping("#{type} not supported")
-      end
-    }
+    begin
+      {
+        "../_test" => "directory",
+        "_file1"   => "file",
+        "/dev/tty" => "characterSpecial",
+        "/dev/fd0" => "blockSpecial",
+        "_sock"    => "socket",
+        "_file3"   => "link",
+        "_fifo"    => "fifo" 
+      }.each { |file, type|
+        if File.exists?(file)
+          assert_equal(type, File.ftype(file), file.dup)
+        else
+          skipping("#{type} not supported")
+        end
+      }
+    ensure
+      sock.close if sock
+    end
   end
 
   def test_s_join

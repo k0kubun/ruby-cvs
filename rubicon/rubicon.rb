@@ -3,12 +3,32 @@
 # statsistics and report them at the end.
 #
 
-VERSION = "VV0.1.1"
+RUBICON_VERSION = "V0.1.1"
+
 
 module Rubicon
 
   require 'runit/testcase'
   require 'runit/cui/testrunner'
+
+  # -------------------------------------------------------
+  # Class to manipulate Ruby version numbers. We use this to 
+  # insulate ourselves from changes in version number format
+  #
+
+  class VersionNumber
+    include Comparable
+
+    def initialize(version)
+      @version = version
+    end
+
+    def <=>(other)
+      @version <=> other
+    end
+  end
+
+  $rubyVersion = VersionNumber.new(VERSION)
 
   # -------------------------------------------------------
 
@@ -79,6 +99,35 @@ module Rubicon
              "#{msg} Expected #{'%f' % exp} got #{'%f' % actual}")
     end
 
+    def assert_kindof_exception(exception, message="")
+      setup_assert
+      block = proc
+      exception_raised = true
+      err = ""
+      ret = nil
+      begin
+	block.call
+	exception_raised = false
+	err = 'NO EXCEPTION RAISED'
+      rescue Exception
+	if $!.kind_of?(exception)
+	  exception_raised = true
+	  ret = $!
+	else
+	  raise $!.type, $!.message, $!.backtrace
+	end
+      end
+      if !exception_raised
+      	msg = edit_message(message)
+        msg.concat "expected:<"
+	msg.concat to_str(exception)
+	msg.concat "> but was:<"
+	msg.concat to_str(err)
+	msg.concat ">"
+	raise_assertion_error(msg, 2)
+      end
+      ret
+    end
 
     #
     # Skip a test if not super user
@@ -201,7 +250,7 @@ module Rubicon
       puts LINE
       title = "Test Results".center(LINE_LENGTH)
       title[0, @name.length] = @name
-      title[-VERSION.length, VERSION.length] = VERSION
+      title[-RUBICON_VERSION.length, RUBICON_VERSION.length] = RUBICON_VERSION
       puts title
       puts LINE
       puts "            Name   OK?   Tests  Asserts      Failures   Errors"

@@ -687,6 +687,9 @@ class TestArray < Rubicon::TestCase
 
   def test_push
     a = [1, 2, 3]
+    if $rubyVersion >= "1.6.2"
+      assert_exception(ArgumentError, "a.push()") { a.push() }
+    end
     assert_equal([1, 2, 3, 4, 5], a.push(4, 5))
     assert_equal([1, 2, 3, 4, 5], a.push())
     assert_equal([1, 2, 3, 4, 5, nil], a.push(nil))

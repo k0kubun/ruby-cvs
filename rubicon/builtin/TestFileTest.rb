@@ -1,5 +1,6 @@
 require 'stat'
 require 'FileInfoTest.rb'
+require 'socket'
 
 class TestFileTest < FileInfoTest
 
@@ -57,74 +58,84 @@ class TestFileTest < FileInfoTest
     
     filez = "_test/_filez"
     File.open(filez, File::CREAT|File::WRONLY, 0644) { |f| f.puts "hi" }
-    
 
+    filesock = "_test/_filesock"
+    sock = UNIXServer.open(filesock)
+    filesock = nil unless sock
+
+    begin
+    
 #    system "ls -l _test"
 
-    tests = [
-      [ nil,          ?A,    @file1,              atime ],
-      [ :blockdev?,   ?b,    "/dev/tty",          false ],
-      [ :blockdev?,   ?b,    ".",                 false ],
-      [ :blockdev?,   ?b,    "/dev/fd0",          true  ],
-      [ :chardev?,    ?c,    "/dev/tty",          true  ],
-      [ :chardev?,    ?c,    ".",                 false ],
-      [ :chardev?,    ?c,    "/dev/fd0",          false ],
-      [ nil,          ?C,    @file1,              ctime ],
-      [ :directory?,  ?d,    "/dev/tty",          false ],
-      [ :directory?,  ?d,    ".",                 true  ],
-      [ :directory?,  ?d,    "/dev/fd0",          false ],
-      [ :exist?,      ?e,    filez,               true  ],
-      [ :exist?,      ?e,    "/dev/tty",          true  ],
-      [ :exist?,      ?e,    "wombat",            false ],
-      [ :file?,       ?f,    "/dev/tty",          false ],
-      [ :file?,       ?f,    ".",                 false ],
-      [ :file?,       ?f,    "/dev/fd0",          false ],
-      [ :file?,       ?f,    @file1,              true  ],
-      [ :setgid?,     ?g,    @file1,              false ],
-      [ :setgid?,     ?g,    fileg,               true  ],
-      [ :grpowned?,   ?G,    @file1,              true  ],
-      [ :grpowned?,   ?G,    "/etc/passwd",       false ],
-      [ :sticky?,     ?k,    ".",                 false ],
-      [ :sticky?,     ?k,    "/dev/tty",          false ],
-      [ :sticky?,     ?k,    @file1,              false ],
-      [ :sticky?,     ?k,    filek,               true  ],
-      [ :symlink?,    ?l,    ".",                 false ],
-      [ :symlink?,    ?l,    "/dev/tty",          false ],
-      [ :symlink?,    ?l,    @file1,              false ],
-      [ :symlink?,    ?l,    filel,               true  ],
-      [ nil,          ?M,    @file1,              mtime ],
-      [ :owned?,      ?o,    @file1,              true  ],
-      [ :owned?,      ?o,    "/etc/passwd",       false ],
-      [ :pipe?,       ?p,    "/dev/tty",          false ],
-      [ :pipe?,       ?p,    ".",                 false ],
-      [ :pipe?,       ?p,    filep,               true  ],
-      [ :readable?,   ?r,    @file1,              true  ],
-      [ :readable?,   ?r,    filer,               false ],
-      [ :size?,       ?s,    filez,               3     ],
-      [ :size?,       ?s,    @file2,              nil   ],
-      [ :socket?,     ?S,    "/dev/tty",          false ],
-      [ :socket?,     ?S,    ".",                 false ],
-      [ :socket?,     ?S,    @file1,              false ],
-      [ :socket?,     ?S,    "/tmp/.X11-unix/X0", true  ],
-      [ :setuid?,     ?u,    @file1,              false ],
-      [ :setuid?,     ?u,    fileu,               true  ],
-      [ :writable?,   ?w,    filew,               false ],
-      [ :writable?,   ?w,    @file2,              true  ],
-      [ :executable?, ?x,    "/dev/tty",          false ],
-      [ :executable?, ?x,    "/bin/echo",         true  ],
-      [ :executable?, ?x,    "/dev/fd0",          false ],
-      [ :zero?,       ?z,    filez,               false ],
-      [ :zero?,       ?z,    @file2,              true  ],
-    ]
+      tests = [
+        [ nil,          ?A,    @file1,              atime ],
+        [ :blockdev?,   ?b,    "/dev/tty",          false ],
+        [ :blockdev?,   ?b,    ".",                 false ],
+        [ :blockdev?,   ?b,    "/dev/fd0",          true  ],
+        [ :chardev?,    ?c,    "/dev/tty",          true  ],
+        [ :chardev?,    ?c,    ".",                 false ],
+        [ :chardev?,    ?c,    "/dev/fd0",          false ],
+        [ nil,          ?C,    @file1,              ctime ],
+        [ :directory?,  ?d,    "/dev/tty",          false ],
+        [ :directory?,  ?d,    ".",                 true  ],
+        [ :directory?,  ?d,    "/dev/fd0",          false ],
+        [ :exist?,      ?e,    filez,               true  ],
+        [ :exist?,      ?e,    "/dev/tty",          true  ],
+        [ :exist?,      ?e,    "wombat",            false ],
+        [ :file?,       ?f,    "/dev/tty",          false ],
+        [ :file?,       ?f,    ".",                 false ],
+        [ :file?,       ?f,    "/dev/fd0",          false ],
+        [ :file?,       ?f,    @file1,              true  ],
+        [ :setgid?,     ?g,    @file1,              false ],
+        [ :setgid?,     ?g,    fileg,               true  ],
+        [ :grpowned?,   ?G,    @file1,              true  ],
+        [ :grpowned?,   ?G,    "/etc/passwd",       false ],
+        [ :sticky?,     ?k,    ".",                 false ],
+        [ :sticky?,     ?k,    "/dev/tty",          false ],
+        [ :sticky?,     ?k,    @file1,              false ],
+        [ :sticky?,     ?k,    filek,               true  ],
+        [ :symlink?,    ?l,    ".",                 false ],
+        [ :symlink?,    ?l,    "/dev/tty",          false ],
+        [ :symlink?,    ?l,    @file1,              false ],
+        [ :symlink?,    ?l,    filel,               true  ],
+        [ nil,          ?M,    @file1,              mtime ],
+        [ :owned?,      ?o,    @file1,              true  ],
+        [ :owned?,      ?o,    "/etc/passwd",       false ],
+        [ :pipe?,       ?p,    "/dev/tty",          false ],
+        [ :pipe?,       ?p,    ".",                 false ],
+        [ :pipe?,       ?p,    filep,               true  ],
+        [ :readable?,   ?r,    @file1,              true  ],
+        [ :readable?,   ?r,    filer,               false ],
+        [ :size?,       ?s,    filez,               3     ],
+        [ :size?,       ?s,    @file2,              nil   ],
+        [ :socket?,     ?S,    "/dev/tty",          false ],
+        [ :socket?,     ?S,    ".",                 false ],
+        [ :socket?,     ?S,    @file1,              false ],
+        [ :socket?,     ?S,    filesock,            true  ],
+        [ :setuid?,     ?u,    @file1,              false ],
+        [ :setuid?,     ?u,    fileu,               true  ],
+        [ :writable?,   ?w,    filew,               false ],
+        [ :writable?,   ?w,    @file2,              true  ],
+        [ :executable?, ?x,    "/dev/tty",          false ],
+        [ :executable?, ?x,    "/bin/echo",         true  ],
+        [ :executable?, ?x,    "/dev/fd0",          false ],
+        [ :zero?,       ?z,    filez,               false ],
+        [ :zero?,       ?z,    @file2,              true  ],
+      ]
 
-    for meth, t, file, result in tests
-      assert_equal(result, test(t, file), "test(?#{t}, #{file})")
-      if meth
-        assert_equal(result, FileTest.send(meth, file), 
-                     "FileTest.#{meth}(#{file})")
+      for meth, t, file, result in tests
+        if file
+          assert_equal(result, test(t, file), "test(?#{t}, #{file})")
+          if meth
+            assert_equal(result, FileTest.send(meth, file), 
+                         "FileTest.#{meth}(#{file})")
+          end
+        end
       end
-    end
 
+    ensure
+      sock.close
+    end
   end
 end
 

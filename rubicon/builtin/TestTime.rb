@@ -25,18 +25,20 @@ class TestTime < Rubicon::TestCase
   #
   # Test month name to month number
   #
-  @@months = { 'Jan' => 1,
-            'Feb' => 2,
-            'Mar' => 3,
-            'Apr' => 4,
-            'May' => 5,
-            'Jun' => 6,
-            'Jul' => 7,
-            'Aug' => 8,
-            'Sep' => 9,
-            'Oct' => 10,
-            'Nov' => 11,
-            'Dec' => 12 }
+  @@months = { 
+    'Jan' => 1,
+    'Feb' => 2,
+    'Mar' => 3,
+    'Apr' => 4,
+    'May' => 5,
+    'Jun' => 6,
+    'Jul' => 7,
+    'Aug' => 8,
+    'Sep' => 9,
+    'Oct' => 10,
+    'Nov' => 11,
+    'Dec' => 12
+  }
 
 
   #
@@ -44,39 +46,39 @@ class TestTime < Rubicon::TestCase
   #
   @@dates = [ 
     #                   Source  +   amt         ==   dest
-    T.new([1999, 12, 31, 23,59,59], 1,               [2000,  1,1,  0,0,0]),
-    T.new([2036, 12, 31, 23,59,59], 1,               [2037,  1,1,  0,0,0]),
-    T.new([2000,  2, 28, 23,59,59], 1,               [2000,  2,29, 0,0,0]),
-    T.new([1970,  1, 1,   0, 0, 0], ONEDAYSEC,       [1970,  1,2,  0,0,0]),
-    T.new([2000,  7, 1,   0, 0, 0], 32 * ONEDAYSEC,  [2000,  8,2,  0,0,0]),
-    T.new([2000,  1, 1,   0, 0, 0], 366 * ONEDAYSEC, [2001,  1,1,  0,0,0]),
-    T.new([2001,  1, 1,   0, 0, 0], 365 * ONEDAYSEC, [2002,  1,1,  0,0,0]),
+    T.new([1999, 12, 31, 23,59,59], 1,               [2000,  1,  1,  0,0,0]),
+    T.new([2036, 12, 31, 23,59,59], 1,               [2037,  1,  1,  0,0,0]),
+    T.new([2000,  2, 28, 23,59,59], 1,               [2000,  2, 29, 0,0,0]),
+    T.new([1970,  2, 1,   0, 0, 0], ONEDAYSEC,       [1970,  2,  2,  0,0,0]),
+    T.new([2000,  7, 1,   0, 0, 0], 32 * ONEDAYSEC,  [2000,  8,  2,  0,0,0]),
+    T.new([2000,  1, 1,   0, 0, 0], 366 * ONEDAYSEC, [2001,  1,  1,  0,0,0]),
+    T.new([2001,  1, 1,   0, 0, 0], 365 * ONEDAYSEC, [2002,  1,  1,  0,0,0]),
 
-    T.new([2000,  1, 1,   0, 0, 0], 0,               [2000,  1,1,  0,0,0]),
-    T.new([2000,  2, 1,   0, 0, 0], 0,               [2000,  2,1,  0,0,0]),
-    T.new([2000,  3, 1,   0, 0, 0], 0,               [2000,  3,1,  0,0,0]),
-    T.new([2000,  4, 1,   0, 0, 0], 0,               [2000,  4,1,  0,0,0]),
-    T.new([2000,  5, 1,   0, 0, 0], 0,               [2000,  5,1,  0,0,0]),
-    T.new([2000,  6, 1,   0, 0, 0], 0,               [2000,  6,1,  0,0,0]),
-    T.new([2000,  7, 1,   0, 0, 0], 0,               [2000,  7,1,  0,0,0]),
-    T.new([2000,  8, 1,   0, 0, 0], 0,               [2000,  8,1,  0,0,0]),
-    T.new([2000,  9, 1,   0, 0, 0], 0,               [2000,  9,1,  0,0,0]),
-    T.new([2000, 10, 1,   0, 0, 0], 0,               [2000, 10,1,  0,0,0]),
-    T.new([2000, 11, 1,   0, 0, 0], 0,               [2000, 11,1,  0,0,0]),
-    T.new([2000, 12, 1,   0, 0, 0], 0,               [2000, 12,1,  0,0,0]),
+    T.new([2000,  1, 1,   0, 0, 0], 0,               [2000,  1,  1,  0,0,0]),
+    T.new([2000,  2, 1,   0, 0, 0], 0,               [2000,  2,  1,  0,0,0]),
+    T.new([2000,  3, 1,   0, 0, 0], 0,               [2000,  3,  1,  0,0,0]),
+    T.new([2000,  4, 1,   0, 0, 0], 0,               [2000,  4,  1,  0,0,0]),
+    T.new([2000,  5, 1,   0, 0, 0], 0,               [2000,  5,  1,  0,0,0]),
+    T.new([2000,  6, 1,   0, 0, 0], 0,               [2000,  6,  1,  0,0,0]),
+    T.new([2000,  7, 1,   0, 0, 0], 0,               [2000,  7,  1,  0,0,0]),
+    T.new([2000,  8, 1,   0, 0, 0], 0,               [2000,  8,  1,  0,0,0]),
+    T.new([2000,  9, 1,   0, 0, 0], 0,               [2000,  9,  1,  0,0,0]),
+    T.new([2000, 10, 1,   0, 0, 0], 0,               [2000, 10,  1,  0,0,0]),
+    T.new([2000, 11, 1,   0, 0, 0], 0,               [2000, 11,  1,  0,0,0]),
+    T.new([2000, 12, 1,   0, 0, 0], 0,               [2000, 12,  1,  0,0,0]), 
 
-    T.new([2001,  1, 1,   0, 0, 0], 0,               [2001,  1,1,  0,0,0]),
-    T.new([2001,  2, 1,   0, 0, 0], 0,               [2001,  2,1,  0,0,0]),
-    T.new([2001,  3, 1,   0, 0, 0], 0,               [2001,  3,1,  0,0,0]),
-    T.new([2001,  4, 1,   0, 0, 0], 0,               [2001,  4,1,  0,0,0]),
-    T.new([2001,  5, 1,   0, 0, 0], 0,               [2001,  5,1,  0,0,0]),
-    T.new([2001,  6, 1,   0, 0, 0], 0,               [2001,  6,1,  0,0,0]),
-    T.new([2001,  7, 1,   0, 0, 0], 0,               [2001,  7,1,  0,0,0]),
-    T.new([2001,  8, 1,   0, 0, 0], 0,               [2001,  8,1,  0,0,0]),
-    T.new([2001,  9, 1,   0, 0, 0], 0,               [2001,  9,1,  0,0,0]),
-    T.new([2001, 10, 1,   0, 0, 0], 0,               [2001, 10,1,  0,0,0]),
-    T.new([2001, 11, 1,   0, 0, 0], 0,               [2001, 11,1,  0,0,0]),
-    T.new([2001, 12, 1,   0, 0, 0], 0,               [2001, 12,1,  0,0,0]),
+    T.new([2001,  1, 1,   0, 0, 0], 0,               [2001,  1,  1,  0,0,0]),
+    T.new([2001,  2, 1,   0, 0, 0], 0,               [2001,  2,  1,  0,0,0]),
+    T.new([2001,  3, 1,   0, 0, 0], 0,               [2001,  3,  1,  0,0,0]),
+    T.new([2001,  4, 1,   0, 0, 0], 0,               [2001,  4,  1,  0,0,0]),
+    T.new([2001,  5, 1,   0, 0, 0], 0,               [2001,  5,  1,  0,0,0]),
+    T.new([2001,  6, 1,   0, 0, 0], 0,               [2001,  6,  1,  0,0,0]),
+    T.new([2001,  7, 1,   0, 0, 0], 0,               [2001,  7,  1,  0,0,0]),
+    T.new([2001,  8, 1,   0, 0, 0], 0,               [2001,  8,  1,  0,0,0]),
+    T.new([2001,  9, 1,   0, 0, 0], 0,               [2001,  9,  1,  0,0,0]),
+    T.new([2001, 10, 1,   0, 0, 0], 0,               [2001, 10,  1,  0,0,0]),
+    T.new([2001, 11, 1,   0, 0, 0], 0,               [2001, 11,  1,  0,0,0]),
+    T.new([2001, 12, 1,   0, 0, 0], 0,               [2001, 12,  1,  0,0,0]),
   ]
 
 
@@ -85,13 +87,13 @@ class TestTime < Rubicon::TestCase
   # and i is the index in the date specifications above.
   #
   def checkComponent(m, i)
-    @@dates.each {|x|
+    @@dates.each do |x|
       msg = "\nTesting method Time."+m.id2name+" with "+x.orig.join(' ')+":\n"
       assert_equals(x.orig[i], Time.local(*x.orig).send(m), msg)
       assert_equals(x.result[i], Time.local(*x.result).send(m), msg)
       assert_equals(x.orig[i], Time.gm(*x.orig).send(m), msg)
       assert_equals(x.result[i], Time.gm(*x.result).send(m), msg)
-    }
+    end
   end
 
   #
@@ -104,39 +106,39 @@ class TestTime < Rubicon::TestCase
   # Method tests:
 
   def test_CMP # '<=>'
-    @@dates.each {|x|
+    @@dates.each do |x|
       if (x.amt != 0)
-      assert_equal(1, Time.local(*x.result) <=> Time.local(*x.orig),
-                   "#{x.result} should be > #{x.orig}")
+        assert_equal(1, Time.local(*x.result) <=> Time.local(*x.orig),
+                     "#{x.result} should be > #{x.orig}")
 
-      assert_equal(-1, Time.local(*x.orig) <=> Time.local(*x.result))
-      assert_equal(0, Time.local(*x.orig) <=> Time.local(*x.orig))
-      assert_equal(0, Time.local(*x.result) <=> Time.local(*x.result))
-
-      assert_equal(1,Time.gm(*x.result) <=> Time.gm(*x.orig))
-      assert_equal(-1,Time.gm(*x.orig) <=> Time.gm(*x.result))
-      assert_equal(0,Time.gm(*x.orig) <=> Time.gm(*x.orig))
-      assert_equal(0,Time.gm(*x.result) <=> Time.gm(*x.result))
+        assert_equal(-1, Time.local(*x.orig) <=> Time.local(*x.result))
+        assert_equal(0, Time.local(*x.orig) <=> Time.local(*x.orig))
+        assert_equal(0, Time.local(*x.result) <=> Time.local(*x.result))
+        
+        assert_equal(1,Time.gm(*x.result) <=> Time.gm(*x.orig))
+        assert_equal(-1,Time.gm(*x.orig) <=> Time.gm(*x.result))
+        assert_equal(0,Time.gm(*x.orig) <=> Time.gm(*x.orig))
+        assert_equal(0,Time.gm(*x.result) <=> Time.gm(*x.result))
       end
-    }
+    end
   end
 
   def test_MINUS # '-'
-    @@dates.each {|x|
+    @@dates.each do |x|
       # Check subtracting an amount in seconds
       assert_equals(Time.local(*x.result) - x.amt, Time.local(*x.orig))
       assert_equals(Time.gm(*x.result) - x.amt, Time.gm(*x.orig))
       # Check subtracting two times
       assert_equals(Time.local(*x.result) - Time.local(*x.orig), x.amt)
       assert_equals(Time.gm(*x.result) - Time.gm(*x.orig), x.amt)
-    }
+    end
   end
 
   def test_PLUS # '+'
-    @@dates.each {|x|
+    @@dates.each do |x|
       assert_equals(Time.local(*x.orig) + x.amt, Time.local(*x.result))
       assert_equals(Time.gm(*x.orig) + x.amt, Time.gm(*x.result))
-    }
+    end
   end
 
   def test__dump
@@ -207,22 +209,42 @@ class TestTime < Rubicon::TestCase
   end
 
   def test_isdst
+    # This code is problematic: how do I find out the exact
+    # date and time of the dst switch for all the possible
+    # timezones in which this code runs? For now, I'll just check
+    # midvalues, and add boundary checks for the US. I know theis won't 
+    # work in some parts of the US, even, so I'm looking for
+    # better ideas
+
     dtest = [ 
       [false, 2000, 1, 1],
       [true,  2000, 7, 1],
-      [true,  2000, 4, 2, 4],
-      [false, 2000, 10, 29, 4],
-      [false, 2000, 4,2,1,59], # Spring forward
-      [true,  2000, 4,2,3,0],
-      [true,  2000, 10,29,1,59], # Fall back
-      [false, 2000, 10,29,2,0],
-      ]
+    ]
 
-    dtest.each {|x|
+    zone = Time.now.zone
+
+    # Are we in the US?
+
+    if ["EST", "EDT",
+        "CST", "CDT",
+        "MST", "MDT",
+        "PST", "PDT"].include? zone
+
+      dtest.push(
+                 [true,  2000, 4, 2, 4],
+                 [false, 2000, 10, 29, 4],
+                 [false, 2000, 4,2,1,59],   # Spring forward
+                 [true,  2000, 4,2,3,0],
+                 [true,  2000, 10,29,1,59], # Fall back
+                 [false, 2000, 10,29,2,0]
+                 )
+    end
+
+    dtest.each do |x|
       result = x.shift
       assert_equal(result, Time.local(*x).isdst,
                    "\nExpected #{x.join(',')} to be dst=#{result}")
-    }
+    end
 
   end
 
@@ -388,11 +410,11 @@ class TestTime < Rubicon::TestCase
     assert_exception(ArgumentError) { Time.gm(2000,13) }
     assert_exception(ArgumentError) { Time.gm(2000,1,1,24) }
     Time.gm(2000,1,1,23)
-    @@months.each {|month, num| 
+    @@months.each do |month, num| 
       assert_equal(Time.gm(2000,month), Time.gm(2000,num,1,0,0,0))
       assert_equal(Time.gm(1970,month), Time.gm(1970,num,1,0,0,0))
       assert_equal(Time.gm(2037,month), Time.gm(2037,num,1,0,0,0))
-    }
+    end
     t = Time.gm(2000,1,1)
     a = t.to_a
     assert_equal(Time.gm(*a),t)
@@ -407,11 +429,11 @@ class TestTime < Rubicon::TestCase
     assert_exception(ArgumentError) { Time.local(2000,13) }
     assert_exception(ArgumentError) { Time.local(2000,1,1,24) }
     Time.local(2000,1,1,23)
-    @@months.each {|month, num| 
+    @@months.each do |month, num| 
       assert_equal(Time.local(2000,month), Time.local(2000,num,1,0,0,0))
-      assert_equal(Time.local(1970,month), Time.local(1970,num,1,0,0,0))
+      assert_equal(Time.local(1971,month), Time.local(1971,num,1,0,0,0))
       assert_equal(Time.local(2037,month), Time.local(2037,num,1,0,0,0))
-    }
+    end
     t = Time.local(2000,1,1)
     a = t.to_a
     assert_equal(Time.local(*a),t)
@@ -433,11 +455,11 @@ class TestTime < Rubicon::TestCase
     #
     # Make sure spelled-out month names work
     #
-    @@months.each {|month, num| 
+    @@months.each do |month, num| 
       assert_equal(Time.mktime(2000,month), Time.mktime(2000,num,1,0,0,0))
-      assert_equal(Time.mktime(1970,month), Time.mktime(1970,num,1,0,0,0))
+      assert_equal(Time.mktime(1971,month), Time.mktime(1971,num,1,0,0,0))
       assert_equal(Time.mktime(2037,month), Time.mktime(2037,num,1,0,0,0))
-    }
+    end
     t = Time.mktime(2000,1,1)
     a = t.to_a
     assert_equal(Time.mktime(*a),t)

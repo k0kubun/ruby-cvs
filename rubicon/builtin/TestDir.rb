@@ -49,11 +49,11 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_delete
-    assert_exception(Errno::ENOENT)    { Dir.delete "_wombat" } 
-    assert_exception(Errno::ENOTEMPTY) { Dir.delete "_test" } 
+    assert_kindof_exception(SystemCallError)    { Dir.delete "_wombat" } 
+    assert_kindof_exception(SystemCallError)    { Dir.delete "_test" } 
     sys("rm _test/*")
     assert_equal(0, Dir.delete("_test"))
-    assert_exception(Errno::ENOENT)    { Dir.delete "_test" } 
+    assert_kindof_exception(SystemCallError)    { Dir.delete "_test" } 
   end
 
   def test_s_entries
@@ -131,19 +131,19 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_rmdir
-    assert_exception(Errno::ENOENT)    { Dir.rmdir "_wombat" } 
-    assert_exception(Errno::ENOTEMPTY) { Dir.rmdir "_test" } 
+    assert_kindof_exception(SystemCallError)    { Dir.rmdir "_wombat" } 
+    assert_kindof_exception(SystemCallError)    { Dir.rmdir "_test" } 
     sys("rm _test/*")
     assert_equal(0, Dir.rmdir("_test"))
-    assert_exception(Errno::ENOENT)    { Dir.rmdir "_test" } 
+    assert_kindof_exception(SystemCallError)    { Dir.rmdir "_test" } 
   end
 
   def test_s_unlink
-    assert_exception(Errno::ENOENT)    { Dir.unlink "_wombat" } 
-    assert_exception(Errno::ENOTEMPTY) { Dir.unlink "_test" } 
+    assert_kindof_exception(SystemCallError)    { Dir.unlink "_wombat" } 
+    assert_kindof_exception(SystemCallError)    { Dir.unlink "_test" } 
     sys("rm _test/*")
     assert_equal(0, Dir.unlink("_test"))
-    assert_exception(Errno::ENOENT)    { Dir.unlink "_test" } 
+    assert_kindof_exception(SystemCallError)    { Dir.unlink "_test" } 
   end
 
   def test_close

@@ -31,7 +31,7 @@ test:		$(UTILSTUFF)
 release:	clean stamp tar
 
 stamp:
-		ruby -i -pe 'sub!(/V\d+(\.\d+)+/, "V$(VERSION)") if /VERSION =/' rubicon.rb
+		ruby -i -pe 'sub!(/V\d+(\.\d+)+/, "V$(VERSION)") if /_VERSION =/' rubicon.rb
 		cvs commit
 		cvs rtag `echo V$(VERSION) | sed s/\\\\./_/g` rubicon
 

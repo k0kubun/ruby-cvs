@@ -1,0 +1,18 @@
+2000-10-20  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestArray.rb: Aleksi again. Add test for array.push with 
+	no argument.
+
+	* builtin/TestTime.rb: Thanks to Aleksi for this one. We can't
+	create local times of 1970,1,1,0,0,0 when we're east of Greenwich, 
+	so I hacked the dates forward a year. Also changed isdst to remove 
+	checks for US changes from DST to standard time when not in the
+	US, and tidied layout a tad
+
+	* rubicon.rb (VersionNumber): Add a class to encapsulate Ruby versions
+
+	* builtin/TestFile.rb: create local socket, rather than relying on 
+	/tmp/.X11 stuff
+
+	* builtin/TestFileTest.rb: ditto
+
