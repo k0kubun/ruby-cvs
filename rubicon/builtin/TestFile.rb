@@ -122,7 +122,7 @@ class TestFile < Rubicon::TestCase
       begin
         users = pw.readlines
         line = ''
-        line = users.pop while users.nitems > 0 and line.length == 0
+	line = users.pop while users.nitems > 0 and (line.length == 0 || /^\+:/ =~ line)
         if line.length > 0 
           name, home  = line.split(':').indices(0, -2)
           assert_equal(home, File.expand_path("~#{name}"))
@@ -151,8 +151,14 @@ class TestFile < Rubicon::TestCase
       tests = {
         "../_test" => "directory",
         "_file1"   => "file",
-        "/dev/tty" => "characterSpecial",
       }
+
+      begin
+        tests[File.expand_path(File.readlink("/dev/tty"), "/dev")] =
+          "characterSpecial"
+      rescue Errno::EINVAL
+        tests["/dev/tty"] = "characterSpecial"
+      end
 
       MsWin32.dont do
         tests["_file3"] = "link"
@@ -482,7 +488,7 @@ class TestFile < Rubicon::TestCase
       
       pid = fork
       if pid
-	File.open("_file1") { |f|
+	File.open("_file1", "w") { |f|
 	  trap("USR1") {
 	    assert_equal(false, f.flock(File::LOCK_EX | File::LOCK_NB))
 	    Process.kill "KILL", pid
@@ -494,8 +500,9 @@ class TestFile < Rubicon::TestCase
 	  assert_fail("Never got signalled")
 	}
       else
-	File.open("_file1") { |f|
+	File.open("_file1", "w") { |f|
 	  assert_equal(0, f.flock(File::LOCK_EX))
+	  sleep 1
 	  Process.kill "USR1", Process.ppid
 	  sleep 10
 	  assert_fail "Parent never killed us"

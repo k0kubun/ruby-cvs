@@ -47,7 +47,6 @@ class TestRegularExpressions < Rubicon::TestCase
     start = File.dirname($0)
     for base in [".", "language"]
       file_name = File.join(start, base, 'regexp.test')
-      puts file_name
       break if File.exist? file_name
       file_name = nil
     end

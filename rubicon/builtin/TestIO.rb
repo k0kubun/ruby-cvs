@@ -609,7 +609,7 @@ class TestIO < Rubicon::TestCase
 
   def test_pid
     assert_nil($stdin.pid)
-    pipe = IO.popen("#$interpreter -e 'p $$'", "r")
+    pipe = IO.popen("exec #$interpreter -e 'p $$'", "r")
     pid = pipe.gets
     assert_equal(pid.to_i, pipe.pid)
     pipe.close
