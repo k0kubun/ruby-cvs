@@ -7,8 +7,9 @@
 # Dave Thomas/Andy Hunt
 # The Pragmatic Progrmmers llc
 # www.pragmaticprogrammer.com
-# $Header$
-# $Log$
+# $Id$
+# Archive save
+#
 
 
 VPATH = util
@@ -22,6 +23,15 @@ default:	test
 test:		$(UTILSTUFF)
 		cd builtin && ruby AllBuiltinTests.rb
 
+tarball:	clean
+		tar 	--directory=..		\
+			--create		\
+			--file=rubicon.tgz 	\
+			--compress 		\
+			--exclude='CVS' 	\
+			--exclude='*/.*'	\
+		   rubicon
 
 clean:
 		rm -f $(UTILSTUFF)
+		find . -name \*~ -print | xargs rm -f

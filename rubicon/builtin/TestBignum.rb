@@ -46,11 +46,11 @@ class TestBignum < Rubicon::TestCase
     assert_equal(1024, @big2 / big3)
 
     bm = -@big2
-    assert_equal(-big3, bm / 1024)
-    assert_equal(-1024, bm / big3)
+    assert_equal(-big3-1, bm / 1024)
+    assert_equal(-1025, bm / big3)
 
-    assert_equal(-big3, @big2 / -1024)
-    assert_equal(-1024, @big2 / -big3)
+    assert_equal(-big3-1, @big2 / -1024)
+    assert_equal(-1025, @big2 / -big3)
 
     assert_equal(big3, bm / -1024)
     assert_equal(1024, bm / -big3)

@@ -445,8 +445,8 @@ class TestHash < Rubicon::TestCase
     h3   = { 2 => false }
 
     h = base.dup
-    assert_equal(h, h.reject! { false })
-    assert_equal({}, h.reject! { true })
+    assert_equal(nil, h.reject! { false })
+    assert_equal({},  h.reject! { true })
 
     h = base.dup
     assert_equal(h1, h.reject! {|k,v| k.instance_of?(String) })

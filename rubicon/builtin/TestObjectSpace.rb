@@ -12,41 +12,7 @@ class TestObjectSpace < Rubicon::TestCase
 
   # finalizer manipulation
   def test_s_finalizers
-    p1 = proc {|o| 1; }
-    p2 = proc {|o| 2; }
-    assert_set_equal([], ObjectSpace.finalizers)
-    ObjectSpace.add_finalizer(p1)
-    assert_set_equal([p1], ObjectSpace.finalizers)
-    ObjectSpace.add_finalizer(p2)
-    assert_set_equal([p1, p2], ObjectSpace.finalizers)
-    ObjectSpace.remove_finalizer(p2)
-    assert_set_equal([p1], ObjectSpace.finalizers)
-    ObjectSpace.remove_finalizer(p1)
-    assert_set_equal([], ObjectSpace.finalizers)
-  end
-
-  def test_s_call_finalizer
-    IO.popen("-") do |pipe|
-      if !pipe
-        ObjectSpace.add_finalizer(proc {|id| puts "f: #{id}" })
-        a = "a"
-        b = "b"
-        c = "c"
-        puts a.id
-        puts c.id
-        ObjectSpace.call_finalizer(a)
-        ObjectSpace.call_finalizer(c)
-        exit
-      end
-      expected = []
-      2.times do
-        id = pipe.gets
-        expected << "f: #{id}"
-      end
-
-      result = pipe.readlines
-      assert_set_equal(expected, result)
-    end
+    skipping("How to test")
   end
 
   class A;      end

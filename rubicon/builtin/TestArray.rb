@@ -708,7 +708,7 @@ class TestArray < Rubicon::TestCase
   # also delete_if
   def test_reject!
     a = [ 1, 2, 3, 4, 5 ]
-    assert_equal(a, a.reject! { false })
+    assert_equal(nil, a.reject! { false })
     assert_equal([1, 2, 3, 4, 5], a)
 
     a = [ 1, 2, 3, 4, 5 ]
@@ -740,7 +740,7 @@ class TestArray < Rubicon::TestCase
     a = %w( dog cat bee ant )
     assert_equal(%w(ant bee cat dog), a.reverse!)
     assert_equal(%w(ant bee cat dog), a)
-    assert_equal([], [].reverse!)
+    assert_nil([].reverse!)
   end
 
   def test_reverse_each
@@ -871,7 +871,7 @@ class TestArray < Rubicon::TestCase
     a.fill(1)
     assert_equal([1, 1, 1, 1], a.sort!)
     
-    assert_equal([], [].sort!)
+    assert_nil([].sort!)
   end
 
   def test_to_a

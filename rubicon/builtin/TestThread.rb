@@ -262,13 +262,14 @@ class TestThread < Rubicon::TestCase
     end
 
     thread_control do
-      c = Thread.new { _signal; Thread.exit }
+      c = Thread.new { _signal;  }
       _wait
     end
 
-    assert_equals("run", Thread.current.status)
-    assert_equals(nil, a.status)
+    assert_equals("run",   Thread.current.status)
+    assert_equals(nil,     a.status)
     assert_equals("sleep", b.status)
+    assert_equals(false,   c.status)
   end
 
   def test_stop?

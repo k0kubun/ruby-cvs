@@ -56,17 +56,17 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(3, -9 / -3)
 
     assert_equal(-2, -6 / 3)
-    assert_equal(-2, -7 / 3)
-    assert_equal(-2, -8 / 3)
+    assert_equal(-3, -7 / 3)
+    assert_equal(-3, -8 / 3)
     assert_equal(-3, -9 / 3)
     
     assert_equal(-2, 6 / -3)
-    assert_equal(-2, 7 / -3)
-    assert_equal(-2, 8 / -3)
+    assert_equal(-3, 7 / -3)
+    assert_equal(-3, 8 / -3)
     assert_equal(-3, 9 / -3)
     
-    assert_equal(-1, MIN / MAX)
-    assert_equal(0,  MAX / MIN)
+    assert_equal(-2, MIN / MAX)
+    assert_equal(-1,  MAX / MIN)
   end
 
   def test_EQUAL # '=='
