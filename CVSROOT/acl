@@ -81,6 +81,7 @@ group:doc:@all
 grant:@admin:.*
 
 grant:@ruby:ruby
+grant:@ruby,@doc:ruby/doc
 grant:@rough:rough
 grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
