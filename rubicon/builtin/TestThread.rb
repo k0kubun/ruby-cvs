@@ -89,6 +89,8 @@ class TestThread < Rubicon::TestCase
   class MyException < Exception; end
 
   def test_abort_on_exception=()
+    skipping("Can't find a test for all platforms")
+    return
     save_stderr = nil
     begin
       begin

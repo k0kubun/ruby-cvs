@@ -59,7 +59,7 @@ $os = case RUBY_PLATFORM
 $interpreter = File.join(Config::CONFIG["bindir"], 
 			 Config::CONFIG["RUBY_INSTALL_NAME"])
 
-Windows.or_variant { $interpreter.tr! '/', '\\' }
+MsWin32.or_variant { $interpreter.tr! '/', '\\' }
 
 
 ######################################################################
