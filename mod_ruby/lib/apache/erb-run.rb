@@ -38,13 +38,13 @@ Apache::ERbRun handles eRuby files by ERb.
 require "singleton"
 require "tempfile"
 require "erb/compile"
-require "apache/cgi-support"
 
 # eruby emulation
 if !defined?(ERuby)
   module ERuby
     @@noheader = false
     @@charset = @@default_charset = "iso-8859-1"
+    @@cgi = nil
   
     def ERuby.noheader
       return @@noheader
@@ -67,38 +67,31 @@ if !defined?(ERuby)
     def ERuby.default_charset
       return @@default_charset
     end
+
+    def self.cgi
+      return @@cgi
+    end
+
+    def self.cgi=(cgi)
+      @@cgi = cgi
+    end
   end
 end
 
 module Apache
   class ERbRun
     include Singleton
-    include CGISupport
 
     def handler(r)
       if r.finfo.mode == 0
 	return NOT_FOUND
       end
-      open(r.filename) do |f|
-	ERuby.noheader = false
-	ERuby.charset = ERuby.default_charset
-	src = f.read
-	code = @compiler.compile(src)
-	emulate_cgi(r) do
-	  file = Tempfile.new(File.basename(r.filename) + ".")
-	  begin
-	    file.print(code)
-	    file.close
-	    load(file.path, true)
-	  ensure
-	    file.close(true)
-	  end
-	  unless ERuby.noheader
-	    r.content_type = format("text/html; charset=%s", ERuby.charset)
-	    r.send_http_header
-	  end
-	end
-      end
+
+      code = compile(r.filename)
+      prerun(r)
+      run(code, r.filename)
+      postrun(r)
+
       return OK
     end
 
@@ -107,6 +100,42 @@ module Apache
     def initialize
       @compiler = ERbCompiler.new
       @compiler.put_cmd = 'print'
+    end
+
+    def compile(filename)
+      open(filename) do |f|
+	return @compiler.compile(f.read)
+      end
+    end
+
+    def prerun(r)
+      ERuby.noheader = false
+      ERuby.charset = ERuby.default_charset
+      ERuby.cgi = nil
+      r.setup_cgi_env
+      Apache.chdir_file(r.filename)
+    end
+
+    def run(code, filename)
+      file = Tempfile.new(File.basename(filename) + ".")
+      begin
+	file.print(code)
+	file.close
+	load(file.path, true)
+      ensure
+	file.close(true)
+      end
+    end
+
+    def postrun(r)
+      unless ERuby.noheader
+	if cgi = ERuby.cgi
+	  cgi.header("charset" => ERuby.charset)
+	else
+	  r.content_type = format("text/html; charset=%s", ERuby.charset)
+	  r.send_http_header
+	end
+      end
     end
   end
 end

@@ -38,7 +38,6 @@ Apache::ERubyRun handles eRuby files.
 require "singleton"
 require "tempfile"
 require "eruby"
-require "apache/cgi-support"
 
 module ERuby
   @@cgi = nil
@@ -55,37 +54,17 @@ end
 module Apache
   class ERubyRun
     include Singleton
-    include CGISupport
 
     def handler(r)
       if r.finfo.mode == 0
 	return NOT_FOUND
       end
-      open(r.filename) do |f|
-	ERuby.noheader = false
-	ERuby.charset = ERuby.default_charset
-	ERuby.cgi = nil
-	@compiler.sourcefile = r.filename
-	code = @compiler.compile_file(f)
-	emulate_cgi(r) do
-	  file = Tempfile.new(File.basename(r.filename) + ".")
-	  begin
-	    file.print(code)
-	    file.close
-	    load(file.path, true)
-	  ensure
-	    file.close(true)
-	  end
-	  unless ERuby.noheader
-	    if cgi = ERuby.cgi
-	      cgi.header("charset" => ERuby.charset)
-	    else
-	      r.content_type = format("text/html; charset=%s", ERuby.charset)
-	      r.send_http_header
-	    end
-	  end
-	end
-      end
+
+      code = compile(r.filename)
+      prerun(r)
+      run(code, r.filename)
+      postrun(r)
+
       return OK
     end
 
@@ -93,6 +72,43 @@ module Apache
 
     def initialize
       @compiler = ERuby::Compiler.new
+    end
+
+    def compile(filename)
+      open(filename) do |f|
+	@compiler.sourcefile = filename
+	return @compiler.compile_file(f)
+      end
+    end
+
+    def prerun(r)
+      ERuby.noheader = false
+      ERuby.charset = ERuby.default_charset
+      ERuby.cgi = nil
+      r.setup_cgi_env
+      Apache.chdir_file(r.filename)
+    end
+
+    def run(code, filename)
+      file = Tempfile.new(File.basename(filename) + ".")
+      begin
+	file.print(code)
+	file.close
+	load(file.path, true)
+      ensure
+	file.close(true)
+      end
+    end
+
+    def postrun(r)
+      unless ERuby.noheader
+	if cgi = ERuby.cgi
+	  cgi.header("charset" => ERuby.charset)
+	else
+	  r.content_type = format("text/html; charset=%s", ERuby.charset)
+	  r.send_http_header
+	end
+      end
     end
   end
 end
