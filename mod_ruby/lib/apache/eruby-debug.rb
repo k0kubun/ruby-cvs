@@ -146,7 +146,7 @@ module Apache
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
 <html>
   <head>
-    <title>eRuby</title>
+    <title>mod_ruby</title>
     <style type="text/css">
       <!--
        body { background-color: #ffffff }
@@ -160,13 +160,7 @@ module Apache
     </style>
   </head>
   <body>
-    <table summary="eRuby error information">
-      <caption>
-<!--
-       <img src="/logo.png" alt="eRuby">
-       <span id=version>version: </span>
-  -->
-      </caption>
+    <table summary="mod_ruby debug information">
       <tr><th id="error">
        ERROR
       </th></tr>

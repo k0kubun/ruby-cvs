@@ -42,6 +42,7 @@ on error for debug.
 =end
 
 require "singleton"
+require "cgi"
 
 module Apache
   class RubyDebug
@@ -71,15 +72,62 @@ module Apache
       begin
 	load(filename, true)
       rescue Exception
-	r.content_type = "text/plain"
+        r.content_type = "text/html"
 	r.send_http_header
-	r.printf("error: %s\n\n", $!)
-	r.print("backtrace:\n")
-	for i in $!.backtrace
-	  r.printf("\t%s\n", i)
-	end
+
+        $>.replace('')
+
+        bt     = $!.backtrace.collect{|x| CGI::escapeHTML(x)}
+        msg    = CGI::escapeHTML($!.to_s)
+        code   = File::open(filename){|fd| fd.read}
+
+        lineno = bt.shift.scan(/:(\d+)/).shift.shift.to_i
+        err = sprintf("%s:%d: %s<br>\n", filename, lineno, msg)
+        bt.each do |stack|
+          err << sprintf("<div class=\"backtrace\">%s<br></div>\n", stack)
+        end
+
+        print_error(r, code, err)
       end
       return OK
+    end
+
+    def print_error(r, code, err)
+      r.print <<HTML
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN">
+<html>
+  <head>
+    <title>mod_ruby</title>
+    <style type="text/css">
+      <!--
+        body { background-color: #ffffff }
+        table { width: 100%; padding: 5pt; border-style: none }
+        th { color: #6666ff; background-color: #b0d0d0; text-align: left }
+        td { color: #336666; background-color: #d0ffff }
+        strong { color: #ff0000; font-weight: bold }
+        div.backtrace { text-indent: 15% }
+        #version { color: #ff9900 }
+      -->
+    </style>
+  </head>
+  <body>
+    <table summary="mod_ruby debug information">
+      <tr><th id="error">
+        ERROR
+      </th></tr>
+      <tr><td headers="error">
+        #{err}
+      </td></tr>
+      <tr><th id="code">
+        CODE
+      </th></tr>
+      <tr><td headers="code">
+        <pre><code>#{CGI::escapeHTML(code)}</code></pre>
+      </td></tr>
+    </table>
+  </body>
+</html>
+HTML
     end
   end
 end
