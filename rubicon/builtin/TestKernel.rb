@@ -1288,10 +1288,8 @@ class TestKernel < Rubicon::TestCase
         assert_equal(10, count)
       end
       assert_nil(res)
-      p.close
 
       # WRITE
-      
       MsWin32.only do
 	fail "This hangs the tests as the background process never terminates"
       end
