@@ -36,6 +36,7 @@ LIBS = $(LIBRUBYARG) @LIBS@
 XLDFLAGS = @XLDFLAGS@
 DLDFLAGS = @DLDFLAGS@
 LDSHARED = @LDSHARED@
+DLL_DLDFLAGS = @DLL_DLDFLAGS@
 INSTALL_PROGRAM = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
 INSTALL_DLLIB = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
 INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
