@@ -5,7 +5,7 @@ require "rubicon_tests"
 
 #
 # Simple wrapper for RubyUnit, primarily designed to capture
-# statsistics and report them at the end.
+# statistics and report them at the end.
 #
 
 # -------------------------------------------------------------
@@ -15,7 +15,7 @@ require "rubicon_tests"
 #
 # Use with
 #
-#   Unix.or_varient do ... end        # operating system is some Unix variant
+#   Unix.or_variant do ... end        # operating system is some Unix variant
 #
 #   Linux.only do .... end            # operating system is Linux
 #
@@ -96,9 +96,9 @@ MsWin32.or_variant { $interpreter.tr! '/', '\\' }
 #
 # This is tacky, but... We need to be able tofind the executable
 # files in the util subdirectory. However, we can be initiated by
-# running a file in either the tpo-level rubicon directory or in
+# running a file in either the top-level rubicon directory or in
 # one of its test subdirectories (such as language). We therefore
-# need tpo hunt around for the util directory
+# need to hunt around for the util directory
 
 run_dir = File.dirname($0)
 

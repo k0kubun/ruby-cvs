@@ -16,7 +16,7 @@ require 'rubicon'
 # Create a test runner
 tests = Rubicon::BulkTestRunner.new(ARGV, "All Tests")
 
-# and tell is what files to test
+# and tell it what files to test
 if ARGV.size.zero?
   for dir in SUB_DIRS
     Dir[File.join(base, dir, "Test*.rb")].each { |file| tests.addFile(file) }
