@@ -1,4 +1,4 @@
-# parsedate.rb: Written by Tadayoshi Funaba 2000
+# parsedate3.rb: Written by Tadayoshi Funaba 2000, 2001
 # $Id$
 
 module ParseDate
@@ -46,7 +46,12 @@ module ParseDate
       hour = $1.to_i
       min = $2.to_i
       sec = $3.to_i if $3
-      hour += 12 if $4 and $4.downcase == 'p'
+      if $4
+	hour %= 12
+	if $4.downcase == 'p'
+	  hour += 12
+	end
+      end
       zone = $5
     end
 
