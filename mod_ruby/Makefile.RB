@@ -40,6 +40,7 @@ CC = #{CONFIG["CC"]}
 CFLAGS = #{CONFIG["CCDLFLAGS"]} -I#{$hdrdir} -I#{$APACHE_INCLUDEDIR} \\
 	 #{$CFLAGS}
 LIBS = #{CONFIG["LIBS"]}
+XLDFLAGS = #{CONFIG["XLDFLAGS"]}
 LDSHARED = #{CONFIG["LDSHARED"]}
 DLDFLAGS = #{CONFIG["DLDFLAGS"]}
 INSTALL = #{$install}
@@ -65,7 +66,7 @@ distclean: clean
 	rm -f Makefile
 
 $(TARGET): $(OBJS)
-	$(LDSHARED) $(DLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)
+	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)
 
 mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h eruby.h
 ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h

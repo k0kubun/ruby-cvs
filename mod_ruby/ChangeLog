@@ -1,3 +1,7 @@
+Fri Jul  9 19:24:38 1999  Shugo Maeda  <shugo@netlab.co.jp>
+
+	* Makefile.RB: add XLDFLAGS.
+
 Fri Jul  9 13:27:01 1999  Katsuyuki Komatsu <komatsu@sarion.co.jp>
 
 	* Makefile.RB: replace -L. with -L$(prefix)/lib in LIBRUBYARG.
