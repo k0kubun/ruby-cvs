@@ -135,11 +135,12 @@ class TestFile__Stat < Rubicon::TestCase
       "/dev/tty"          => "characterSpecial",
       "/dev/fd0"          => "blockSpecial",
       "/tmp/.X11-unix/X0" => "socket",
-      "_file3"            => "link",
+      "_file3"            => "file",   # try uses stat
       "_fifo"             => "fifo" 
     }.each { |file, type|
       try(:ftype, file, type)
     }
+    assert_equal("link", File.lstat("_file3").ftype)
   end
 
   def test_gid
@@ -257,7 +258,8 @@ class TestFile__Stat < Rubicon::TestCase
     try(:symlink?, ".",        false)
     try(:symlink?, "/dev/tty", false)
     try(:symlink?, "_file1",   false)
-    try(:symlink?, "_symlink", true)
+    try(:symlink?, "_symlink", false)  # try uses stat
+    assert(File.lstat("_symlink").symlink?)
   end
 
   def test_uid

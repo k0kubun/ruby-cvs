@@ -16,6 +16,11 @@ class TestString < Rubicon::TestCase
   end
 
   def test_EQUAL # '=='
+
+    $= = true
+    assert("CAT" == 'cat')
+    assert("CaT" == 'cAt')
+    $= = false
     assert_fail("untested")
   end
 
