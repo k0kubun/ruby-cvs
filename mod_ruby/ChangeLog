@@ -1,3 +1,7 @@
+Tue Jun 11 13:23:20 2002  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.9 released.
+
 Thu May 30 14:23:00 2002  Takeshi Komiya <katsuwo@ish.ic.kanagawa-it.ac.jp>
 
 	* lib/apache/eruby-debug.rb: new module to debug eRuby scripts.
