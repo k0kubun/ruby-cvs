@@ -1,3 +1,7 @@
+Wed Oct 17 15:03:34 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.4 released.
+
 Mon Oct 15 12:25:28 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (ruby_startup): call Init_stack().
