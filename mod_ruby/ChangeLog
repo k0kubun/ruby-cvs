@@ -1,3 +1,7 @@
+Thu May 30 14:23:00 2002  Takeshi Komiya <katsuwo@ish.ic.kanagawa-it.ac.jp>
+
+	* lib/apache/eruby-debug.rb: new module to debug eRuby scripts.
+
 Tue May 28 14:50:37 2002  WATANABE Hirofumi <eban@os.rim.or.jp>
 
 	* configure.rb.in: fix for cygwin.
