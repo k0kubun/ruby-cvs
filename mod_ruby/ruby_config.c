@@ -172,13 +172,8 @@ const char *ruby_cmd_add_path(cmd_parms *cmd, ruby_dir_config *dconf, char *arg)
     ruby_server_config *sconf;
 
     if (cmd->path == NULL) {
-	if (ruby_running()) {
-	    ruby_add_path(arg);
-	}
-	else {
-	    sconf = get_server_config(cmd->server);
-	    *(char **) ap_push_array(sconf->load_path) = arg;
-	}
+	sconf = get_server_config(cmd->server);
+	*(char **) ap_push_array(sconf->load_path) = arg;
     }
     else {
 	if (dconf->load_path == NULL)

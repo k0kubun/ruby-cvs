@@ -1,3 +1,8 @@
+Fri May 24 15:39:03 2002  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_startup): remove already require libraries from
+	conf->load_path.
+
 Tue May 21 14:51:35 2002  Shugo Maeda <shugo@modruby.net>
 
 	* ruby_config.c (ruby_cmd_require): fixed the third argument of

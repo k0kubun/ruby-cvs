@@ -599,6 +599,7 @@ static void ruby_startup(server_rec *s, pool *p)
 	for (i = 0; i < n; i++) {
 	    ruby_add_path(list[i]);
 	}
+	conf->load_path = NULL;
 
 	default_kcode = rb_get_kcode();
 
