@@ -1,4 +1,6 @@
-Wed Oct 10 11:35:09 2001  Shugo Maeda  <shugo@modruby.net>
+Wed Oct 10 15:15:48 2001  Shugo Maeda  <shugo@modruby.net>
+
+	* eruby_main.c (run): call ruby_finalize().
 
 	* eruby_main.c (run): print error messages to stderr if $DEBUG is
 	false.

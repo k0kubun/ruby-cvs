@@ -529,6 +529,7 @@ static void run()
 
     Init_stack(&code);
     code = eruby_load(eruby_filename, 0, &state);
+    ruby_finalize();
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	if (RTEST(ruby_debug) &&
 	    (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)) {
