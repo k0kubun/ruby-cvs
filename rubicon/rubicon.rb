@@ -33,7 +33,7 @@ module Rubicon
         caller[0] =~ /`(.*)'/ #`
         from = $1
       end
-      $stderr.puts "Skipping: #{from} - #{info}"
+      $stderr.puts "\nSkipping: #{from} - #{info}"
     end
 
     #
@@ -68,9 +68,10 @@ module Rubicon
 
     def setupTestDir
       @start = Dir.getwd
+ 
       system("mkdir _test")
       if $? != 0
-        $stderr.puts "Cannot run directory test: " + 
+        $stderr.puts "Cannot run a file or directory test: " + 
           "will destroy existing directory _test"
         exit(99)
       end
