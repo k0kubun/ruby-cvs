@@ -1228,7 +1228,7 @@ class TestKernel < Rubicon::TestCase
       
       open(filen, "w", 0444) {}
       assert(File.exists?(filen))
-      assert_equal(0444, File.stat(filen).mode)
+      assert_equal(0444, File.stat(filen).mode & 0777)
       File.delete(filen)
     ensure
       teardownTestDir           # also does a chdir

@@ -36,7 +36,7 @@ class TestLoopStuff < Rubicon::TestCase
       File.open("while_tmp") do |tmp|
         while tmp.gets()
           break unless 1..2
-          assert(!(/vt100/ || /Amiga/ || /paper/))
+          assert($_ !~ /[vt100|Amiga|paper]/)
         end
       end
     end
@@ -45,7 +45,7 @@ class TestLoopStuff < Rubicon::TestCase
       File.open("while_tmp") do |tmp|
         while tmp.gets()
           break if 3
-          assert(!(/vt100/ || /Amiga/ || /paper/))
+          assert($_ !~ /[vt100|Amiga|paper]/)
         end
       end
     end

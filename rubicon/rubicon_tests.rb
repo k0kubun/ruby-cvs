@@ -306,11 +306,14 @@ module Rubicon
     attr_reader   :ruby_release_date
     attr_reader   :ruby_architecture
 
+    attr_reader   :failure_count
+
     # Two sage initialization, so that Rubric doesn't create all the
     # internals when we unmarshal
 
     def initialize(name = '')
       @name    = ''
+      @failure_count = 0
     end
 
     def setup
@@ -332,6 +335,7 @@ module Rubicon
 
     def add(klass, result_set)
       @results[klass.name] = Results.new.initialize_from(result_set)
+      @failure_count += result_set.error_size + result_set.failure_size
     end
     
   end
@@ -380,6 +384,7 @@ module Rubicon
 
       reporter = ResultDisplay.new(@results)
       reporter.reportOn $stdout
+      return @results.failure_count
     end
 
   end

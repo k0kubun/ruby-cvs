@@ -1,3 +1,10 @@
+2001-11-11  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestIO.rb: Can't test /dev/tty when run from cron.
+
+	* language/TestLoopStuff.rb: Fix warnings about bare regex's in
+	booleans under 1.7
+
 2001-11-11  Tanaka Akira <akr@m17n.org>
 
 	* language/TestRegularExpressions.rb, builtin/TestFile, TestIO:

@@ -25,4 +25,6 @@ else
   ARGV.each { |file| tests.addFile(file) }
 end
 
-tests.run
+failure_count = tests.run
+
+exit(failure_count)
