@@ -1,31 +1,32 @@
 require '../rubicon'
 
-class SubThread < Thread
-  def initialize
-    @wasCalled = true
-    super
-  end
-  def initCalled?
-    @wasCalled
-  end
-end
-
-#
-# Signal
-#
-def s
-  $spinlock = true
-end
-
-#
-# Wait
-#
-def w
-  sleep .1 while !$spinlock
-  $spinlock = false
-end
 
 class TestThread < Rubicon::TestCase
+
+  class SubThread < Thread
+    def initialize
+      @wasCalled = true
+      super
+    end
+    def initCalled?
+      @wasCalled
+    end
+  end
+  
+  #
+  # Signal
+  #
+  def s
+    $spinlock = true
+  end
+  
+  #
+  # Wait
+  #
+  def w
+    sleep .1 while !$spinlock
+    $spinlock = false
+  end
 
   def teardown
     Thread.list.each {|t|

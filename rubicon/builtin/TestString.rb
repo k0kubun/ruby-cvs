@@ -10,8 +10,7 @@ class TestString < Rubicon::TestCase
 
     assert_equal("Foo","FooBar"[0,3])
     assert_equal("Bar","FooBar"[-3,3])
-    $stderr.puts "End of string is special???"
-    assert_equal(nil,"FooBar"[7,2])     # Maybe should be six?
+    assert_equal(nil,"FooBar"[6,2]) # Matz doesn't agree that this is a bug
     assert_equal(nil,"FooBar"[-7,10])
 
     assert_equal("Foo","FooBar"[0..2])
@@ -123,7 +122,22 @@ class TestString < Rubicon::TestCase
   def test_MOD # '%'
     assert_equals("00123", "%05d" % 123)
     assert_equals("123  |00000001", "%-5s|%08x" % [123, 1])
-    $stderr.puts "kernel.sprintf flags not tested in String.%"
+    x = "%3s %-4s%%foo %.0s%5d %#x%c%3.1f %b %x %X %#b %#x %#X" %
+    ["hi",
+      123,
+      "never seen",
+      456,
+      0,
+      ?A,
+      3.0999,
+      11,
+      171,
+      171,
+      11,
+      171,
+      171]
+
+    assert_equal(' hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB', x)
   end
 
   def test_MUL # '*'

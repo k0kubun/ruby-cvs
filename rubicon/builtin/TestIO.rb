@@ -7,17 +7,29 @@ class TestIO < Rubicon::TestCase
     setupTestDir
     @file  = "_test/_10lines"
     @file1 = "_test/_99lines"
+begin    
 
     File.open(@file, "w") { |f|
       10.times { |i| f.printf "%02d: This is a line\n", i }
     }
-
     File.open(@file1, "w") { |f|
-      99.times { |i| f.printf "Line %02d\n", i }
+        99.times { |i| f.printf "Line %02d\n", i }
     }
+rescue Exception
+  puts 
+  puts '!' * 50
+  puts $!
+  exit!
+end
+
   end
 
   def teardown
+
+    begin
+      loop { Process.wait; puts "\n\nCHILD REAPED\n\n" }
+    rescue Errno::ECHILD
+    end
 
     3.upto(255) { |fd|
       begin
@@ -75,6 +87,10 @@ class TestIO < Rubicon::TestCase
       assert_equal(10, count)
     ensure
       io.close
+      begin
+        f.close
+      rescue Exception
+      end
     end
 
     f = File.open(@file)
@@ -84,6 +100,10 @@ class TestIO < Rubicon::TestCase
       assert_exception(Errno::EBADF) { io.gets }
     ensure
       io.close
+      begin
+        f.close
+      rescue Exception
+      end
     end
 
     f = File.open(@file, "r")
@@ -97,6 +117,10 @@ class TestIO < Rubicon::TestCase
       assert_equal(7, count)
     ensure
       io.close
+      begin
+        f.close
+      rescue Exception
+      end
     end
   end
 

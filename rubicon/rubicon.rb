@@ -111,7 +111,7 @@ module Rubicon
     #
     def setupTestDir
       @start = Dir.getwd
- 
+      teardownTestDir
       Dir.mkdir("_test")
       if $? != 0 && false
         $stderr.puts "Cannot run a file or directory test: " + 
@@ -143,7 +143,7 @@ module Rubicon
   #
   def handleTests(testClass)
     testrunner = TestRunner.new
-    TestRunner.quiet_mode = true
+#    TestRunner.quiet_mode = true
     if ARGV.size == 0
       suite = testClass.suite
     else

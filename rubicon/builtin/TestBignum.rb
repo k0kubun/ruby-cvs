@@ -197,7 +197,7 @@ class TestBignum < Rubicon::TestCase
   end
 
   def test_MOD # '%'
-    b = 10**80
+    b = 10**40
     a = b * 9 + 7
 
     assert_equal(7,   a % b)

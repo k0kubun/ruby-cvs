@@ -43,7 +43,6 @@ class TestRegexp < Rubicon::TestCase
   end
 
   def test_clone
-    skipping("segvs"); return
     for taint in [ false, true ]
       for frozen in [ false, true ]
         a = /SIT/
@@ -68,11 +67,11 @@ class TestRegexp < Rubicon::TestCase
     assert_equal("none", c.kcode)
   end
 
-  def test_last_match
+  def test_s_last_match
     a = /SIT/
     "STAND OUT" =~ a
     "SIT IT OUT" =~ a
-    m = a.last_match
+    m = Regexp.last_match
     assert_instance_of(MatchData, m)
     assert_equal([0,3], m.offset(0))
     assert_equal(1, m.length)

@@ -12,6 +12,8 @@ class TestStruct__Tms < Rubicon::TestCase
 
     name = pid ? "_parent" : "_child"
 
+    Dir.rmdir(name) if File.exists?(name)
+
     5000.times {
       Dir.mkdir(name)
       Dir.rmdir(name)
