@@ -27,6 +27,9 @@ class TestIO < Rubicon::TestCase
         $stderr.puts "FD #{fd} was not closed"
         exit
       rescue Errno::EBADF
+      rescue Exception
+        puts "Seen an exception: #{$!.name}"
+        exit!
       end
     }
 
