@@ -1,7 +1,7 @@
 2002-06-28  Nobuyoshi Nakada  <nobu.nokada@softhome.net>
 
-	* builtin/TestIO.rb (TestIO::test_ungetc): use `\s' for white
-	  space instead of `\ '.
+	* builtin/TestIO.rb (TestIO::test_ungetc): use `?\s' for white
+	  space instead of `?<whitespace>'.
 
 2002-05-30  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
