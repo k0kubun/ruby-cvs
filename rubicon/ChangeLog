@@ -1,4 +1,15 @@
+2001-11-18  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestFile.rb: Chad: changed line length tests to alkklow
+	for \r\n on any WindowsNative platform
+
+	* builtin/TestDir.rb: Chad: added missing Dir#close's, and added a
+	test to illustrate a cygwin known problem.
+
 2001-11-16  Dave Thomas  <Dave@Thomases.com>
+
+	* Makefile: Avoid adding an empty tarball to the tarball when I
+	say 'make tar' :)
 
 	* builtin/TestFile.rb, TestKernel: Cygwin can't support modes when
 	creating fles, so flag these two tests as known problems

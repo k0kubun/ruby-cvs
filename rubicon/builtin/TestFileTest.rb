@@ -64,7 +64,7 @@ class TestFileTest < FileInfoTest
     
     filez = "_test/_filez"
     File.open(filez, File::CREAT|File::WRONLY, 0644) { |f| f.puts "hi" }
-    filez_size = $os <= Windows ? 4 : 3
+    filez_size = $os <= WindowsNative ? 4 : 3
 
     filesock = sock = nil
     MsWin32.dont do
@@ -103,7 +103,6 @@ class TestFileTest < FileInfoTest
         [ :socket?,     ?S,    ".",                 false ],
         [ :socket?,     ?S,    @file1,              false ],
         [ :setuid?,     ?u,    @file1,              false ],
-        [ :writable?,   ?w,    filew,               Process.euid == 0],
         [ :writable?,   ?w,    @file2,              true  ],
         [ :executable?, ?x,    "/dev/fd0",          false ],
         [ :zero?,       ?z,    filez,               false ],
@@ -154,6 +153,12 @@ class TestFileTest < FileInfoTest
                          "FileTest.#{meth}(#{file})")
           end
         end
+      end
+
+      Cygwin.known_problem do
+          assert_equal(Process.euid == 0, test(?w, filew), "test(?#{t.chr}, #{filew})")
+          assert_equal(Process.euid == 0, FileTest.send(:writable?, filew),
+                       "FileTest.writable?(#{filew})")
       end
 
     ensure

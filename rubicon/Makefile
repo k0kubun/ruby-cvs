@@ -53,6 +53,7 @@ tar:
 			--compress 			\
 			--exclude='CVS' 		\
 			--exclude='*/.*'		\
+			--exclude=rubicon-$(VERSION).tgz	\
 			rubicon-$(VERSION)
 		rm ../rubicon-$(VERSION)
 

@@ -183,6 +183,7 @@ class TestDir < Rubicon::TestCase
     d = Dir.new("_test")
     assert_equal(d, d.each { |f| got << f })
     assert_set_equal(@files, got)
+    d.close
   end
 
   def test_read
@@ -191,6 +192,7 @@ class TestDir < Rubicon::TestCase
     entry = nil
     got << entry while entry = d.read
     assert_set_equal(@files, got)
+    d.close
   end
 
   def test_rewind
@@ -203,6 +205,7 @@ class TestDir < Rubicon::TestCase
     got = []
     got << entry while entry = d.read
     assert_set_equal(@files, got)
+    d.close
   end
 
   def test_seek
@@ -225,6 +228,20 @@ class TestDir < Rubicon::TestCase
     assert_equal(d, d.seek(pos))
     assert_equal(name, d.read)
     d.close
+  end
+
+  def test_improper_close
+    teardownTestDir
+    Cygwin.known_problem do
+      Dir.mkdir("_test")
+      d = Dir.new("_test")
+      Dir.rmdir("_test")
+      begin
+        Dir.mkdir("_test")
+      rescue
+        raise RUNIT::AssertionFailedError
+      end
+    end
   end
 
 end
