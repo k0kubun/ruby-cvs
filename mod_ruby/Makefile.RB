@@ -9,6 +9,8 @@ ENV["PATH"] += ":/sbin:/usr/sbin:/usr/local/sbin:\
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $LIBRUBYARG =~ /\.a$/
   $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
+else
+  $LIBRUBYARG.gsub!(/-L\./, "-L#{CONFIG['prefix']}/lib")
 end
 
 $APACHE_CFLAGS = `apxs -q CFLAGS`

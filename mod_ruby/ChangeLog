@@ -1,3 +1,7 @@
+Fri Jul  9 13:27:01 1999  Katsuyuki Komatsu <komatsu@sarion.co.jp>
+
+	* Makefile.RB: replace -L. with -L$(prefix)/lib in LIBRUBYARG.
+
 Tue Jul  6 18:40:42 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.1.3 released.
