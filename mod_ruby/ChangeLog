@@ -1,3 +1,11 @@
+Mon Aug  6 14:38:39 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.1 released.
+
+Mon Aug  6 14:36:20 2001  Shugo Maeda <shugo@modruby.net>
+
+	* changed license for Apache.
+
 Mon Aug  6 14:09:20 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (ruby_handler): flush rb_request only in RubyHandler.
