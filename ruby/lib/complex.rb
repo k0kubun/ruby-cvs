@@ -59,6 +59,7 @@ def Complex(a, b = 0)
 end
 
 class Complex < Numeric
+  @RCS_ID='-$Id$-'
   
   def Complex.generic?(other)
     other.kind_of?(Integer) or
@@ -284,6 +285,11 @@ class Complex < Numeric
     @real ^ @image
   end
   
+  def inspect
+    sprintf("Complex(%s, %s)", @real.inspect, @image.inspect)
+  end
+
+  
   I = Complex(0,1)
   
   attr :real
@@ -396,7 +402,7 @@ module Math
       cos!(z)
     else
       Complex(cos!(z.real)*cosh!(z.image),
-	      sin!(z.real)*sinh!(z.image))
+	      -sin!(z.real)*sinh!(z.image))
     end
   end
     
@@ -405,7 +411,7 @@ module Math
       sin!(z)
     else
       Complex(sin!(z.real)*cosh!(z.image),
-	      -cos!(z.real)*sinh!(z.image))
+	      cos!(z.real)*sinh!(z.image))
     end
   end
   
