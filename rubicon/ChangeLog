@@ -1,3 +1,8 @@
+2002-03-08  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestKernel.rb (TestKernel::test_extend): should handle
+	  extend order change.
+
 2002-02-26  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* builtin/TestMarshal.rb (TestMarshal::test_s_dump_load3): new

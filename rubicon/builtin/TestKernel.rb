@@ -177,13 +177,15 @@ class TestKernel < Rubicon::TestCase
     assert_equal("et3.2", s.et3)
 
     t = "goodbye"
-    t.extend(ExtendTest1, ExtendTest2)
+    t.extend(ExtendTest1)
+    t.extend(ExtendTest2)
     assert_equal("et1", t.et1)
     assert_equal("et2", t.et2)
     assert_equal("et3.2", t.et3)
 
     t = "goodbye"
-    t.extend(ExtendTest2, ExtendTest1)
+    t.extend(ExtendTest2)
+    t.extend(ExtendTest1)
     assert_equal("et1", t.et1)
     assert_equal("et2", t.et2)
     assert_equal("et3.1", t.et3)
