@@ -126,10 +126,11 @@ class StringBase < Rubicon::TestCase
     s = S("FooBar")
     s[S("Foo")] = S("Bar")
     assert_equal(S("BarBar"), s)
-    s[S("Foo")] = S("xyz")
-    assert_equal(S("BarBar"), s)
 
     pre_1_7_1 do
+      s[S("Foo")] = S("xyz")
+      assert_equal(S("BarBar"), s)
+
       $= = true
       s = S("FooBar")
       s[S("FOO")] = S("Bar")
@@ -887,11 +888,13 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("Bar"), a.slice!(S("Bar")))
     assert_equal(S("Foo"), a)
 
-    a=S("FooBar")
-    assert_nil(a.slice!(S("xyzzy")))
-    assert_equal(S("FooBar"), a)
-    assert_nil(a.slice!(S("plugh")))
-    assert_equal(S("FooBar"), a)
+    pre_1_7_1 do
+      a=S("FooBar")
+      assert_nil(a.slice!(S("xyzzy")))
+      assert_equal(S("FooBar"), a)
+      assert_nil(a.slice!(S("plugh")))
+      assert_equal(S("FooBar"), a)
+    end
   end
 
   def test_split

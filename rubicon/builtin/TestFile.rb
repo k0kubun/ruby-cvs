@@ -287,7 +287,7 @@ class TestFile < Rubicon::TestCase
 
       # file: empty
       File.open(file1, mode) { |f| 
-        assert_nil(f.puts "wombat")
+        assert_nil(f.puts("wombat"))
         assert_exception(IOError) { f.gets }
       }
 
@@ -296,7 +296,7 @@ class TestFile < Rubicon::TestCase
       # file: wombat
       File.open(file1, mode) { |f| 
         assert_equal("wombat\n", f.gets)
-        assert_nil(f.puts "koala")
+        assert_nil(f.puts("koala"))
         f.rewind
         assert_equal("wombat\n", f.gets)
         assert_equal("koala\n", f.gets)
@@ -307,7 +307,7 @@ class TestFile < Rubicon::TestCase
       # file: wombat/koala
       File.open(file1, mode) { |f| 
         assert_nil(f.gets)
-        assert_nil(f.puts "koala")
+        assert_nil(f.puts("koala"))
         f.rewind
         assert_equal("koala\n", f.gets)
       }
@@ -316,7 +316,7 @@ class TestFile < Rubicon::TestCase
 
       # file: koala
       File.open(file1, mode) { |f| 
-        assert_nil(f.puts "wombat")
+        assert_nil(f.puts("wombat"))
         assert_exception(IOError) { f.gets }
       }
       
@@ -324,7 +324,7 @@ class TestFile < Rubicon::TestCase
 
       # file: koala/wombat
       File.open(file1, mode) { |f| 
-        assert_nil(f.puts "wallaby")
+        assert_nil(f.puts("wallaby"))
         f.rewind
         assert_equal("koala\n", f.gets)
         assert_equal("wombat\n", f.gets)

@@ -130,17 +130,17 @@ class TestKernel < Rubicon::TestCase
   def test_eql?
     o1 = Object.new
     o2 = Object.new
-    assert(o1.eql? o1)
-    assert(o2.eql? o2)
-    assert(!(o1.eql? o2))
+    assert(o1.eql?(o1))
+    assert(o2.eql?(o2))
+    assert(!(o1.eql?(o2)))
   end
 
   def test_equal?
     o1 = Object.new
     o2 = Object.new
-    assert(o1.equal? o1)
-    assert(o2.equal? o2)
-    assert(!(o1.equal? o2))
+    assert(o1.equal?(o1))
+    assert(o2.equal?(o2))
+    assert(!(o1.equal?(o2)))
   end
 
   module ExtendTest1
@@ -446,8 +446,10 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_to_a
-    o = Object.new
-    assert_equal([o], o.to_a)   # rest tested in individual classes
+    Version.less_than("1.7.2") do
+      o = Object.new
+      assert_equal([o], o.to_a)   # rest tested in individual classes
+    end
   end
 
   def test_to_s
@@ -492,7 +494,9 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_Array
-    assert_equal([], Array(nil))
+    Version.less_than("1.7.2") do
+      assert_equal([], Array(nil))
+    end
     assert_equal([1, 2, 3], Array([1, 2, 3]))
     assert_equal([1, 2, 3], Array(1..3))
     assert_equal([4, 5, 6], Array(Caster.new))
@@ -1175,7 +1179,7 @@ class TestKernel < Rubicon::TestCase
         
         # file: empty
         open(file1, mode) { |f| 
-          assert_nil(f.puts "wombat")
+          assert_nil(f.puts("wombat"))
           assert_exception(IOError) { f.gets }
         }
         
@@ -1184,7 +1188,7 @@ class TestKernel < Rubicon::TestCase
         # file: wombat
         open(file1, mode) { |f| 
           assert_equal("wombat\n", f.gets)
-          assert_nil(f.puts "koala")
+          assert_nil(f.puts("koala"))
           f.rewind
           assert_equal("wombat\n", f.gets)
           assert_equal("koala\n", f.gets)
@@ -1195,7 +1199,7 @@ class TestKernel < Rubicon::TestCase
         # file: wombat/koala
         open(file1, mode) { |f| 
           assert_nil(f.gets)
-          assert_nil(f.puts "koala")
+          assert_nil(f.puts("koala"))
           f.rewind
           assert_equal("koala\n", f.gets)
         }
@@ -1204,7 +1208,7 @@ class TestKernel < Rubicon::TestCase
         
         # file: koala
         open(file1, mode) { |f| 
-          assert_nil(f.puts "wombat")
+          assert_nil(f.puts("wombat"))
           assert_exception(IOError) { f.gets }
         }
         
@@ -1212,7 +1216,7 @@ class TestKernel < Rubicon::TestCase
         
         # file: koala/wombat
         open(file1, mode) { |f| 
-          assert_nil(f.puts "wallaby")
+          assert_nil(f.puts("wallaby"))
           f.rewind
           assert_equal("koala\n", f.gets)
           assert_equal("wombat\n", f.gets)
