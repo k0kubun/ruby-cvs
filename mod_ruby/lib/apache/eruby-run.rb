@@ -35,8 +35,10 @@ Apache::ERubyRun handles eRuby files.
 
 =end
 
+require "singleton"
+require "apache/cgi-support"
+
 require "eruby"
-require "apache/ruby-run"
 
 module ERuby
   @@cgi = nil
@@ -51,33 +53,37 @@ module ERuby
 end
 
 module Apache
-  class ERubyRun < Apache::RubyRun
+  class ERubyRun
+    include Singleton
+    include CGISupport
+
     def handler(r)
-      begin
-	open(r.filename) do |f|
-	  ERuby.noheader = false
-	  ERuby.charset = ERuby.default_charset
-	  ERuby.cgi = nil
-	  @compiler.sourcefile = r.filename
-	  code = @compiler.compile_file(f)
-	  emulate_cgi(r) do
-	    eval(code, TOPLEVEL_BINDING, r.filename)
-	    unless ERuby.noheader
-	      if cgi = ERuby.cgi
-		cgi.header("charset" => ERuby.charset)
-	      else
-		r.content_type = format("text/html; charset=%s", ERuby.charset)
-		r.send_http_header
-	      end
+      if r.finfo.mode == 0
+	return NOT_FOUND
+      end
+      if r.allow_options & OPT_EXECCGI == 0
+	r.log_reason("Options ExecCGI is off in this directory", r.filename)
+	return FORBIDDEN
+      end
+      open(r.filename) do |f|
+	ERuby.noheader = false
+	ERuby.charset = ERuby.default_charset
+	ERuby.cgi = nil
+	@compiler.sourcefile = r.filename
+	code = @compiler.compile_file(f)
+	emulate_cgi(r) do
+	  eval(code, TOPLEVEL_BINDING, r.filename)
+	  unless ERuby.noheader
+	    if cgi = ERuby.cgi
+	      cgi.header("charset" => ERuby.charset)
+	    else
+	      r.content_type = format("text/html; charset=%s", ERuby.charset)
+	      r.send_http_header
 	    end
 	  end
 	end
-	return Apache::OK
-      rescue Errno::ENOENT
-	return Apache::NOT_FOUND
-      rescue Errno::EACCES
-	return Apache::FORBIDDEN
       end
+      return OK
     end
 
     private

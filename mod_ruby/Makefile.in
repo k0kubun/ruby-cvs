@@ -62,6 +62,13 @@ TEENY = @TEENY@
 VERSION = $(MAJOR).$(MINOR).$(TEENY)
 TAG = release_$(MAJOR)_$(MINOR)_$(TEENY)
 
+RUBYLIBS	= apache/cgi-support.rb \
+		  apache/ruby-run.rb \
+		  apache/eruby-run.rb \
+		  apache/erb-run.rb \
+		  apache/rd2html.rb \
+		  auto-reload.rb
+
 OBJS	= mod_ruby.@OBJEXT@ \
 	  ruby_config.@OBJEXT@ \
 	  apachelib.@OBJEXT@ \
@@ -82,17 +89,15 @@ site-install: @INSTALL_TARGET@ install-siteruby
 
 install-ruby:
 	$(INSTALL_DIR) $(rubylibdir)/apache
-	$(INSTALL_DATA) lib/apache/ruby-run.rb $(rubylibdir)/apache
-	$(INSTALL_DATA) lib/apache/eruby-run.rb $(rubylibdir)/apache
-	$(INSTALL_DATA) lib/apache/rd2html.rb $(rubylibdir)/apache
-	$(INSTALL_DATA) lib/auto-reload.rb $(rubylibdir)
+	for file in $(RUBYLIBS); do \
+		$(INSTALL_DATA) lib/$$file $(rubylibdir)/$$file; \
+	done
 
 install-siteruby:
 	$(INSTALL_DIR) $(sitelibdir)/apache
-	$(INSTALL_DATA) lib/apache/ruby-run.rb $(sitelibdir)/apache
-	$(INSTALL_DATA) lib/apache/eruby-run.rb $(sitelibdir)/apache
-	$(INSTALL_DATA) lib/apache/rd2html.rb $(sitelibdir)/apache
-	$(INSTALL_DATA) lib/auto-reload.rb $(sitelibdir)
+	for file in $(RUBYLIBS); do \
+		$(INSTALL_DATA) lib/$$file $(sitelibdir)/$$file; \
+	done
 
 install-static: all
 	$(INSTALL_DIR) -o $(APACHE_SRC_UID) -g $(APACHE_SRC_GID) \

@@ -1,3 +1,24 @@
+Thu Jun 21 15:35:01 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_startup): removed Ruby version from version
+	component.
+
+	* mod_ruby.c (ruby_startup): log error if ruby_require() fails.
+
+	* mod_ruby.c (ruby_handler): don't call rb_apache_request_flush()
+	on error.
+
+	* request.c (rb_apache_request_new): should initialize data->server.
+
+	* lib/apache/ruby-run.rb (handler): require ExecCGI and exec
+	permission.
+
+	* lib/apache/eruby-run.rb (handler): require ExecCGI.
+
+	* lib/apache/cgi-support.rb: new file.
+
+	* lib/apache/erb-run.rb: new file, supports ERb.
+
 Wed Jun 20 18:23:13 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.8.4 released.

@@ -93,6 +93,38 @@ static VALUE server_wild_names(VALUE self)
     }
 }
 
+static VALUE server_log(int type, int argc, VALUE *argv, VALUE self)
+{
+    server_rec *server;
+    VALUE s;
+
+    Data_Get_Struct(self, server_rec, server);
+    s = rb_f_sprintf(argc, argv);
+    ap_log_error(APLOG_MARK, type | APLOG_NOERRNO, server,
+		 "%s", STR2CSTR(s));
+    return Qnil;
+}
+
+static VALUE server_log_error(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_ERR, argc, argv, self);
+}
+
+static VALUE server_log_warn(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_WARNING, argc, argv, self);
+}
+
+static VALUE server_log_notice(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_NOTICE, argc, argv, self);
+}
+
+static VALUE server_log_debug(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_DEBUG, argc, argv, self);
+}
+
 void rb_init_apache_server()
 {
     rb_cApacheServer = rb_define_class_under(rb_mApache, "Server", rb_cObject);
@@ -129,4 +161,12 @@ void rb_init_apache_server()
 		     server_limit_req_fieldsize, 0);
     rb_define_method(rb_cApacheServer, "limit_req_fields",
 		     server_limit_req_fields, 0);
+    rb_define_method(rb_cApacheServer, "log_error",
+		     server_log_error, -1);
+    rb_define_method(rb_cApacheServer, "log_warn",
+		     server_log_warn, -1);
+    rb_define_method(rb_cApacheServer, "log_notice",
+		     server_log_notice, -1);
+    rb_define_method(rb_cApacheServer, "log_debug",
+		     server_log_debug, -1);
 }

@@ -36,36 +36,29 @@ Apache::RubyRun executes Ruby scripts.
 =end
 
 require "singleton"
+require "apache/cgi-support"
 
 module Apache
   class RubyRun
     include Singleton
+    include CGISupport
 
     def handler(r)
       if r.finfo.mode == 0
-	return Apache::NOT_FOUND
+	return NOT_FOUND
       end
-      if r.finfo.directory? or !r.finfo.readable?
-	return Apache::FORBIDDEN
+      if r.allow_options & OPT_EXECCGI == 0
+	r.log_reason("Options ExecCGI is off in this directory", r.filename)
+	return FORBIDDEN
+      end
+      unless r.finfo.executable?
+	r.log_reason("file permissions deny server execution", r.filename)
+	return FORBIDDEN
       end
       emulate_cgi(r) do
 	load(r.filename, true)
       end
-      return Apache::OK
-    end
-
-    private
-
-    def emulate_cgi(r)
-      r.setup_cgi_env
-      Apache.chdir_file(r.filename)
-      stdin, stdout, defout = $stdin, $stdout, $>
-      $stdin = $stdout = $> = r
-      begin
-	yield
-      ensure
-	$stdin, $stdout, $> = stdin, stdout, defout
-      end
+      return OK
     end
   end
 end

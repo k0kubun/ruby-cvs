@@ -97,6 +97,7 @@ VALUE rb_apache_request_new(request_rec *r)
     data->request = r;
     data->outbuf = rb_tainted_str_new("", 0);
     data->connection = Qnil;
+    data->server = Qnil;
     data->headers_in = Qnil;
     data->headers_out = Qnil;
     data->err_headers_out = Qnil;
@@ -949,6 +950,24 @@ static VALUE request_setup_cgi_env(VALUE self)
     return Qnil;
 }
 
+static VALUE request_log_reason(VALUE self, VALUE msg, VALUE file)
+{
+    request_data *data;
+
+    Check_Type(msg, T_STRING);
+    Check_Type(file, T_STRING);
+    Data_Get_Struct(self, request_data, data);
+    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
+		 data->request->server,
+		 "access to %s failed for %s, reason: %s",
+		 STR2CSTR(file),
+		 ap_get_remote_host(data->request->connection,
+				    data->request->per_dir_config,
+				    REMOTE_NAME),
+		 STR2CSTR(msg));
+    return Qnil;
+}
+
 void rb_init_apache_request()
 {
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
@@ -1067,4 +1086,6 @@ void rb_init_apache_request()
 		     request_add_cgi_vars, 0);
     rb_define_method(rb_cApacheRequest, "setup_cgi_env",
 		     request_setup_cgi_env, 0);
+    rb_define_method(rb_cApacheRequest, "log_reason",
+		     request_log_reason, 2);
 }

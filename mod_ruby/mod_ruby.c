@@ -225,188 +225,6 @@ static VALUE protect_funcall(VALUE recv, ID mid, int *state, int argc, ...)
     return rb_protect(protect_funcall0, (VALUE) &arg, state);
 }
 
-int ruby_running()
-{
-    return ruby_is_running;
-}
-
-int ruby_require(char *filename)
-{
-    int state;
-
-    rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
-    return state;
-}
-
-void ruby_add_path(const char *path)
-{
-    rb_ary_push(default_load_path, rb_str_new2(path));
-}
-
-#if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
-static void mod_ruby_dso_unload(void *data)
-{
-    EXTERN VALUE ruby_dln_librefs;
-    int i;
-
-    for (i = 0; i < RARRAY(ruby_dln_librefs)->len; i++) {
-	ap_os_dso_unload((void *) NUM2LONG(RARRAY(ruby_dln_librefs)->ptr[i]));
-    }
-}
-#endif
-
-static void ruby_startup(server_rec *s, pool *p)
-{
-    ruby_server_config *conf = get_server_config(s);
-    char **list;
-    int i, n;
-
-#ifdef MULTITHREAD
-    mod_ruby_mutex = ap_create_mutex("mod_ruby_mutex");
-#endif
-
-    if (!ruby_running()) {
-	ruby_init();
-	rb_init_apache();
-#ifdef USE_ERUBY
-	eruby_init();
-#endif
-
-	rb_define_global_const("MOD_RUBY",
-			       STRING_LITERAL(MOD_RUBY_STRING_VERSION));
-
-#ifndef WIN32
-	origenviron = environ;
-#endif /* WIN32 */
-
-	ruby_init_loadpath();
-	default_load_path = rb_load_path;
-	rb_global_variable(&default_load_path);
-	list = (char **) conf->load_path->elts;
-	n = conf->load_path->nelts;
-	for (i = 0; i < n; i++) {
-	    ruby_add_path(list[i]);
-	}
-
-	default_kcode = rb_get_kcode();
-
-	list = (char **) conf->required_files->elts;
-	n = conf->required_files->nelts;
-	for (i = 0; i < n; i++) {
-	    if (ruby_require(list[i])) {
-		fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
-			list[i]);
-		exit(1);
-	    }
-	}
-
-	ruby_is_running = 1;
-    }
-
-#if MODULE_MAGIC_NUMBER >= 19980507
-    {
-	static char buf[BUFSIZ];
-	VALUE v, d;
-
-	ap_add_version_component(MOD_RUBY_STRING_VERSION);
-	v = rb_const_get(rb_cObject, rb_intern("RUBY_VERSION"));
-	d = rb_const_get(rb_cObject, rb_intern("RUBY_RELEASE_DATE"));
-	snprintf(buf, BUFSIZ, "Ruby/%s(%s)", STR2CSTR(v), STR2CSTR(d));
-	ap_add_version_component(buf);
-#ifdef USE_ERUBY
-	snprintf(buf, BUFSIZ, "eRuby/%s", eruby_version());
-	ap_add_version_component(buf);
-#endif
-    }
-#endif
-
-#if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
-    if (ruby_module.dynamic_load_handle) 
-	ap_register_cleanup(p, NULL, mod_ruby_dso_unload, ap_null_cleanup);
-#endif
-}
-
-static void mod_ruby_clearenv()
-{
-#ifdef WIN32
-    char *orgp, *p;
-
-    orgp = p = GetEnvironmentStrings();
-
-    if (p == NULL)
-	return;
-
-    while (*p) {
-	char buf[1024];
-	char *q;
-
-	strncpy(buf, p, sizeof buf);
-	q = strchr(buf, '=');
-	if (q)
-	    *(q+1) = '\0';
-
-	putenv(buf);
-	p += strlen(p) + 1;
-    }
-
-    FreeEnvironmentStrings(orgp);
-#else
-#ifndef __CYGWIN__
-    if (environ == origenviron) {
-	environ = ALLOC_N(char*, 1);
-    }
-    else {
-	char **p;
-
-	for (p = environ; *p; p++) {
-	    if (*p) free(*p);
-	}
-	REALLOC_N(environ, char*, 1);
-    }
-    *environ = NULL;
-#endif
-#endif
-}
-
-static void mod_ruby_setenv(const char *name, const char *value)
-{
-    if (!name) return;
-    if (value && *value)
-	ruby_setenv(name, value);
-    else
-	ruby_unsetenv(name);
-}
-
-static void setenv_from_table(table *tbl)
-{
-    array_header *env_arr;
-    table_entry *env;
-    int i;
-
-    env_arr = ap_table_elts(tbl);
-    env = (table_entry *) env_arr->elts;
-    for (i = 0; i < env_arr->nelts; i++) {
-	if (env[i].key == NULL)
-	    continue;
-	mod_ruby_setenv(env[i].key, env[i].val);
-    }
-}
-
-void rb_setup_cgi_env(request_rec *r)
-{
-    ruby_server_config *sconf = get_server_config(r->server);
-    ruby_dir_config *dconf = get_dir_config(r);
-
-    mod_ruby_clearenv();
-    ap_add_common_vars(r);
-    ap_add_cgi_vars(r);
-    setenv_from_table(r->subprocess_env);
-    setenv_from_table(sconf->env);
-    setenv_from_table(dconf->env);
-    mod_ruby_setenv("MOD_RUBY", MOD_RUBY_STRING_VERSION);
-    mod_ruby_setenv("GATEWAY_INTERFACE", RUBY_GATEWAY_INTERFACE);
-}
-
 static void get_error_pos(VALUE str)
 {
     char buff[BUFSIZ];
@@ -520,7 +338,7 @@ static void get_exception_info(VALUE str)
     ruby_errinfo = Qnil;
 }
 
-static VALUE get_error_info(request_rec *r, int state)
+static VALUE get_error_info(int state)
 {
     char buff[BUFSIZ];
     VALUE errmsg;
@@ -560,7 +378,7 @@ static VALUE get_error_info(request_rec *r, int state)
     return errmsg;
 }
 
-static void print_error(request_rec *r, int state)
+static void ruby_print_error(request_rec *r, int state)
 {
     VALUE errmsg, logmsg;
 
@@ -572,9 +390,9 @@ static void print_error(request_rec *r, int state)
     ap_rputs("<body>\n", r);
     ap_rputs("<pre>\n", r);
 
-    errmsg = get_error_info(r, state);
+    errmsg = get_error_info(state);
     ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
-    logmsg = STRING_LITERAL("mod_ruby:\n");
+    logmsg = STRING_LITERAL("mod_ruby: error in ruby\n");
     rb_str_concat(logmsg, errmsg);
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
 		 "%s", STR2CSTR(logmsg));
@@ -584,16 +402,186 @@ static void print_error(request_rec *r, int state)
     ap_rputs("</html>\n", r);
 }
 
-static void log_error(request_rec *r, int state)
+static void ruby_log_error(server_rec *s, int state)
 {
     VALUE errmsg, logmsg;
 
-    errmsg = get_error_info(r, state);
-    ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
-    logmsg = STRING_LITERAL("mod_ruby: error in ruby program\n");
+    errmsg = get_error_info(state);
+    logmsg = STRING_LITERAL("mod_ruby: error in ruby\n");
     rb_str_concat(logmsg, errmsg);
-    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
+    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
 		 "%s", STR2CSTR(logmsg));
+}
+
+int ruby_running()
+{
+    return ruby_is_running;
+}
+
+int ruby_require(char *filename)
+{
+    int state;
+
+    rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
+    return state;
+}
+
+void ruby_add_path(const char *path)
+{
+    rb_ary_push(default_load_path, rb_str_new2(path));
+}
+
+#if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
+static void mod_ruby_dso_unload(void *data)
+{
+    EXTERN VALUE ruby_dln_librefs;
+    int i;
+
+    for (i = 0; i < RARRAY(ruby_dln_librefs)->len; i++) {
+	ap_os_dso_unload((void *) NUM2LONG(RARRAY(ruby_dln_librefs)->ptr[i]));
+    }
+}
+#endif
+
+static void ruby_startup(server_rec *s, pool *p)
+{
+    ruby_server_config *conf = get_server_config(s);
+    char **list;
+    int i, n;
+    int state;
+
+#ifdef MULTITHREAD
+    mod_ruby_mutex = ap_create_mutex("mod_ruby_mutex");
+#endif
+
+    if (!ruby_running()) {
+	ruby_init();
+	rb_init_apache();
+#ifdef USE_ERUBY
+	eruby_init();
+#endif
+
+	rb_define_global_const("MOD_RUBY",
+			       STRING_LITERAL(MOD_RUBY_STRING_VERSION));
+
+#ifndef WIN32
+	origenviron = environ;
+#endif /* WIN32 */
+
+	ruby_init_loadpath();
+	default_load_path = rb_load_path;
+	rb_global_variable(&default_load_path);
+	list = (char **) conf->load_path->elts;
+	n = conf->load_path->nelts;
+	for (i = 0; i < n; i++) {
+	    ruby_add_path(list[i]);
+	}
+
+	default_kcode = rb_get_kcode();
+
+	list = (char **) conf->required_files->elts;
+	n = conf->required_files->nelts;
+	for (i = 0; i < n; i++) {
+	    if ((state = ruby_require(list[i]))) {
+		ruby_log_error(s, state);
+		fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
+			list[i]);
+		exit(1);
+	    }
+	}
+
+	ruby_is_running = 1;
+    }
+
+#if MODULE_MAGIC_NUMBER >= 19980507
+    ap_add_version_component(MOD_RUBY_STRING_VERSION);
+#endif
+
+#if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
+    if (ruby_module.dynamic_load_handle) 
+	ap_register_cleanup(p, NULL, mod_ruby_dso_unload, ap_null_cleanup);
+#endif
+}
+
+static void mod_ruby_clearenv()
+{
+#ifdef WIN32
+    char *orgp, *p;
+
+    orgp = p = GetEnvironmentStrings();
+
+    if (p == NULL)
+	return;
+
+    while (*p) {
+	char buf[1024];
+	char *q;
+
+	strncpy(buf, p, sizeof buf);
+	q = strchr(buf, '=');
+	if (q)
+	    *(q+1) = '\0';
+
+	putenv(buf);
+	p += strlen(p) + 1;
+    }
+
+    FreeEnvironmentStrings(orgp);
+#else
+#ifndef __CYGWIN__
+    if (environ == origenviron) {
+	environ = ALLOC_N(char*, 1);
+    }
+    else {
+	char **p;
+
+	for (p = environ; *p; p++) {
+	    if (*p) free(*p);
+	}
+	REALLOC_N(environ, char*, 1);
+    }
+    *environ = NULL;
+#endif
+#endif
+}
+
+static void mod_ruby_setenv(const char *name, const char *value)
+{
+    if (!name) return;
+    if (value && *value)
+	ruby_setenv(name, value);
+    else
+	ruby_unsetenv(name);
+}
+
+static void setenv_from_table(table *tbl)
+{
+    array_header *env_arr;
+    table_entry *env;
+    int i;
+
+    env_arr = ap_table_elts(tbl);
+    env = (table_entry *) env_arr->elts;
+    for (i = 0; i < env_arr->nelts; i++) {
+	if (env[i].key == NULL)
+	    continue;
+	mod_ruby_setenv(env[i].key, env[i].val);
+    }
+}
+
+void rb_setup_cgi_env(request_rec *r)
+{
+    ruby_server_config *sconf = get_server_config(r->server);
+    ruby_dir_config *dconf = get_dir_config(r);
+
+    mod_ruby_clearenv();
+    ap_add_common_vars(r);
+    ap_add_cgi_vars(r);
+    setenv_from_table(r->subprocess_env);
+    setenv_from_table(sconf->env);
+    setenv_from_table(dconf->env);
+    mod_ruby_setenv("MOD_RUBY", MOD_RUBY_STRING_VERSION);
+    mod_ruby_setenv("GATEWAY_INTERFACE", RUBY_GATEWAY_INTERFACE);
 }
 
 static VALUE kill_threads(VALUE arg)
@@ -730,7 +718,7 @@ static VALUE ruby_handler_0(void *arg)
 	    ret = rb_iv_get(ruby_errinfo, "status");
 	}
 	else {
-	    log_error(r, state);
+	    ruby_log_error(r->server, state);
 	    return INT2NUM(SERVER_ERROR);
 	}
     }
@@ -741,6 +729,7 @@ static VALUE ruby_handler_0(void *arg)
 		     handler, rb_id2name(mid));
 	return INT2NUM(SERVER_ERROR);
     }
+    rb_apache_request_flush(rb_request);
     retval = NUM2INT(ret);
     return INT2NUM(retval);
 }
@@ -763,11 +752,10 @@ static int ruby_handler(request_rec *r, char *handler, ID mid)
     arg.mid = mid;
     if ((state = run_safely(safe_level, sconf->timeout,
 			    ruby_handler_0, &arg, &ret)) == 0) {
-	rb_apache_request_flush(rb_request);
 	retval = NUM2INT(ret);
     }
     else {
-	log_error(r, state);
+	ruby_log_error(r->server, state);
 	retval = SERVER_ERROR;
     }
     rb_protect(exec_end_proc, Qnil, NULL);
@@ -921,7 +909,7 @@ static VALUE load_ruby_script(void *arg)
 	    ret = rb_iv_get(ruby_errinfo, "status");
 	}
 	else {
-	    print_error(r, state);
+	    ruby_print_error(r, state);
 	    return INT2NUM(OK);
 	}
     }
