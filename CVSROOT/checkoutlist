@@ -11,6 +11,5 @@
 #	[<whitespace>]<filename><whitespace><error message><end-of-line>
 #
 # comment lines begin with '#'
-mailto-committers.pl
 commitinfo.rb
 loginfo.rb
