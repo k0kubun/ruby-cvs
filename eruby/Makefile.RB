@@ -11,7 +11,7 @@ $DEFAULT_CHARSET = case $KCODE
 		   when /^u/i
 		     "UTF-8"
 		   else
-		     "US-ASCII"
+		     "ISO-8859-1"
 		   end
 $ENABLE_SHARED = false
 

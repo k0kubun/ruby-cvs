@@ -1,3 +1,11 @@
+Tue Dec 12 14:40:19 2000  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.2.2 released.
+
+Tue Dec 12 14:35:30 2000  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.c: some methods of Apache::Request are obsolete now.
+
 Wed Dec  6 14:35:37 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* mod_ruby.c (ruby_startup): get correct RUBY_VERSION.

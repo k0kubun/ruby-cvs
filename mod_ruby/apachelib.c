@@ -626,6 +626,7 @@ static VALUE request_content_length(VALUE self)
     request_data *data;
     const char *s;
 
+    rb_warn("content_length is obsolete; use headers_in[\"Content-Length\"] instead");
     Data_Get_Struct(self, request_data, data);
     s = ap_table_get(data->request->headers_in, "Content-Length");
     return s ? rb_cstr2inum(s, 10) : Qnil;
@@ -738,6 +739,7 @@ static VALUE request_aref(VALUE self, VALUE vkey)
     char *key = STR2CSTR(vkey);
     const char *val;
 
+    rb_warn("self[] is obsolete; use headers_in instead");
     if (strcasecmp(key, "authorization") == 0 ||
 	strcasecmp(key, "proxy-authorization") == 0)
 	return Qnil;
@@ -751,6 +753,7 @@ static VALUE request_aset(VALUE self, VALUE key, VALUE val)
     request_data *data;
     char *s;
 
+    rb_warn("self[]= is obsolete; use headers_out instead");
     s = STR2CSTR(key);
     if (strcasecmp(s, "content-type") == 0) {
 	return request_set_content_type(self, val);
@@ -773,6 +776,7 @@ static VALUE request_each_header(VALUE self)
     int i;
     VALUE assoc;
 
+    rb_warn("each_header is obsolete; use headers_in instead");
     Data_Get_Struct(self, request_data, data);
     hdrs_arr = ap_table_elts(data->request->headers_in);
     hdrs = (table_entry *) hdrs_arr->elts;
@@ -796,6 +800,7 @@ static VALUE request_each_key(VALUE self)
     table_entry *hdrs;
     int i;
 
+    rb_warn("each_key is obsolete; use headers_in instead");
     Data_Get_Struct(self, request_data, data);
     hdrs_arr = ap_table_elts(data->request->headers_in);
     hdrs = (table_entry *) hdrs_arr->elts;
@@ -817,6 +822,7 @@ static VALUE request_each_value(VALUE self)
     table_entry *hdrs;
     int i;
 
+    rb_warn("each_value is obsolete; use headers_in instead");
     Data_Get_Struct(self, request_data, data);
     hdrs_arr = ap_table_elts(data->request->headers_in);
     hdrs = (table_entry *) hdrs_arr->elts;

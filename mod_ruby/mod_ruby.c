@@ -234,7 +234,7 @@ static void ruby_startup(server_rec *s, pool *p)
 	(ruby_server_config *) ap_get_module_config(s->module_config,
 						    &ruby_module);
     char **list;
-    int i;
+    int i, n;
 
 #ifdef MULTITHREAD
     mod_ruby_mutex = ap_create_mutex("mod_ruby_mutex");
@@ -275,7 +275,8 @@ static void ruby_startup(server_rec *s, pool *p)
     rb_global_variable(&orig_load_path);
 
     list = (char **) conf->required_files->elts;
-    for (i = 0; i < conf->required_files->nelts; i++) {
+    n = conf->required_files->nelts;
+    for (i = 0; i < n; i++) {
 	if (ruby_require(list[i])) {
 	    fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
 		    list[i]);
