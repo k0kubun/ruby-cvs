@@ -254,10 +254,10 @@ static VALUE lex_str_gets(eruby_compiler_t *compiler)
     VALUE s = compiler->lex_input;
     char *beg, *end, *pend;
 
+    if (RSTRING(s)->len == compiler->lex_gets_ptr)
+	return Qnil;
     beg = RSTRING(s)->ptr;
-    if (compiler->lex_gets_ptr) {
-	if (RSTRING(s)->len == compiler->lex_gets_ptr)
-	    return Qnil;
+    if (compiler->lex_gets_ptr > 0) {
 	beg += compiler->lex_gets_ptr;
     }
     pend = RSTRING(s)->ptr + RSTRING(s)->len;
@@ -540,7 +540,7 @@ static VALUE eruby_compile(eruby_compiler_t *compiler)
 	}
     }
   end:
-    if (prevc != EOF) {
+    if (prevc >= 0) {
 	output_literal(compiler, "\"");
     }
     if (compiler->buf_len > 0)
