@@ -1,9 +1,8 @@
 require 'net/http'
 
-h = Net::HTTP.new("rubygarden.org")
-
 data = $stdin.read
 
+h = Net::HTTP.new("rubygarden.org")
 resp, = h.post("/cgi-bin/rrr.rb", data)
 
 if resp.code == "200"

@@ -18,8 +18,8 @@ Prerequisites:
 
          http://homepage1.nifty.com/markey/ruby/rubyunit/rubyunit_e.html
 
-  3. I suspect these tests will currently run only on Linux boxes (as
-     they rely on 'touch' being available).
+  3. We're slowly getting the tests to run on Windows boxes, but it's
+     a struggle. All help gratefully received.
 
 
 Installation:
@@ -33,7 +33,7 @@ Structure:
 
    Eventually, rubicon will test all of Ruby: the core interpreter,
    the libraries, and various add on modules.  For now, though, we
-   have tests for the built-in libraries, and stubs for the language
+   have tests for the built-in libraries, and some for the language
    features. The tests for the builtins are in the subdirectory
    'builtin', and those for the language are in 'language'. Over time, 
    different directories will be added with additional sets of tests
@@ -73,6 +73,25 @@ Running:
        ruby TestBignum.rb test_OR
 
 
+
+Submitting Results to the Rubicon Result Repository
+===================================================
+
+    (experimental service)
+
+    http://www.rubygarden.org/triple-r/index.html is a database which
+    stores Rubicon results. It welcomes all results, but we're
+    particularly interested in Ruby version/architecture combinations
+    we don't yet have.
+
+    To submit a result, do:
+
+
+       ruby AllTests.rb -op xml | ruby post.rb
+
+    Eventually we'll tidy this up.
+
+
 Changing:
 =========
 
@@ -95,37 +114,44 @@ Environmental Tests
       VersionNumber (defined in rubicon.rb).
 
     - if your test depends on the operating system type, use the
-      global $os, and compare it against the OS class hierarchy (also
-      defined in rubicon.rb). For example, Linux is a type of Unix,
-      which is a type of OS, so the following tests succeed on a Linux box:
+      comparison classes. There's a class defined for each target
+      operating system and environment (for example, Linux has one
+      class, and Windows has MsWin32, Cygwin, and MinGW). These
+      classes define class methods to allow you to include and exclude
+      blocks of code depending on the OS that Rubicon is running
+      under.
 
-          $os == Linux
-          $os <  Unix
-          $os <  OS
+          MsWin32.only do
+            # stuff for MsWin only
+          end
 
-      The following fail:
+          Windows.or_variant do
+            # all Windows variants
+          end
 
-          $os == BSD
-          $os <= FreeBSD
+          Linux.dont do
+            # don't run this under Linux
+          end
 
-      Feel free to add to the OS hierarchy as needed.
+      Have a look near the top of rubicon.rb for details.
 
 
 Contacts:
 =========
 
-    Rubicon is available from
+    Rubicon is available from the Ruby CVS repository:
 
-       http://www.pragmaticprogrammer.com/ruby/downloads/rubicon
-
-    Drop me an e-mail at  dave@pragmaticprogrammer.com.
+      $ cvs -d :pserver:anonymous@cvs.ruby-lang.org:/src login
+      (Logging in to anonymous@cvs.ruby-lang.org)
+      CVS password:  (anonymous)
+      $ cvs -z4 -d :pserver:anonymous@cvs.ruby-lang.org:/src co rubicon
 
 
 
 Regards
 
 
-Dave Thomas & Andy Hunt
+Dave Thomas
 The Pragmatic Programmers, LLC
 
       
