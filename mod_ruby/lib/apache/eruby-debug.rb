@@ -110,6 +110,7 @@ module Apache
 	file.close
 	load(file.path, true)
       rescue SystemExit
+	postrun(r)
 	raise($!)
       rescue Exception
 	$>.replace('')

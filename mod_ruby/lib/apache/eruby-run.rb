@@ -74,8 +74,11 @@ module Apache
       filename.untaint
       code = compile(filename)
       prerun(r)
-      run(code, filename)
-      postrun(r)
+      begin
+	run(code, filename)
+      ensure
+	postrun(r)
+      end
 
       return OK
     end
