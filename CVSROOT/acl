@@ -45,7 +45,7 @@ group:cvsmailer:knu
 group:rwiki:seki,nahi
 group:rwiki-installer:kazu
 group:interbase:matz,bizenn
-group:irc:iga,knu
+group:irc:iga,knu,gnhurst
 group:metaruby:matju,aleksi
 group:xlib:matju
 
