@@ -157,15 +157,12 @@ class TestModule < Rubicon::TestCase
   end
 
   def test_const_set
-    assert(!Other.const_defined?(:WOMBAT))
-    Other.const_set(:WOMBAT, 99)
-    assert(Other.const_defined?(:WOMBAT))
-    assert_equal(99, Other::WOMBAT)
-    save = $-v
-    $-v = false
-    eval 'Other.const_set("WOMBAT", "Hi")'
+    assert(!Other.const_defined?(:KOALA))
+    Other.const_set(:KOALA, 99)
+    assert(Other.const_defined?(:KOALA))
+    assert_equal(99, Other::KOALA)
+    Other.const_set("WOMBAT", "Hi")
     assert_equal("Hi", Other::WOMBAT)
-    $-v = save
   end
 
   def test_constants

@@ -29,9 +29,9 @@ class TestFileTest < FileInfoTest
   end
 
   def test_test
-    atime = RubiconStat::atime(@file1)
-    ctime = RubiconStat::ctime(@file1)
-    mtime = RubiconStat::mtime(@file1)
+    atime = Time.at(RubiconStat::atime(@file1))
+    ctime = Time.at(RubiconStat::ctime(@file1))
+    mtime = Time.at(RubiconStat::mtime(@file1))
 
     fileg = "_test/_fileg"
     File.open(fileg, File::CREAT, 02644) { }
@@ -62,7 +62,7 @@ class TestFileTest < FileInfoTest
 #    system "ls -l _test"
 
     tests = [
-      [ nil,?A, @file1,              atime ],
+      [ nil,          ?A,    @file1,              atime ],
       [ :blockdev?,   ?b,    "/dev/tty",          false ],
       [ :blockdev?,   ?b,    ".",                 false ],
       [ :blockdev?,   ?b,    "/dev/fd0",          true  ],
@@ -117,7 +117,7 @@ class TestFileTest < FileInfoTest
       [ :zero?,       ?z,    @file2,              true  ],
     ]
 
-    for meth,t,file,result in tests
+    for meth, t, file, result in tests
       assert_equal(result, test(t, file), "test(?#{t}, #{file})")
       if meth
         assert_equal(result, FileTest.send(meth, file), 

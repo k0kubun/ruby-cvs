@@ -17,6 +17,10 @@ end
 
 tests = Rubicon::BulkTestRunner.new("Built-ins")
 
-Dir["Test*.rb"].each { |file| tests.addFile(file) }
+if ARGV.size.zero?
+  Dir["Test*.rb"].each { |file| tests.addFile(file) }
+else
+  ARGV.each { |file| tests.addFile(file) }
+end
 
 tests.run

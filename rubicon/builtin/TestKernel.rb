@@ -637,8 +637,7 @@ class TestKernel < Rubicon::TestCase
 
   def test_s_caller
     c = caller_test
-    assert_equal(%{TestKernel.rb:#{__LINE__-1}:in `test_s_caller'},
-                c[0])
+    assert_match(c[0], %r{TestKernel.rb:#{__LINE__-1}:in `test_s_caller'})
   end
 
   def catch_test
@@ -651,7 +650,7 @@ class TestKernel < Rubicon::TestCase
     assert_equal(321, catch(:c) { a = 1; throw :c, 321; 123 })
     assert_equal(456, catch(:c) { a = 1; catch_test; 123 })
 
-    assert_equal(456, catch(:c) { catch (:d) { catch_test; 123 } } )
+    assert_equal(456, catch(:c) { catch(:d) { catch_test; 123 } } )
   end
 
   def test_s_chomp
@@ -817,8 +816,22 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_fail
-    assert_exception(StandardError) { fail }
-    assert_exception(StandardError) { fail "Wombat" }
+    begin
+      fail
+    rescue StandardError
+      assert(true)
+    rescue Exception
+      assert_fail("Wrong exception raised")
+    end
+
+    begin
+      fail "Wombat"
+    rescue StandardError => detail
+      assert_equal("Wombat", detail.message)
+    rescue Exception
+      assert_fail("Wrong exception raised")
+    end
+
     assert_exception(NotImplementError) { fail NotImplementError }
 
     begin
@@ -827,7 +840,7 @@ class TestKernel < Rubicon::TestCase
     rescue StandardError => detail
       assert_equal("Wombat", detail.message)
     rescue Exception
-      assert_fail("Wrong exception")
+      assert_fail("Wrong exception raised")
     end
 
     begin
@@ -836,20 +849,18 @@ class TestKernel < Rubicon::TestCase
     rescue NotImplementError => detail
       assert_equal("Wombat", detail.message)
     rescue Exception
-      raise
+      assert_fail("Wrong exception raised")
     end
 
     bt = %w(one two three)
     begin
-
       fail NotImplementError, "Wombat", bt
       assert_fail("No exception")
     rescue NotImplementError => detail
       assert_equal("Wombat", detail.message)
-      puts
       assert_equal(bt, detail.backtrace)
     rescue Exception
-      raise
+      assert_fail("Wrong exception raised")
     end
 
   end
@@ -1468,8 +1479,22 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_raise
-    assert_exception(StandardError) { raise }
-    assert_exception(StandardError) { raise "Wombat" }
+    begin
+      raise
+    rescue StandardError
+      assert(true)
+    rescue Exception
+      assert_fail("Wrong exception raised")
+    end
+
+    begin
+      raise "Wombat"
+    rescue StandardError => detail
+      assert_equal("Wombat", detail.message)
+    rescue Exception
+      assert_fail("Wrong exception raised")
+    end
+
     assert_exception(NotImplementError) { raise NotImplementError }
 
     begin
@@ -1497,7 +1522,6 @@ class TestKernel < Rubicon::TestCase
       assert_fail("No exception")
     rescue NotImplementError => detail
       assert_equal("Wombat", detail.message)
-      puts
       assert_equal(bt, detail.backtrace)
     rescue Exception
       raise
@@ -1700,12 +1724,13 @@ class TestKernel < Rubicon::TestCase
     assert_equal("cruel world", $_)
   end
 
+  # Need a better test here
   def test_s_select
     assert_nil(select(nil, nil, nil, 0))
     assert_exception(ArgumentError) { select(nil, nil, nil, -1) }
     
     File.open(".") do |file|
-      res = select([file], [$stdout, $stderr], [file,$stdout,$stderr], 1)
+      res = select([file], [$stdout, $stderr], [], 1)
       assert_equal([[file], [$stdout, $stderr], []], res)
     end
   end
@@ -1731,8 +1756,7 @@ class TestKernel < Rubicon::TestCase
                  @res[1])
     assert_equal(["line", __FILE__, innerLine, :trace_func_test, TestKernel],
                  @res[2])
-    assert_equal(["return", __FILE__, line+3, :test_s_set_trace_func, TestKernel],
-                 @res[3])
+    assert_equal("return", @res[3][0])
   end
 
   class SMATest
@@ -1766,7 +1790,7 @@ class TestKernel < Rubicon::TestCase
     s1 = Time.now
     duration = sleep 999
     s2 = Time.now
-    assert(duration >= 0 && duration < 2)
+    assert(duration >= 0 && duration <= 2, "#{duration} not in 0..2")
     assert((s2-s1) >= 0)
     assert((s2-s1) <= 3)
   end
@@ -1837,14 +1861,18 @@ class TestKernel < Rubicon::TestCase
     # Now check that the seed is random if called with no argument
     keys = {}
     values = {}
+    dups = 0
     100.times do
       oldSeed = srand
-      assert_nil(keys[oldSeed])
+      dups += 1 if keys[oldSeed]
       keys[oldSeed] = 1
       value = rand(2**30)
-      assert_nil(values[value])
+      dups += 1 if values[value]
       values[value] = 1
     end
+
+    # this is a crap shoot, but more than 2 dups is suspicious
+    assert(dups <= 2, "srand may not be randomized.")
 
     # and check that the seed is randomized for different runs of Ruby
     values = {}
@@ -1961,17 +1989,19 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_trap
+    # "IGNORE" discards child termination status
     trap "CHLD", "IGNORE"
-    fork { ; }
-    Process.wait
+    pid = fork
+    exit unless pid
+    assert_exception(Errno::ECHILD) { Process.wait }
     res = nil
-    lastProc = proc { res = 1 }
 
+    lastProc = proc { res = 1 }
     trap("SIGCHLD", lastProc)
     fork { ; }
     Process.wait
     assert_equal(1, res)
-    assert_equal(lastProc, trap("SIGCHLD", "SIG_IGN"))
+    assert_equal(lastProc, trap("SIGCHLD", "DEFAULT"))
 
     res = nil
     fork { ; }

@@ -7,7 +7,9 @@ class FileInfoTest < Rubicon::TestCase
     @file1 = "_test/_touched1"
     @file2 = "_test/_touched2"
 
-    sys("touch #@file1")  # in case it needs creating
+    [ @file1, @file2 ].each { |file|
+      File.delete file if File.exist?(file)
+    }
 
     sys("touch -a -t 122512341999 #@file1")
     @aTime1 = Time.local(1999, 12, 25, 12, 34, 00)

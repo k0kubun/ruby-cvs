@@ -7,13 +7,9 @@ module RubiconStat
 
   
   def stat(file)
-    if file != @file
-      @file = file
-      tmp = `../util/checkstat #{file}`.chomp
-      raise "unable to stat(#{file}:)" if $? != 0
-      @res = tmp.split
-    end
-    return @res
+    tmp = `../util/checkstat #{file}`.chomp
+    raise "unable to stat(#{file}:)" if $? != 0
+    tmp.split
   end
 
   def blksize(file) self.stat(file)[8].to_i end
