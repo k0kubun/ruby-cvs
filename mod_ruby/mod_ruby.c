@@ -449,10 +449,16 @@ static void init_loadpath()
 
 int ruby_require(char *filename)
 {
+    VALUE exit_status;
     int state;
 
     init_loadpath();
     rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
+    if (state == TAG_RAISE &&
+	rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
+	exit_status = rb_iv_get(ruby_errinfo, "status");
+	exit(NUM2INT(exit_status));
+    }
     return state;
 }
 

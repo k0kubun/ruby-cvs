@@ -286,6 +286,24 @@ void rb_init_apache()
     rb_define_const(rb_mApache, "VARIANT_ALSO_VARIES",
 		    INT2NUM(VARIANT_ALSO_VARIES));
 
+    rb_define_const(rb_mApache, "M_GET", INT2NUM(M_GET));
+    rb_define_const(rb_mApache, "M_PUT", INT2NUM(M_PUT));
+    rb_define_const(rb_mApache, "M_POST", INT2NUM(M_POST));
+    rb_define_const(rb_mApache, "M_DELETE", INT2NUM(M_DELETE));
+    rb_define_const(rb_mApache, "M_CONNECT", INT2NUM(M_CONNECT));
+    rb_define_const(rb_mApache, "M_OPTIONS", INT2NUM(M_OPTIONS));
+    rb_define_const(rb_mApache, "M_TRACE", INT2NUM(M_TRACE));
+    rb_define_const(rb_mApache, "M_PATCH", INT2NUM(M_PATCH));
+    rb_define_const(rb_mApache, "M_PROPFIND", INT2NUM(M_PROPFIND));
+    rb_define_const(rb_mApache, "M_PROPPATCH", INT2NUM(M_PROPPATCH));
+    rb_define_const(rb_mApache, "M_MKCOL", INT2NUM(M_MKCOL));
+    rb_define_const(rb_mApache, "M_COPY", INT2NUM(M_COPY));
+    rb_define_const(rb_mApache, "M_MOVE", INT2NUM(M_MOVE));
+    rb_define_const(rb_mApache, "M_LOCK", INT2NUM(M_LOCK));
+    rb_define_const(rb_mApache, "M_UNLOCK", INT2NUM(M_UNLOCK));
+    rb_define_const(rb_mApache, "M_INVALID", INT2NUM(M_INVALID));
+    rb_define_const(rb_mApache, "METHODS", INT2NUM(METHODS));
+
     rb_define_const(rb_mApache, "OPT_NONE", INT2NUM(OPT_NONE));
     rb_define_const(rb_mApache, "OPT_INDEXES", INT2NUM(OPT_INDEXES));
     rb_define_const(rb_mApache, "OPT_INCLUDES", INT2NUM(OPT_INCLUDES));

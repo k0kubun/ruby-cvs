@@ -1,3 +1,21 @@
+Fri Aug 24 11:20:56 2001  Shugo Maeda <shugo@modruby.net>
+
+	* lib/apache/eruby-run.rb (postrun): do not overwrite r.content_type.
+
+Thu Aug 23 19:59:41 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_require): handle SystemExit correctly.
+
+Mon Aug 20 15:22:10 2001  Shugo Maeda <shugo@modruby.net>
+
+	* request.c (request_method_number): new method.
+
+	* apachelib.c: new constants M_GET, M_PUT, ....
+
+Tue Aug 14 14:58:56 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb: rebuild with autoconf.rb 0.2.3 for Solaris.
+
 Mon Aug 13 11:25:13 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.2 released.

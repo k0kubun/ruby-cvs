@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated automatically using autoconf.rb version 0.2.1
+# Generated automatically using autoconf.rb version 0.2.3
 
 require "mkmf"
 
@@ -166,6 +166,9 @@ def AC_PROG_INSTALL
   AC_MSG_CHECKING("for a BSD compatible install")
   $ac_cv_path_install = callcc { |c|
     for dir in ENV["PATH"].split(/:/)
+      if %r'^(/|\./|/etc/.*|/usr/sbin/.*|/usr/etc/.*|/sbin/.*|/usr/afsws/bin/.*|/usr/ucb/.*)$' =~ dir + "/" # '
+	next
+      end
       for prog in [ "ginstall", "scoinst", "install" ]
 	file = File.join(dir, prog)
 	if File.file?(file)
@@ -202,6 +205,7 @@ $stdout.sync = true
 
 drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
 prefix = Regexp.new("\\A" + Regexp.quote(CONFIG["prefix"]))
+$drive = CONFIG["prefix"] =~ drive ? $& : ''
 $prefix = CONFIG["prefix"].sub(drive, '')
 $exec_prefix = "$(prefix)"
 $bindir = CONFIG["bindir"].sub(prefix, "$(exec_prefix)").sub(drive, '')
@@ -304,7 +308,9 @@ $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $RUBY_SHARED
   $LIBRUBYARG.gsub!(/-L\./, "-L$(libdir)")
 else
-  $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
+  if RUBY_PLATFORM !~ /mswin32/
+    $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
+  end
 end
 $LIBRUBY_A = CONFIG["LIBRUBY_A"]
 $RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
@@ -332,6 +338,7 @@ AC_SUBST("VPATH")
 
 AC_SUBST("arch")
 AC_SUBST("ruby_version")
+AC_SUBST("drive")
 AC_SUBST("prefix")
 AC_SUBST("exec_prefix")
 AC_SUBST("bindir")

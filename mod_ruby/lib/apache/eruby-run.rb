@@ -110,7 +110,9 @@ module Apache
 	if cgi = ERuby.cgi
 	  cgi.header("charset" => ERuby.charset)
 	else
-	  r.content_type = format("text/html; charset=%s", ERuby.charset)
+	  unless r.content_type
+	    r.content_type = format("text/html; charset=%s", ERuby.charset)
+	  end
 	  r.send_http_header
 	end
       end
