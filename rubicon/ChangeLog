@@ -1,3 +1,8 @@
+2001-02-19  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/StringBase.rb: I finally agreed that "FooBar"[6,2]
+	  returning nil is a bug (line 17).
+
 2001-02-06  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/ArrayBase.rb: Split out testing of Array-like classes

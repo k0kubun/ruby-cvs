@@ -14,7 +14,7 @@ class StringBase < Rubicon::TestCase
 
     assert_equal(S("Foo"), S("FooBar")[0,3])
     assert_equal(S("Bar"), S("FooBar")[-3,3])
-    assert_equal(nil,      S("FooBar")[6,2]) # Matz doesn't agree that this is a bug
+    assert_equal(S(""),    S("FooBar")[6,2])
     assert_equal(nil,      S("FooBar")[-7,10])
 
     assert_equal(S("Foo"), S("FooBar")[0..2])
