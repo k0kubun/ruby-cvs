@@ -89,13 +89,13 @@ site-install: @INSTALL_TARGET@ install-siteruby
 install-ruby:
 	$(INSTALL_DIR) $(rubylibdir)/apache
 	for file in $(RUBYLIBS); do \
-		$(INSTALL_DATA) lib/$$file $(rubylibdir)/$$file; \
+		$(INSTALL_DATA) $(srcdir)/lib/$$file $(rubylibdir)/$$file; \
 	done
 
 install-siteruby:
 	$(INSTALL_DIR) $(sitelibdir)/apache
 	for file in $(RUBYLIBS); do \
-		$(INSTALL_DATA) lib/$$file $(sitelibdir)/$$file; \
+		$(INSTALL_DATA) $(srcdir)/lib/$$file $(sitelibdir)/$$file; \
 	done
 
 install-static: all

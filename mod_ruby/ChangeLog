@@ -1,3 +1,9 @@
+Mon Jan  7 18:08:09 2002  U.Nakamura <usa@osb.att.ne.jp>
+
+	* Makefile.in (install-ruby): lib/$$file -> $(srcdir)/lib/$$file.
+
+	* Makefile.in (install-siteruby): ditto.
+
 Thu Dec 27 15:27:02 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.5 released.
