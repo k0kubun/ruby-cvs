@@ -22,7 +22,6 @@ class TestStruct__Tms < Rubicon::TestCase
     # and the parent to get decent times. RUn in parallel so
     # those with MP boxes get home slightly faster
     burntime
-    puts Time.times.to_a
   end
 
   def test_cstime

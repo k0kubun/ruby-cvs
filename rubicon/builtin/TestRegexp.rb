@@ -59,12 +59,12 @@ class TestRegexp < Rubicon::TestCase
   end
 
   def test_kcode
-    a=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
-    b=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
-    c=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "n")
-    assert_equal("none",a.kcode) if $KCODE == "NONE"
-    assert_equal("sjis",b.kcode)
-    assert_equal("none",c.kcode)
+    a = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
+    b = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
+    c = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "n")
+    assert_equal("none", a.kcode) if $KCODE == "NONE"
+    assert_equal("sjis", b.kcode)
+    assert_equal("none", c.kcode)
   end
 
   def test_last_match
@@ -72,7 +72,7 @@ class TestRegexp < Rubicon::TestCase
     "STAND OUT" =~ a
     "SIT IT OUT" =~ a
     m = a.last_match
-    assert_instance_of(MatchData,m)
+    assert_instance_of(MatchData, m)
     assert_equal([0,3], m.offset(0))
     assert_equal(1, m.length)
     assert_equal(" IT OUT", m.post_match)
