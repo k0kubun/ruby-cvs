@@ -24,7 +24,7 @@ class TestIO < Rubicon::TestCase
     3.upto(255) { |fd|
       begin
         io = IO.new(fd)
-        $stderr.puts "Failed on fd #{fd}"
+        $stderr.puts "FD #{fd} was not closed"
         exit
       rescue Errno::EBADF
       end

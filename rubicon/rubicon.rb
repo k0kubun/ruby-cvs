@@ -107,26 +107,32 @@ module Rubicon
     end
 
     #
-    # Setup some files in a test directory
+    # Setup some files in a test directory.
     #
     def setupTestDir
       @start = Dir.getwd
  
-      system("mkdir _test")
+      Dir.mkdir("_test", 0644)
+      system("ls -ld _test")
+      exit
       if $? != 0 && false
         $stderr.puts "Cannot run a file or directory test: " + 
           "will destroy existing directory _test"
         exit(99)
       end
-      sys("touch _test/_file1")
-      sys("touch _test/_file2")
+      Dir.chdir("_test")
+      File.open("_file1", "w", 0644) {}
+      File.open("_file2", "w", 0644) {}
+      Dir.chdir("..")
       @files = %w(. .. _file1 _file2)
     end
     
     def teardownTestDir
       Dir.chdir(@start)
-      system("rm -f _test/*")
-      system("rmdir _test 2>/dev/null")
+      Dir.chdir("_test")
+      Dir.foreach { |f| File.delete(f) unless f[0] = ?. }
+      Dir.chdir("..")
+      Dir.rmdir("_test")
     end
 
   end
