@@ -1,12 +1,23 @@
-2001-11-27  ChangeLog  <chadfowler@chadfowler.com>
+2001-12-27  Dave Thomas  <Dave@Thomases.com>
+
+	* language/TestStrings.rb: Tests for string literals from Matt Armstrong
+
+	* builtin/StringBase.rb: Additional tests in #sub from Matt
+	Armstrong.
+	
+
+2001-11-27  Chad Fowler  <chadfowler@chadfowler.com>
 
 	* language/TestFloats.rb: fixed tests to work on Win32
 
-	* builtin/TestFile__Stat.rb: Guarded known Win32 problems that were previously exposed during Cygwin testing.
+	* builtin/TestFile__Stat.rb: Guarded known Win32 problems that
+	were previously exposed during Cygwin testing.
 
-	* builtin/TestFile.rb: Guarded known Win32 problems that were previously exposed during Cygwin testing.
+	* builtin/TestFile.rb: Guarded known Win32 problems that were
+	previously exposed during Cygwin testing.
 
-	* builtin/TestFile.rb: Windows doesn't like pre-18000-second dates on its files.  Changed the tests to accomodate.
+	* builtin/TestFile.rb: Windows doesn't like pre-18000-second dates
+	on its files.  Changed the tests to accomodate.
 
 	* builtin/TestFloat.rb: fixed tests to work on Win32.
 
@@ -22,10 +33,8 @@
 
 	* builtin/TestIO.rb, Kernel: Array separator behavior changes back.
 
-2001-11-25    <Administrator@WALTER>
 
-
-2001-11-25    <Dave@Thomases.com>
+2001-11-25  Dave Thomas  <Dave@Thomases.com>
 
 	* GNUmakefile: added. Now 'make' picks up GNUmakefile, and nmake
 	the Makefile.

@@ -970,6 +970,36 @@ class StringBase < Rubicon::TestCase
                    |s| $1.upcase + S('-') + $2
                    })
 
+    assert_equal(S("a\\aba"), S("ababa").sub(/b/, '\\'))
+    assert_equal(S("ab\\aba"), S("ababa").sub(/(b)/, '\1\\'))
+    assert_equal(S("ababa"), S("ababa").sub(/(b)/, '\1'))
+    assert_equal(S("ababa"), S("ababa").sub(/(b)/, '\\1'))
+    assert_equal(S("a\\1aba"), S("ababa").sub(/(b)/, '\\\1'))
+    assert_equal(S("a\\1aba"), S("ababa").sub(/(b)/, '\\\\1'))
+    assert_equal(S("a\\baba"), S("ababa").sub(/(b)/, '\\\\\1'))
+
+    assert_equal(S("a--ababababababababab"),
+		 S("abababababababababab").sub(/(b)/, '-\9-'))
+    assert_equal(S("1-b-0"),
+		 S("1b2b3b4b5b6b7b8b9b0").
+		 sub(/(b).(b).(b).(b).(b).(b).(b).(b).(b)/, '-\9-'))
+    assert_equal(S("1-b-0"),
+		 S("1b2b3b4b5b6b7b8b9b0").
+		 sub(/(b).(b).(b).(b).(b).(b).(b).(b).(b)/, '-\\9-'))
+    assert_equal(S("1-\\9-0"),
+		 S("1b2b3b4b5b6b7b8b9b0").
+		 sub(/(b).(b).(b).(b).(b).(b).(b).(b).(b)/, '-\\\9-'))
+    assert_equal(S("k"),
+		 S("1a2b3c4d5e6f7g8h9iAjBk").
+		 sub(/.(.).(.).(.).(.).(.).(.).(.).(.).(.).(.).(.)/, '\+'))
+
+    assert_equal(S("ab\\aba"), S("ababa").sub(/b/, '\&\\'))
+    assert_equal(S("ababa"), S("ababa").sub(/b/, '\&'))
+    assert_equal(S("ababa"), S("ababa").sub(/b/, '\\&'))
+    assert_equal(S("a\\&aba"), S("ababa").sub(/b/, '\\\&'))
+    assert_equal(S("a\\&aba"), S("ababa").sub(/b/, '\\\\&'))
+    assert_equal(S("a\\baba"), S("ababa").sub(/b/, '\\\\\&'))
+
     a = S("hello")
     a.taint
     assert(a.sub(S('.'), S('X')).tainted?)
