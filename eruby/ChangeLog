@@ -1,3 +1,11 @@
+Mon Oct 16 18:32:23 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* version 0.1.2 released.
+
+Mon Oct 16 18:31:55 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby.c: use TRAP_BEG/TRAP_END.
+
 Wed Oct 11 14:13:05 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* eruby.c: new macro ERUBY_BEGIN_DELIMITER etc.
