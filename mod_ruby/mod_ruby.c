@@ -28,6 +28,7 @@
  */
 
 #include <stdarg.h>
+#include <signal.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -491,6 +492,12 @@ static void ruby_cleanup(void *data)
 }
 #endif
 
+#ifdef POSIX_SIGNAL
+#define ruby_signal(sig,handle) posix_signal((sig),(handle))
+#else
+#define ruby_signal(sig,handle) signal((sig),(handle))
+#endif
+
 static void ruby_startup(server_rec *s, pool *p)
 {
     VALUE stack_start;
@@ -498,10 +505,41 @@ static void ruby_startup(server_rec *s, pool *p)
     char **list;
     int i, n;
     int state;
+#ifdef SIGHUP
+    RETSIGTYPE (*sighup_handler)_((int));
+#endif
+#ifdef SIGQUIT
+    RETSIGTYPE (*sigquit_handler)_((int));
+#endif
+#ifdef SIGTERM
+    RETSIGTYPE (*sigterm_handler)_((int));
+#endif
     void Init_stack _((VALUE*));
 
     if (!ruby_running()) {
+#ifdef SIGHUP
+	sighup_handler = signal(SIGHUP, SIG_DFL);
+#endif
+#ifdef SIGQUIT
+	sigquit_handler = signal(SIGQUIT, SIG_DFL);
+#endif
+#ifdef SIGTERM
+	sigterm_handler = signal(SIGTERM, SIG_DFL);
+#endif
 	ruby_init();
+#ifdef SIGHUP
+	if (sighup_handler != SIG_ERR)
+	    ruby_signal(SIGHUP, sighup_handler);
+#endif
+#ifdef SIGQUIT
+	if (sigquit_handler != SIG_ERR)
+	    ruby_signal(SIGQUIT, sigquit_handler);
+#endif
+#ifdef SIGTERM
+	if (sigterm_handler != SIG_ERR)
+	    ruby_signal(SIGTERM, sigterm_handler);
+#endif
+
 	Init_stack(&stack_start);
 	rb_init_apache();
 #ifdef USE_ERUBY
