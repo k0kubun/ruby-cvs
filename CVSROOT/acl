@@ -1,0 +1,33 @@
+#
+# acl - access control list for the repository
+#
+# $Id$
+#
+
+#
+# Define groups
+#
+# Note: "all" is a pre-defined special group that includes everyone
+#
+
+group:admin:matz,shugo,akira,knu
+
+group:ruby:@all
+group:rubicon:dave,andy
+
+
+#
+# List access controls
+#
+# Note: they work on a first-match-wins basis.  If none matches,
+#       access will be granted.
+#
+
+# Grant "admin" members everything
+grant:@admin:.*
+
+grant:@ruby:ruby
+grant:@rubicon:rubicon
+
+# Deny access if we reach here
+deny:@all:.*

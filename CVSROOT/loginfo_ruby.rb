@@ -7,8 +7,9 @@
 # 0.11 Added "_nomail_" command 
 # 0.12 subject_prefix, smtp_ipaddr, multiple-email-address. (2000/6/1)
 #
-# $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.2 2001/01/14 09:54:20 knu Exp $
+# $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
 # $Id$
+#
 
 $cvs = "/usr/bin/cvs"
 
