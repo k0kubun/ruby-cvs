@@ -8,7 +8,7 @@ VPATH = $(srcdir)
 arch = @arch@
 ruby_version = @ruby_version@
 
-DESTDIR = 
+DESTDIR = @drive@
 
 prefix = $(DESTDIR)@prefix@
 exec_prefix = @exec_prefix@
@@ -135,7 +135,7 @@ $(LIBERUBY_SO): $(LIBERUBY_OBJS)
 		File.symlink "$(LIBERUBY_SO)", link}' $(LIBERUBY_ALIASES)
 
 $(ERUBY): $(OBJS) $(LIBERUBY)
-	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@
+	@MKERUBY@
 
 $(DLLIB): $(EXT_OBJS) $(LIBERUBY)
 	@MKDLLIB@

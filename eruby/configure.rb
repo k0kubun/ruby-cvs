@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated automatically using autoconf.rb version 0.2.1
+# Generated automatically using autoconf.rb version 0.2.2
 
 require "mkmf"
 
@@ -197,6 +197,7 @@ $stdout.sync = true
 
 drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
 prefix = Regexp.new("\\A" + Regexp.quote(CONFIG["prefix"]))
+$drive = CONFIG["prefix"] =~ drive ? $& : ''
 $prefix = CONFIG["prefix"].sub(drive, '')
 $exec_prefix = "$(prefix)"
 $bindir = CONFIG["bindir"].sub(prefix, "$(exec_prefix)").sub(drive, '')
@@ -299,7 +300,9 @@ $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $RUBY_SHARED
   $LIBRUBYARG.gsub!(/-L\./, "-L$(libdir)")
 else
-  $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
+  if RUBY_PLATFORM !~ /mswin32/
+    $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
+  end
 end
 $LIBRUBY_A = CONFIG["LIBRUBY_A"]
 $RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
@@ -327,6 +330,7 @@ AC_SUBST("VPATH")
 
 AC_SUBST("arch")
 AC_SUBST("ruby_version")
+AC_SUBST("drive")
 AC_SUBST("prefix")
 AC_SUBST("exec_prefix")
 AC_SUBST("bindir")
@@ -465,7 +469,7 @@ if PLATFORM =~ /-mswin32/
   $LIBERUBY = "$(LIBERUBY_A)"
   $LIBRUBYARG.gsub!(CONFIG["RUBY_SO_NAME"] + ".lib", CONFIG["LIBRUBY_A"])
   if /nmake/i =~ $make
-    $LD = "(set LIB=$(libdir:/=\\);$(LIB))& $(CC)"
+    $LD = "$(CC)"
     $VPATH = "{$(VPATH)}"
   else
     $LD = "env LIB='$(subst /,\\\\,$(libdir));$(LIB)' $(CC)"
@@ -482,22 +486,35 @@ AC_SUBST("LIBERUBY_ALIASES")
 AC_SUBST("AROPT")
 
 $EXT_DLDFLAGS = CONFIG["DLDFLAGS"]
-if $RUBY_SHARED
+if $RUBY_SHARED || RUBY_PLATFORM =~ /mswin32/
   $EXT_LIBRUBYARG = "$(LIBRUBYARG)"
 else
   $EXT_LIBRUBYARG = ""
 end
 
+$MKERUBY = ""
+if /mswin32/ =~ RUBY_PLATFORM
+  if /nmake/i =~ $make
+    $MKERUBY << "set LIB=$(libdir:/=\\);$(LIB)\n\t"
+  else
+    $MKERUBY << "\tenv LIB='$(subst /,\\\\,$(LIBPATH)); $(EXT_LIBRUBYARG) $(LIB)' \\\n\t"
+  end
+end
+$MKERUBY << "$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@"
+
 if $DLEXT != $OBJEXT
   $MKDLLIB = ""
   if /mswin32/ =~ RUBY_PLATFORM
     if /nmake/i =~ $make
-      $MKDLLIB << "set LIB=$(LIBPATH:/=\\); $(EXT_LIBRUBYARG) $(LIB)\n\t"
+      $MKDLLIB << "set LIB=$(libdir:/=\\);$(LIB)\n\t"
     else
       $MKDLLIB << "\tenv LIB='$(subst /,\\\\,$(LIBPATH)); $(EXT_LIBRUBYARG) $(LIB)' \\\n\t"
     end
   end
   $MKDLLIB << "$(LDSHARED) $(EXT_DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(EXT_LIBRUBYARG) $(LIBS)"
+  if /mswin32/ =~ RUBY_PLATFORM && /nmake/i =~ $make
+    $MKDLLIB << " -link /INCREMENTAL:no /EXPORT:Init_eruby"
+  end
 else
   case RUBY_PLATFORM
   when "m68k-human"
@@ -509,6 +526,7 @@ end
 
 AC_SUBST("EXT_DLDFLAGS")
 AC_SUBST("EXT_LIBRUBYARG")
+AC_SUBST("MKERUBY")
 AC_SUBST("MKDLLIB")
 
 AC_CONFIG_HEADER("config.h")
