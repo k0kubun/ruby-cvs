@@ -90,7 +90,7 @@ class TestFile < Rubicon::TestCase
       assert_equal(File.join(home, 'a'),
                          File.expand_path('~/a', '/tmp/gumby/ddd'))
     else
-      $stderr.puts "Skipping test_s_expand_path(~)"
+      skipping("$HOME not set")
     end
 
     pw = File.open("/etc/passwd")
@@ -110,7 +110,7 @@ class TestFile < Rubicon::TestCase
         pw.close
       end
     else
-      $stderr.puts "Slipping test_s_expand_path(~user)"
+      skipping("~user")
     end
   end
 
@@ -120,13 +120,13 @@ class TestFile < Rubicon::TestCase
     system("mkfifo _fifo") # may fail
 
     {
-      "../_test" => "directory",
-      "_file1" => "file",
-      "/dev/tty"     => "characterSpecial",
-      "/dev/fd0"     => "blockSpecial",
+      "../_test"          => "directory",
+      "_file1"            => "file",
+      "/dev/tty"          => "characterSpecial",
+      "/dev/fd0"          => "blockSpecial",
       "/tmp/.X11-unix/X0" => "socket",
-      "_file3"  => "link",
-      "_fifo"   => "fifo" 
+      "_file3"            => "link",
+      "_fifo"             => "fifo" 
     }.each { |file, type|
       if File.exists?(file)
         assert_equal(type, File.ftype(file), file.dup)
@@ -137,15 +137,37 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_join
-    assert_fail("untested")
+
+    [
+      %w( a b c d ),
+      %w( a ),
+      %w( ),
+      %w( a b .. c )
+    ].each do |a|
+      assert_equal(a.join(File::SEPARATOR), File.join(*a))
+    end
   end
 
   def test_s_link
-    assert_fail("untested")
+    Dir.chdir("_test")
+    
+    assert_equal(0, File.link("_file1", "_file3"))
+    
+    assert(File.exists?("_file3"))
+    assert_equal(2, File.stat("_file1").nlink)
+    assert_equal(2, File.stat("_file3").nlink)
+    assert(File.stat("_file1").ino == File.stat("_file3").ino)
   end
 
   def test_s_lstat
-    assert_fail("untested")
+    Dir.chdir("_test")
+    File.symlink("_file1", "_file3") # may fail
+
+    assert_equal(0, File.stat("_file3").size)
+    assert(0 < File.lstat("_file3").size)
+
+    assert_equal(0, File.stat("_file1").size)
+    assert_equal(0,  File.lstat("_file1").size)
   end
 
   def test_s_mtime
@@ -153,11 +175,111 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_open
-    assert_fail("untested")
+    file1 = "_test/_file1"
+
+    assert_exception(Errno::ENOENT) { File.open("_gumby") }
+
+    # test block/non block forms
+    
+    f = File.open(file1)
+    assert_equal(File, f.type)
+    f.close
+
+    assert_nil(File.open(file1) { |f| assert_equal(File, f.type)})
+
+    # test modes
+
+    modes = [
+      %w( r w r+ w+ a a+ ),
+      [ File::RDONLY, 
+        File::WRONLY | File::CREAT,
+        File::RDWR,
+        File::RDWR   + File::TRUNC + File::CREAT,
+        File::WRONLY + File::APPEND + File::CREAT,
+        File::RDWR   + File::APPEND + File::CREAT
+        ]]
+
+    for modeset in modes
+      sys("rm -f #{file1}")
+      sys("touch #{file1}")
+
+      mode = modeset.shift      # "r"
+
+      # file: empty
+      File.open(file1, mode) { |f| 
+        assert_nil(f.gets)
+        assert_exception(IOError) { f.puts "wombat" }
+      }
+
+      mode = modeset.shift      # "w"
+
+      # file: empty
+      File.open(file1, mode) { |f| 
+        assert_nil(f.puts "wombat")
+        assert_exception(IOError) { f.gets }
+      }
+
+      mode = modeset.shift      # "r+"
+
+      # file: wombat
+      File.open(file1, mode) { |f| 
+        assert_equal("wombat\n", f.gets)
+        assert_nil(f.puts "koala")
+        f.rewind
+        assert_equal("wombat\n", f.gets)
+        assert_equal("koala\n", f.gets)
+      }
+
+      mode = modeset.shift      # "w+"
+
+      # file: wombat/koala
+      File.open(file1, mode) { |f| 
+        assert_nil(f.gets)
+        assert_nil(f.puts "koala")
+        f.rewind
+        assert_equal("koala\n", f.gets)
+      }
+
+      mode = modeset.shift      # "a"
+
+      # file: koala
+      File.open(file1, mode) { |f| 
+        assert_nil(f.puts "wombat")
+        assert_exception(IOError) { f.gets }
+      }
+      
+      mode = modeset.shift      # "a+"
+
+      # file: koala/wombat
+      File.open(file1, mode) { |f| 
+        assert_nil(f.puts "wallaby")
+        f.rewind
+        assert_equal("koala\n", f.gets)
+        assert_equal("wombat\n", f.gets)
+        assert_equal("wallaby\n", f.gets)
+      }
+
+    end
+
+    # Now try creating files
+
+    filen = "_test/_filen"
+
+    File.open(filen, "w") {}
+    assert(File.exists?(filen))
+    File.delete(filen)
+    
+    File.open(filen, "w", 0444) {}
+    assert(File.exists?(filen))
+    assert(0444, File.stat(filen).mode)
+    File.delete(filen)
   end
 
   def test_s_readlink
-    assert_fail("untested")
+    Dir.chdir("_test")
+    File.symlink("_file1", "_file3") # may fail
+    assert_equal("_file1", File.readlink("_file3"))
+    assert_exception(Errno::EINVAL) { File.readlink("_file1") }
   end
 
   def test_s_rename
