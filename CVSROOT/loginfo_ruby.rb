@@ -12,7 +12,16 @@
 
 $cvs = "/usr/bin/cvs"
 
-$datestr = Time.now
+
+def time2str(tm)
+  ret = tm.strftime("%a, #{tm.mday} %b %Y %X ")
+  gmt = Time.at(tm.to_i)
+  gmt.gmtime
+  offset = tm.to_i - Time.local(*gmt.to_a[0,6].reverse).to_i
+  ret + sprintf('%+.2d%.2d', *(offset / 60).divmod(60))
+end
+
+$datestr = time2str(Time.now)
 $ecvsuser = ENV['LOGNAME']
 $pgrp = Process.getpgrp()
 
