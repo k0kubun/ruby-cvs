@@ -88,9 +88,6 @@ class TestModule < Rubicon::TestCase
     Version.less_than("1.7") do
       assert_equal(1, Mixin <=> User)
     end
-    Version.greater_or_equal("1.7") do
-      assert_exception(ArgumentError) { Mixin <=> Other }
-    end 
 
     assert_equal( 0, Object <=> Object)
     assert_equal(-1, String <=> Object)

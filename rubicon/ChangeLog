@@ -1,3 +1,9 @@
+2002-05-21  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestModule.rb (TestModule::test_CMP): <=> comparison
+	  between unrelated classes/modules does not raise an exception on
+	  1.7 now.
+
 2002-03-26  Nobuyoshi Nakada  <nobu.nakada@nifty.ne.jp>
 
 	* builtin/TestIO.rb (TestIO::test_gets_para): IO#gets in paragraph
