@@ -328,6 +328,7 @@ REQUEST_INT_ATTR_READER(request_get_status, status);
 REQUEST_INT_ATTR_WRITER(request_set_status, status);
 REQUEST_STRING_ATTR_READER(request_get_status_line, status_line);
 REQUEST_STRING_ATTR_WRITER(request_set_status_line, status_line);
+REQUEST_STRING_ATTR_READER(request_the_request, the_request);
 REQUEST_STRING_ATTR_READER(request_request_method, method);
 REQUEST_STRING_ATTR_READER(request_args, args);
 REQUEST_STRING_ATTR_READER(request_get_content_type, content_type);
@@ -1051,6 +1052,8 @@ void rb_init_apache_request()
 		     request_set_status_line, 1);
     rb_define_method(rb_cApacheRequest, "request_method",
 		     request_request_method, 0);
+    rb_define_method(rb_cApacheRequest, "the_request",
+		     request_the_request, 0);
     rb_define_method(rb_cApacheRequest, "header_only?", request_header_only, 0);
     rb_define_method(rb_cApacheRequest, "args", request_args, 0);
     rb_define_method(rb_cApacheRequest, "content_length",
