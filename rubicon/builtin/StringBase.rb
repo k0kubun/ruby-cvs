@@ -222,12 +222,12 @@ class StringBase < Rubicon::TestCase
 
   def test_REV # '~'
     $_ = S("FeeFieFoo-Fum")
-    assert_equal(10,  ~S("Fum$"))
-    assert_equal(nil, ~S("FUM$"))
+    assert_equal(10,  ~/Fum$/)
+    assert_equal(nil, ~/FUM$/)
 
     pre_1_7_1 do
       $= = true
-      assert_equal(10, ~S("FUM$"))
+      assert_equal(10, ~/FUM$/)
       $= = false
     end
   end
@@ -547,13 +547,13 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("h*ll*"),     S("hello").gsub(/[aeiou]/, S('*')))
     assert_equal(S("h<e>ll<o>"), S("hello").gsub(/([aeiou])/, S('<\1>')))
     assert_equal(S("104 101 108 108 111 "),
-                 S("hello").gsub(S('.')) { |s| s[0].to_s + S(' ')})
+                 S("hello").gsub(/./) { |s| s[0].to_s + S(' ')})
     assert_equal(S("HELL-o"), 
                  S("hello").gsub(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 })
 
     a = S("hello")
     a.taint
-    assert(a.gsub(S('.'), S('X')).tainted?)
+    assert(a.gsub(/./, S('X')).tainted?)
   end
 
   def test_gsub!
@@ -568,7 +568,7 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("h<e>ll<o>"), a)
 
     a = S("hello")
-    a.gsub!(S('.')) { |s| s[0].to_s + S(' ')}
+    a.gsub!(/./) { |s| s[0].to_s + S(' ')}
     assert_equal(S("104 101 108 108 111 "), a)
 
     a = S("hello")
@@ -577,7 +577,7 @@ class StringBase < Rubicon::TestCase
 
     r = S('X')
     r.taint
-    a.gsub!(S('.'), r)
+    a.gsub!(/./, r)
     assert(a.tainted?) 
 
     a = S("hello")
@@ -969,8 +969,12 @@ class StringBase < Rubicon::TestCase
   def test_sub
     assert_equal(S("h*llo"),    S("hello").sub(/[aeiou]/, S('*')))
     assert_equal(S("h<e>llo"),  S("hello").sub(/([aeiou])/, S('<\1>')))
-    assert_equal(S("104 ello"), S("hello").sub(S('.')) {
-                   |s| s[0].to_s + S(' ')})
+
+    Version.less_than("1.7.2") do
+      assert_equal(S("104 ello"), S("hello").sub(S('.')) {
+                     |s| s[0].to_s + S(' ')})
+    end
+
     assert_equal(S("HELL-o"),   S("hello").sub(/(hell)(.)/) {
                    |s| $1.upcase + S('-') + $2
                    })
@@ -1007,7 +1011,7 @@ class StringBase < Rubicon::TestCase
 
     a = S("hello")
     a.taint
-    assert(a.sub(S('.'), S('X')).tainted?)
+    assert(a.sub(/./, S('X')).tainted?)
   end
 
   def test_sub!
@@ -1021,20 +1025,22 @@ class StringBase < Rubicon::TestCase
     a.sub!(/([aeiou])/, S('<\1>'))
     assert_equal(S("h<e>llo"), a)
 
-    a = S("hello")
-    a.sub!(S('.')) { |s| s[0].to_s + S(' ')}
-    assert_equal(S("104 ello"), a)
+    Version.less_than("1.7.2") do
+      a = S("hello")
+      a.sub!(S('.')) { |s| s[0].to_s + S(' ')}
+      assert_equal(S("104 ello"), a)
+    end
 
     a = S("hello")
     a.sub!(/(hell)(.)/) { |s| $1.upcase + S('-') + $2 }
     assert_equal(S("HELL-o"), a)
 
     a=S("hello")
-    assert_nil(a.sub!(S('X'), S('Y')))
+    assert_nil(a.sub!(/X/, S('Y')))
 
     r = S('X')
     r.taint
-    a.sub!(S('.'), r)
+    a.sub!(/./, r)
     assert(a.tainted?) 
   end
 
