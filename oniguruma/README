@@ -1,4 +1,4 @@
-README  2002/04/01
+README  2002/04/16
 
 OniGuruma (regular expression library)
 
@@ -7,13 +7,13 @@ K.Kosako <kosako@sofnec.co.jp>
 
 There are two ways of using of it in this program.
 
-  A. built-in regular expression engine of Ruby
-  B. C library
+  a. Built-in regular expression engine of Ruby
+  b. C library
 
 
 Install
 
-  A. Install into Ruby
+  a. Install into Ruby
 
      1. Copy regex.h and regex.c into ruby source directory.
      2. Apply a patch file to re.c.
@@ -32,7 +32,7 @@ Install
      2. make 166 (or make 172)  (in oniguruma directory)
 
 
-  B. Install library (and header file)
+  b. Install library (and header file)
 
      1. ./configure
      2. make
@@ -43,12 +43,12 @@ Install
 
 License
 
-   When this software is partly used or it is distributed, this of Ruby
-   follows the license of Ruby.
+   When this software is partly used or it is distributed with Ruby, 
+   this of Ruby follows the license of Ruby.
    It follows the BSD license in the case of the one except for it.
 
 
-Differences with japanized GNU regex(version 0.12) of Ruby
+Differences with Japanized GNU regex(version 0.12) of Ruby
 
    + has a original native API. (Thread safe?  I hope so.)
    + has modified GNU regex API.
@@ -60,6 +60,9 @@ Differences with japanized GNU regex(version 0.12) of Ruby
    + look-behind (?<=fixed-char-length-pattern) and
                  (?<!fixed-char-length-pattern) are added.
      (char-class, anychar(.) and anchor(^,$,\A only) are allowed.)
+     (in negative-look-behind, capture group() isn't allowed, 
+      shy group(?:) is allowed.)
+
    + specify wide-char value by \x{hexadecimal-number} form.
    + Octal or hexadecimal number sequence can be treated as 
      a multibyte code char in char-class, if multibyte encoding is specified.
@@ -79,16 +82,18 @@ Differences with japanized GNU regex(version 0.12) of Ruby
 
 ToDo
 
+   + POSIX compatible API.
    + check invalid wide char value in WC2MB, WC2MB_FIRST on Ruby M17N.
    + benchmark script.
 
-   ? get tail string optimizing info. ex. /X((.*).)+X/
-     (add backward link to NCONS)
+   ? named sub-pattern, named back-reference, pattern and bytecode sharing.
+     ex. define: (?<name>...), back-ref: \g<name>, share: (?*name)
+
+     Pattern sharing was proposed by Tanaka Akira for DFA -> regexp transformation.
+
    ? reduce null-check range at bytecode compile time.
      ex. (?:a*)+  ===> (?:aa*|)+
-   ? add a new stack type for anystar(.*) matching process.
-     [STK_ANYCHAR_STAR, address, str-low, str-now]
-  ?? POSIX compatible API.
+
 
  and I'm thankful to Akinori MUSHA.
 
@@ -109,6 +114,15 @@ Problem
 
 History
 
+2002/04/09: [impl] move IS_MULTILINE() to outside of loop in OP_ANYCHAR_STAR.
+2002/04/08: [impl] don't use OP_REPEAT operator for '??'.
+2002/04/06: [impl] reduce redundant nested repeat operators(?,*,+,??,*?,+?).
+                   ex. (?:a*)?, (?:a??)* etc..
+2002/04/06: [spec] should not warn for /(?:a?)+?/.
+2002/04/04: [spec] should allow fixed length alternative and repeat pattern
+                   in look-behind. ex. /(?<=(a|b){3})/  (thanks Guy Decoux)
+2002/04/02: [spec] should warn for /(?:a+)?/ and /(?:a*)??/.  (thanks akr)
+
 2002/04/01: Version 1.3
 
 2002/04/01: [dist] add COPYING.
@@ -121,6 +135,7 @@ History
 2002/03/27: [impl] add THREAD_ATOMIC to regex_clone(), regex_init(), regex_end().
 2002/03/25: [spec] if encoding is utf-8, allow combination of singlebyte and
                    multibyte code range in char class.
+                   (cancelled 2002/04/01: for M17N compatibility)
 2002/03/25: [dist] description of the license condition is added to README.
 2002/03/23: [bug]  should set all bits of reg->mem_stats,
                    if REG_OPTION_FIND_LONGEST or REG_OPTION_NOT_EMPTY.
@@ -166,7 +181,7 @@ History
 2002/03/08: [spec] allow use of "\A"(begin-buf) in look-behind.
 2002/03/08: [impl] add a new opcode OP_PUSH_IF_PEEK_NEXT.
 2002/03/08: [impl] add a new opcode OP_ANYCHAR_STAR_PEEK_NEXT.
-2002/03/07: [spec] prohibit use of memory group "(...)"
+2002/03/07: [spec] prohibit use of capture group "(...)"
                    in negative look-behind.
 2002/03/07: [inst] add configure.in, config.h.in, Makefile.in.
 2002/03/07: [impl] call Init_REGEX_STAT() in RegexInit().
