@@ -1,3 +1,24 @@
+Fri Apr 27 13:50:29 2001  Shugo Maeda <shugo@modruby.net>
+	
+	* ruby/apache/ruby.rb (emulate_cgi): new method.
+
+	* ruby/apache/eruby.rb: inherit Apache::Ruby.
+
+Thu Apr 26 17:41:11 2001  Shugo Maeda <shugo@modruby.net>
+
+	* table.c: new file for Apache::Table.
+
+	* connection.c: new file for Apache::Connection.
+
+	* server.c: new file for Apache::Server.
+
+	* request.c: new file for Apache::Request.
+
+	* request.c (request_setup_cgi_env): new method.
+
+	* mod_ruby.c (script_handler): resotre original $stdin, $stdout
+	and $>.
+
 Fri Apr 20 13:04:28 2001  Shugo Maeda <shugo@modruby.net>
 
 	* apachelib.c (request_finfo): new method Apache::Request#finfo.

@@ -30,15 +30,30 @@ module Apache
     include Singleton
 
     def handler(r)
-      st = r.finfo
-      if st.mode.zero?
+      if r.finfo.mode == 0
 	return Apache::NOT_FOUND
       end
-      if st.directory? or !st.readable?
+      if r.finfo.directory? or !r.finfo.readable?
 	return Apache::FORBIDDEN
       end
-      load(r.filename, true)
+      emulate_cgi(r) do
+	load(r.filename, true)
+      end
       return Apache::OK
+    end
+
+    private
+
+    def emulate_cgi(r)
+      r.setup_cgi_env
+      Apache.chdir_file(r.filename)
+      stdin, stdout, defout = $stdin, $stdout, $>
+      $stdin = $stdout = $> = r
+      begin
+	yield
+      ensure
+	$stdin, $stdout, $> = stdin, stdout, defout
+      end
     end
   end
 end

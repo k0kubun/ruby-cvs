@@ -12,6 +12,7 @@ Required environment
 ====================
 
   * Ruby version 1.6.x or later.
+    (Recommends version 1.6.4 or later.)
   * Apache version 1.3.3 or later.
 
 

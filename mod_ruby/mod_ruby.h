@@ -47,6 +47,7 @@ extern MODULE_VAR_EXPORT module ruby_module;
 int ruby_running();
 int ruby_require(char*);
 void ruby_add_path(const char *path);
+void rb_setup_cgi_env(request_rec *r);
 
 #endif /* !MOD_RUBY_H */
 

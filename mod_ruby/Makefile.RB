@@ -4,8 +4,12 @@ require "mkmf"
 require "getoptlong"
 
 if RUBY_VERSION < "1.6"
-  $stderr.print("mod_ruby requires Ruby 1.6.x or later.")
+  $stderr.print("mod_ruby requires Ruby 1.6.x or later.\n")
   exit 1
+end
+
+if RUBY_VERSION < "1.6.4"
+  $stderr.print("warning: mod_ruby recommends Ruby 1.6.4 or later.\n")
 end
 
 $APXS = "apxs"
@@ -156,7 +160,13 @@ APACHE_LIBEXECDIR = $(DESTDIR)#{$APACHE_LIBEXECDIR}
 
 TARGET = mod_ruby.so
 
-OBJS = mod_ruby.o ruby_config.o apachelib.o
+OBJS	= mod_ruby.o \
+	  ruby_config.o \
+	  apachelib.o \
+	  table.o \
+	  connection.o \
+	  server.o \
+	  request.o
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -185,6 +195,10 @@ $(TARGET): $(OBJS)
 mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h
 ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h
 apachelib.o: apachelib.c apachelib.h
+table.o: table.c apachelib.h
+connection.o: connection.c apachelib.h
+server.o: server.c apachelib.h
+request.o: request.c apachelib.h
 EOMF
 ensure
   mfile.close

@@ -23,21 +23,42 @@ Apache::ERuby handles eRuby files.
 
 =end
 
-require "singleton"
+require "cgi/session"
+
 require "eruby"
+require "apache/ruby"
+
+module ERuby
+  @@cgi = nil
+
+  def self.cgi
+    return @@cgi
+  end
+
+  def self.cgi=(cgi)
+    @@cgi = cgi
+  end
+end
 
 module Apache
-  class ERuby
-    include Singleton
-
+  class ERuby < Apache::Ruby
     def handler(r)
       begin
 	open(r.filename) do |f|
+	  ::ERuby.noheader = false
+	  ::ERuby.charset = ::ERuby.default_charset
+	  ::ERuby.cgi = nil
 	  code = @compiler.compile_file(f)
-	  eval(code, TOPLEVEL_BINDING)
-	  unless ::ERuby.noheader
-	    r.content_type = format("text/html; charset=%s", ::ERuby.charset)
-	    r.send_http_header
+	  emulate_cgi(r) do
+	    eval(code, TOPLEVEL_BINDING)
+	    unless ::ERuby.noheader
+	      if cgi = ::ERuby.cgi
+		cgi.header("charset" => ::ERuby.charset)
+	      else
+		r.content_type = format("text/html; charset=%s", ::ERuby.charset)
+		r.send_http_header
+	      end
+	    end
 	  end
 	end
 	return Apache::OK

@@ -61,6 +61,7 @@ static char **origenviron;
 extern VALUE ruby_errinfo;
 extern VALUE rb_defout;
 extern VALUE rb_stdin;
+extern VALUE rb_stdout;
 
 extern VALUE rb_load_path;
 static VALUE default_load_path;
@@ -240,7 +241,7 @@ static void ruby_startup(server_rec *s, pool *p)
 #endif
 
     ruby_init();
-    ruby_init_apachelib();
+    rb_init_apache();
 #ifdef USE_ERUBY
     eruby_init();
 #endif
@@ -362,18 +363,23 @@ static void setenv_from_table(table *tbl)
     }
 }
 
-static void setup_env(request_rec *r, ruby_dir_config *dconf)
+void rb_setup_cgi_env(request_rec *r)
 {
     ruby_server_config *sconf =
 	(ruby_server_config *) ap_get_module_config(r->server->module_config,
-						    &ruby_module);
+						       &ruby_module);
+    ruby_dir_config *dconf;
 
     mod_ruby_clearenv();
     ap_add_common_vars(r);
     ap_add_cgi_vars(r);
     setenv_from_table(r->subprocess_env);
     setenv_from_table(sconf->env);
-    if (dconf) setenv_from_table(dconf->env);
+    if (r->per_dir_config) {
+	dconf = (ruby_dir_config *) ap_get_module_config(r->per_dir_config,
+							 &ruby_module);
+	setenv_from_table(dconf->env);
+    }
     mod_ruby_setenv("MOD_RUBY", MOD_RUBY_STRING_VERSION);
     mod_ruby_setenv("GATEWAY_INTERFACE", RUBY_GATEWAY_INTERFACE);
 }
@@ -665,16 +671,12 @@ static void per_request_init(request_rec *r)
 	if (dconf->kcode)
 	    rb_set_kcode(dconf->kcode);
     }
-    rb_defout = ruby_request_new(r);
-    rb_gv_set("$stdin", rb_defout);
-    rb_gv_set("$stdout", rb_defout);
-    setup_env(r, dconf);
-    if (r->filename)
-	ap_chdir_file(r->filename);
+    rb_request = rb_apache_request_new(r);
 }
 
 static void per_request_cleanup()
 {
+    rb_request = Qnil;
     rb_set_kcode(default_kcode);
 }
 
@@ -695,7 +697,7 @@ static VALUE ruby_object_handler_0(void *arg)
     n = dconf->handlers->nelts;
     retval = DECLINED;
     for (i = 0; i < n; i++) {
-	ret = rb_funcall(rb_eval_string(list[i]), id_handler, 1, rb_defout);
+	ret = rb_funcall(rb_eval_string(list[i]), id_handler, 1, rb_request);
 	retval = NUM2INT(ret);
 	if (retval != DECLINED)
 	    break;
@@ -725,7 +727,7 @@ static int ruby_object_handler(request_rec *r)
     ap_soft_timeout("call ruby handler", r);
     if ((state = run_safely(safe_level, sconf->timeout,
 			    ruby_object_handler_0, r, &ret)) == 0) {
-	rb_request_flush(rb_defout);
+	rb_apache_request_flush(rb_request);
 	retval = NUM2INT(ret);
     }
     else {
@@ -745,6 +747,7 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
 						    &ruby_module);
     ruby_dir_config *dconf = NULL;
     VALUE ret;
+    VALUE orig_stdin, orig_stdout, orig_defout;
     int retval;
     int safe_level = 0;
 
@@ -760,7 +763,18 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
     }
 
     (void) ap_acquire_mutex(mod_ruby_mutex);
+
     per_request_init(r);
+    rb_setup_cgi_env(r);
+    orig_stdin = rb_stdin;
+    orig_stdout = rb_stdout;
+    orig_defout = rb_defout;
+    rb_stdin = rb_request;
+    rb_stdout = rb_request;
+    rb_defout = rb_request;
+    if (r->filename)
+	ap_chdir_file(r->filename);
+
     ap_soft_timeout("load ruby script", r);
     if (run_safely(safe_level, sconf->timeout, func, r, &ret) == 0) {
 	retval = NUM2INT(ret);
@@ -769,7 +783,12 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
 	retval = SERVER_ERROR;
     }
     ap_kill_timeout(r);
+
+    rb_stdin = orig_stdin;
+    rb_stdout = orig_stdout;
+    rb_defout = orig_defout;
     per_request_cleanup();
+
     (void) ap_release_mutex(mod_ruby_mutex);
     return retval;
 }
@@ -795,7 +814,7 @@ static VALUE load_ruby_script(void *arg)
     else {
 	ret = INT2NUM(OK);
     }
-    rb_request_flush(rb_defout);
+    rb_apache_request_flush(rb_request);
     return ret;
 }
 
@@ -837,7 +856,7 @@ static VALUE load_eruby_script(void *arg)
 	ret = INT2NUM(OK);
     }
     if (!eruby_noheader) {
-	long len = ruby_request_outbuf_length(rb_defout);
+	long len = rb_apache_request_length(rb_request);
 	
 	if (strcmp(r->content_type, "text/html") == 0) {
 	    r->content_type = ap_psprintf(r->pool,
@@ -845,9 +864,9 @@ static VALUE load_eruby_script(void *arg)
 					  ERUBY_CHARSET);
 	}
 	ap_set_content_length(r, len);
-	rb_request_send_http_header(rb_defout);
+	rb_apache_request_send_http_header(rb_request);
     }
-    rb_request_flush(rb_defout);
+    rb_apache_request_flush(rb_request);
     return ret;
 }
 
