@@ -40,12 +40,12 @@ group:admin:matz,shugo,akira,knu
 group:ruby:matz,shugo,aamine,wakou,eban,knu,komatsu,usa
 group:eruby:shugo
 group:mod_ruby:shugo
-group:rubicon:dave,andy
+group:rubicon:dave,andy,aleksi
 group:cvsmailer:knu
 group:rwiki:seki,nahi
 group:interbase:matz,bizenn
 group:irc:iga,knu
-group:metaruby:matju
+group:metaruby:matju,aleksi
 
 group:www:@all
 
