@@ -4,6 +4,7 @@
  */
 
 #include "ruby.h"
+#include "rubysig.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -242,10 +243,14 @@ static int parse_embedded_program(FILE *in, FILE *out,
     if (type == EMBEDDED_EXPR)
 	fputs("print((", out);
     for (;;) {
+	TRAP_BEG;
 	c = getc(in);
+	TRAP_END;
       again:
 	if (c == ERUBY_END_DELIMITER[0]) {
+	    TRAP_BEG;
 	    c = getc(in);
+	    TRAP_END;
 	    if (c == ERUBY_END_DELIMITER[1]) {
 		if (prevc == ERUBY_END_DELIMITER[0]) {
 		    if (type != EMBEDDED_COMMENT)
@@ -299,7 +304,9 @@ static int parse_embedded_line(FILE *in, FILE *out)
     int c;
 
     for (;;) {
+	TRAP_BEG;
 	c = getc(in);
+	TRAP_END;
 	switch (c) {
 	case EOF:
 	    if (ferror(in))
@@ -323,9 +330,13 @@ int eruby_compile(FILE *in, FILE *out)
     int c, prevc = EOF;
     int err;
 
+    TRAP_BEG;
     c = getc(in);
+    TRAP_END;
     if (c == '#') {
+	TRAP_BEG;
 	c = getc(in);
+	TRAP_END;
 	if (c == '!') {
 	    unsigned char *p;
 	    char *argv[2];
@@ -351,7 +362,9 @@ int eruby_compile(FILE *in, FILE *out)
 	}
 	else {
 	    while (c != EOF) {
+		TRAP_BEG;
 		c = getc(in);
+		TRAP_END;
 		if (c == '\n') {
 		    putc(c, out);
 		    break;
@@ -364,12 +377,18 @@ int eruby_compile(FILE *in, FILE *out)
     }
 
     for (;;) {
+	TRAP_BEG;
 	c = getc(in);
+	TRAP_END;
       again:
 	if (c == ERUBY_BEGIN_DELIMITER[0]) {
+	    TRAP_BEG;
 	    c = getc(in);
+	    TRAP_END;
 	    if (c == ERUBY_BEGIN_DELIMITER[1]) {
+		TRAP_BEG;
 		c = getc(in);
+		TRAP_END;
 		if (c == EOF) {
 		    return ERUBY_MISSING_END_DELIMITER;
 		}
@@ -404,7 +423,9 @@ int eruby_compile(FILE *in, FILE *out)
 	    }
 	}
 	else if (c == ERUBY_LINE_BEG_CHAR && prevc == EOF) {
+	    TRAP_BEG;
 	    c = getc(in);
+	    TRAP_END;
 	    if (c == EOF) {
 		return ERUBY_MISSING_END_DELIMITER;
 	    }
@@ -516,19 +537,24 @@ VALUE eruby_compile_file(char *filename)
 	    rb_sys_fail(filename);
     }
   retry:
-    if ((tmp = eruby_mktemp(filename)) == NULL)
+    if ((tmp = eruby_mktemp(filename)) == NULL) {
+	fclose(in);
 	rb_fatal("can't mktemp");
-    fd = open(tmp, O_CREAT | O_EXCL | O_WRONLY, 0600);
+    }
+    fd = open(tmp, O_CREAT | O_EXCL | O_WRONLY, 00600);
     if (fd < 0) {
 	free(tmp);
 	if (errno == EEXIST)
 	    goto retry;
+	fclose(in);
 	rb_fatal("cannot open temporary file: %s", tmp);
     }
     scriptname = rb_str_new2(tmp);
     free(tmp);
-    if ((out = fdopen(fd, "w")) == NULL)
+    if ((out = fdopen(fd, "w")) == NULL) {
+	close(fd);
 	rb_fatal("cannot open temporary file: %s", RSTRING(scriptname)->ptr);
+    }
     err = eruby_compile(in, out);
     if (in != stdin) fclose(in);
     fclose(out);
@@ -550,16 +576,13 @@ VALUE eruby_compile_file(char *filename)
 VALUE eruby_load(char *filename, int wrap, int *state)
 {
     VALUE scriptname;
-    void (*sigint)(int);
-    void (*sigquit)(int);
+    int status;
 
-    sigint = signal(SIGINT, SIG_DFL);
-    sigquit = signal(SIGQUIT, SIG_DFL);
-    scriptname = rb_protect(eruby_compile_file, (VALUE) filename, state);
-    signal(SIGINT, sigint);
-    signal(SIGQUIT, sigquit);
-    if (*state)	return Qnil;
-    rb_load_protect(scriptname, wrap, state);
+    scriptname = rb_protect(eruby_compile_file, (VALUE) filename, &status);
+    if (state) *state = status;
+    if (status)	return Qnil;
+    rb_load_protect(scriptname, wrap, &status);
+    if (state) *state = status;
     return scriptname;
 }
 

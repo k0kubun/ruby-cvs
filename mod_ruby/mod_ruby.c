@@ -487,6 +487,16 @@ static void ruby_error_print(request_rec *r, int state)
     ap_rputs("<body>\n", r);
     ap_rputs("<pre>\n", r);
 
+#if 0
+    {
+	int pid;
+	pid = getpid();
+	ap_rprintf(r, "pid: %d\n", pid);
+	ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
+		     "pid: %d\n", pid);
+    }
+#endif
+
     errmsg = STRING_LITERAL("");
     switch (state) {
     case TAG_RETURN:
