@@ -1,4 +1,4 @@
-# parsedate3.rb: Written by Tadayoshi Funaba 2000
+# parsedate.rb: Written by Tadayoshi Funaba 2000
 # $Id$
 
 module ParseDate
