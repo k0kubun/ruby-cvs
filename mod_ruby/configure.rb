@@ -434,9 +434,9 @@ AC_WITH("apxs") { |withval|
 }
 
 if $APXS
-  $CFLAGS += " " + `#{$APXS} -q CFLAGS`
-  $APACHE_INCLUDES = "-I" + `#{$APXS} -q INCLUDEDIR`
-  $APACHE_LIBEXECDIR = `#{$APXS} -q LIBEXECDIR`
+  $CFLAGS += " " + `#{$APXS} -q CFLAGS`.chomp
+  $APACHE_INCLUDES = "-I" + `#{$APXS} -q INCLUDEDIR`.chomp
+  $APACHE_LIBEXECDIR = `#{$APXS} -q LIBEXECDIR`.chomp
   if $? != 0
     AC_MSG_ERROR("failed to exec #{$APXS}")
   end

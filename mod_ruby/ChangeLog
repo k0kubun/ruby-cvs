@@ -1,4 +1,8 @@
-Wed Oct 10 12:15:16 2001  Shugo Maeda  <shugo@modruby.net>
+Fri Oct 12 12:35:12 2001  Miles Egan <miles@pixar.com>
+
+	* configure.rb.in: chomp output of apxs.
+
+Wed Oct 10 12:15:16 2001  Shugo Maeda <shugo@modruby.net>
 
 	* ruby_config.c (ruby_cmd_output_mode): new directive RubyOutputMode.
 
