@@ -63,14 +63,12 @@ group:doc:@all
 #   {grant|deny}:{username|@groupname}[,{username|@groupname}..]:module_pattern
 #
 # Note:
-#   For convenience, each module_pattern match is done with an
+#   For convenience, each module_pattern match is executed with an
 #   implicit `^/?(?:' at the beginning and an implicit `)(?:/|$)' at
-#   the end.
+#   the end.  Besides, each comparison is made case-insensitively.
 #
-#   Also, each comparison is made case-insensitively.
-#
-#   They work on a first-match-wins basis.  If none matches, access
-#   will be granted.
+#   The rules work on a first-match-wins basis.  If none matches,
+#   access will be granted.
 #
 
 # Grant "admin" members everything
