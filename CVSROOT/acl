@@ -63,7 +63,7 @@ group:hybris:matju
 group:csv:nahi
 group:devel-logger:nahi
 group:soap4r:nahi
-group:snmp:sean
+group:snmp:sean,jd
 
 group:www:@all
 
