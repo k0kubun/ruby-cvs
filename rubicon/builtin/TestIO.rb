@@ -461,6 +461,7 @@ class TestIO < Rubicon::TestCase
     skipping()
   end
 
+  # see tty?
   def test_isatty
     assert(!File.new(@file).isatty)
     assert(!File.new("/dev/tty").isatty)
@@ -742,8 +743,6 @@ class TestIO < Rubicon::TestCase
 
     nums = [5, -2, 4, -7, 0 ]
     File.open(@file) do |file|
-      file.seek(999, IO::SEEK_CUR)
-      assert_nil(file.gets)
       count = -1
       file.seek(0)
       for pos in nums
@@ -754,61 +753,118 @@ class TestIO < Rubicon::TestCase
       end
     end
 
+    nums = [ 5, 8, 1, 10, 1 ]
+
     File.open(@file) do |file|
-      file.seek(999, IO::SEEK_SET)
-      assert_nil(file.gets)
+      file.seek(0)
       for pos in nums
-        assert_equal(0, file.seek(19*pos))
+        assert_equal(0, file.seek(-19*pos, IO::SEEK_END))
         line = file.gets
-        assert_equal(pos, line[0..1].to_i)
+        assert_equal(10-pos, line[0..1].to_i)
       end
     end
   end
 
+  # Stat is pretty much tested elsewhere, so we're minimal here
   def test_stat
-    assert_fail("untested")
+    assert_instance_of(IO.new($stdin.fileno).stat, File::Stat)
   end
 
   def test_sync
-    assert_fail("untested")
+    $stderr.sync = false
+    assert(!$stderr.sync)
+    $stderr.sync = true
+    assert($stderr.sync)
   end
 
   def test_sync=
-    assert_fail("untested")
+    read, write = IO.pipe
+    write.sync = false
+    write.print "hello"
+    assert_nil(select([read], nil,  [read], .1))
+    write.sync = true
+    write.print "there"
+    assert_equal([[read],[],[]], select([read], nil,  [read], .1))
   end
 
   def test_sysread
-    assert_fail("untested")
+    File.open(@file) do |file|
+      assert_equal("", file.sysread(0))
+      assert_equal("0", file.sysread(1))
+      assert_equal("0:", file.sysread(2))
+      assert_equal(" Thi", file.sysread(4))
+      rest = file.sysread(100000)
+      assert_equal(19*10 - (1+2+4), rest.length)
+      assert_exception(EOFError) { file.sysread(1) }
+    end
   end
 
   def test_syswrite
-    assert_fail("untested")
+    File.open(@file, "w") do |file|
+      file.syswrite ""
+      file.syswrite "hello"
+      file.syswrite 1
+      file.syswrite "\n"
+    end
+
+    File.open(@file) do |file|
+      assert_equal("hello1\n", file.gets)
+    end
   end
 
+  # see also pos
   def test_tell
-    assert_fail("untested")
+    pos = 0
+    File.open(@file) do |file|
+      assert_equal(0, file.tell)
+      while (line = file.gets)
+        pos += line.length
+        assert_equal(pos, file.tell)
+      end
+    end
   end
 
   def test_to_i
-    assert_fail("untested")
+    assert_equal(0, $stdin.to_i)
+    assert_equal(1, $stdout.to_i)
+    assert_equal(2, $stderr.to_i)
+    File.open(@file) {|f| assert(f.to_i > 2)}
   end
 
-  def test_to_io
-    assert_fail("untested")
-  end
-
+  # see isatty
   def test_tty?
-    assert_fail("untested")
+    assert(!File.new(@file).tty?)
+    assert(!File.new("/dev/tty").tty?)
   end
 
   def test_ungetc
-    assert_fail("untested")
+    File.open(@file) do |file|
+      assert_equal(?0, file.getc)
+      assert_equal(?0, file.getc)
+      assert_equal(?:, file.getc)
+      assert_equal(? , file.getc)
+      assert_nil(file.ungetc(?:))
+      assert_equal(?:, file.getc)
+      1 while file.getc
+      assert_nil(file.ungetc(?A))
+      assert_equal(?A, file.getc)
+    end
   end
 
   def test_write
-    assert_fail("untested")
+    File.open(@file, "w") do |file|
+      assert_equal(10, file.write('*' * 10))
+      assert_equal(5,  file.write('!' * 5))
+      assert_equal(0,  file.write(''))
+      assert_equal(1,  file.write(1))
+      assert_equal(3,  file.write(2.30000))
+      assert_equal(1,  file.write("\n"))
+    end
+    
+    File.open(@file) do |file|
+      assert_equal("**********!!!!!12.3\n", file.gets)
+    end
   end
-
 end
 
 Rubicon::handleTests(TestIO) if $0 == __FILE__
