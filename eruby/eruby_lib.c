@@ -656,6 +656,7 @@ VALUE eruby_load(char *filename, int wrap, int *state)
     VALUE compiler;
     VALUE code;
     VALUE f;
+    VALUE vfilename = rb_str_new2(filename);
     compile_arg_t carg;
     eval_arg_t earg;
     int status;
@@ -671,7 +672,7 @@ VALUE eruby_load(char *filename, int wrap, int *state)
 	}
     }
     compiler = eruby_compiler_new();
-    eruby_compiler_set_sourcefile(compiler, rb_str_new2(filename));
+    eruby_compiler_set_sourcefile(compiler, vfilename);
     carg.compiler = compiler;
     carg.input = f;
     code = rb_protect(eruby_compile_file, (VALUE) &carg, &status);
@@ -684,7 +685,8 @@ VALUE eruby_load(char *filename, int wrap, int *state)
     }
     else {
 	earg.src = code;
-	earg.filename = rb_str_new2(filename);
+	earg.filename = vfilename;
+	rb_gc(); /* why this break f? */
 	rb_protect(eval_string, (VALUE) &earg, &status);
     }
     if (state) *state = status;
