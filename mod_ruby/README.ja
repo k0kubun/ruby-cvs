@@ -1,0 +1,42 @@
+[mod_rubyのREADME]
+
+mod_rubyとは?
+=============
+
+  mod_rubyはApacheウェブサーバにRubyインタプリタを組み込み、CGIスクリ
+  プトがネイティブに起動されることを許します。スクリプトはmod_rubyを利
+  用しない場合よりも速く起動するでしょう。
+
+
+要求される環境
+==============
+
+  * Ruby version 1.3.1(99/03/11) 以降
+  * Apache version 1.3.3 以降
+
+
+インストール
+============
+
+  1) `ruby configure.rb'とタイプし、Makefileを作成してください。
+
+  2) `make'とタイプし、mod_rubyをコンパイルしてください。
+
+  3) `make install'とタイプし、mod_ruby.{so|o}を`apachelibexec'にコピー
+     してください。
+
+  4) Apacheにmod_rubyをロードさせるため、`httpd.conf'を編集してください。
+
+       LoadModule ruby_module `apachelibexec'/mod_ruby.{so|o}
+
+  5) `srm.conf'を編集し、`ruby-script'ハンドラをセットしてください。
+
+       AddHandler ruby-script .rb
+
+  6) Apacheを再起動してください。
+
+
+Local variables:
+mode: Auto-Fill
+fill-column: 70
+End:

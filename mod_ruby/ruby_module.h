@@ -1,0 +1,51 @@
+/*
+ * $Id$
+ * Copyright (C) 1998-1999  Network Applied Communication Laboratory, Inc.
+ *
+ * This file is part of mod_ruby.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
+ * 02111-1307, USA
+ */
+
+#ifndef RUBY_MODULE_H
+#define RUBY_MODULE_H
+
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.1.0"
+#define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
+
+typedef struct {
+    array_header *required_files;
+    table *env;
+    int timeout;
+} ruby_server_config;
+
+typedef struct {
+    char *kcode;
+    table *env;
+} ruby_dir_config;
+
+extern MODULE_VAR_EXPORT module ruby_module;
+int ruby_running();
+int ruby_require(char*);
+
+#endif /* !RUBY_MODULE_H */
+
+/*
+ * Local variables:
+ * mode: C
+ * tab-width: 8
+ * End:
+ */

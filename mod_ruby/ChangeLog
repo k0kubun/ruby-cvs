@@ -1,0 +1,280 @@
+Tue Apr 20 16:22:11 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.0 released.
+
+Mon Apr 19 19:37:26 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (ruby_error_print): print error info to error.log.
+
+Tue Apr 13 20:13:32 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_config.c: new file.
+
+Mon Apr 12 18:29:32 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (merge_dir_config): new function.
+
+	* ruby_module.c: move ruby_module definition to top.
+
+	* ruby_module.c: remove HASH_FREEZE macro.
+
+Wed Apr  7 18:48:50 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (ruby_cmd_export_env): remove command RubyExportEnv.
+
+	* ruby_module.c (ruby_cmd_pass_env): new command RubyPassEnv.
+
+	* ruby_module.c (ruby_comd_set_env): new command RubySetEnv.
+
+	* apachelib.c: remove Apache::Writable and define output methods
+	directly in Apache::Request.
+
+Tue Apr  6 19:41:45 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.9 released.
+
+Tue Apr  6 18:52:09 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (ruby_cmd_timeout): new command RubyTimeout.
+
+Fri Apr  2 14:06:20 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (do_timeout): new function.
+
+Thu Mar 18 11:13:15 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c: #include "util.h"
+
+	* apachelib.c: do not cast const char* to char*.
+
+Fri Mar 12 16:53:09 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (ruby_startup): use RUBY_RELEASE_DATE instead of VERSION_DATE.
+
+Tue Mar  9 15:33:44 1999  KIMURA Koichi <kimura@sqa.canon.co.jp>
+
+	* ruby_module.c (mr_clearenv): hack for win32.
+
+Sun Mar  7 20:35:00 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.8 released.
+
+Sun Mar  7 19:59:52 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apachelib.c (apache_server_version): new method.
+
+	* apachelib.c (apache_server_built): new method.
+
+	* README.en: new file.
+
+	* README.ja: new file.
+
+Tue Mar  2 21:04:56 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (mr_clearenv): new function.
+
+	* ruby_module.c (ruby_error_print): always print error message in HTML.
+
+	* ruby_module.c (setup_env): new environment variables REQUEST_URI,
+	SCRIPT_NAME, PATH_TRANSLATED.
+
+	* apachelib.c (apache_unescape_url): new method.
+
+	* apachelib.c (request_escape_html): new method.
+
+Mon Mar  1 11:58:24 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.7 released.
+
+Mon Mar  1 11:12:41 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (ruby_handler): protect Thread#join. (but I don't
+	know why I need it.)
+
+Sat Feb 27 01:28:15 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.[ch]: renamed from mod_ruby.[ch]
+
+	* apachelib.[ch]: renamed from apache.[ch]
+
+	* configure.rb: rename option --apachelib to --apachelibexec.
+
+	* ruby_module.c (ruby_cmd_export_env): new command RubyExportEnv.
+
+Thu Feb 25 20:52:04 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (setup_env): new environment variable HTTP_CONNECTION.
+
+	* mod_ruby.c (ruby_startup): add version component (ruby version).
+
+Tue Feb 23 23:26:42 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (rb_request_flush): new method. (renamed from
+	rb_exec_request.)
+
+	* apache.c (request_write): if sync mode is true, write data
+	to client immediately.
+
+	* apache.c (ruby_create_request): use request_data structure
+	instead of using request_rec directly.
+
+	* mod_ruby.c (ruby_error_print): if sync mode is true, print
+	error information in HTML.
+
+	* mod_ruby.c (clearenv): realloc environ.
+
+Tue Feb 23 17:05:12 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.6 released.
+
+Tue Feb 23 16:50:29 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (request_hostname): new method.
+
+	* apache.c (request_unparsed_uri): new method.
+
+	* apache.c (request_uri): new method.
+
+	* apache.c (request_filename): new method.
+
+	* apache.c (request_path_info): new method.
+
+	* apache.c (request_request_time): new method.
+
+	* mod_ruby.c (setup_env): restore environment variables.
+
+Tue Feb 23 09:47:11 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (request_method): new method.
+
+	* apache.c (request_args): new method.
+
+	* apache.c (request_content_length): new method.
+
+	* apache.c (send_to_stdin): new method `read', `gets', etc....
+
+Mon Feb 22 23:19:30 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (request_aset): set Content-Type and Content-Encoding
+	properly.
+
+Fri Feb 19 16:13:04 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (ruby_startup): fix typo.
+
+	* apache.c (writable_addstr): new method.
+
+	* apache.c (writable_flush): new method.
+
+	* apache.c (writable_get_sync): new method.
+
+	* apache.c (writable_set_sync): new method.
+
+	* apache.c (request_each_key): new method.
+
+	* apache.c (request_each_value): new method.
+
+	* apache.c (ruby_init_apache): Apache::Request include Enumerable.
+
+Fri Feb 19 03:09:39 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.5 released.
+
+Fri Feb 19 03:04:30 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (request_each_header): new method.
+
+	* mod_ruby.c (ruby_startup): define global constant MOD_RUBY.
+
+Thu Feb 18 20:17:45 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (request_get_content_languages): new method.
+
+	* apache.c (request_set_content_languages): new method.
+
+Thu Feb 18 19:28:37 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c: new module Writable.
+
+	* apache.c (ruby_init_apache): renamed from `Init_apache'.
+
+	* apache.c (ruby_init_apache): Apache::Request include Apache::Writable
+	 instead of inheriting IO.
+
+Thu Feb 18 15:05:54 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (Init_apache): define HTTP status code constants.
+
+Thu Feb 18 06:48:40 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (Init_apache): rename Request#send_header to `send_http_header'.
+
+	* mod_ruby.c (ruby_handler): pass exit status code to Apache.
+
+Wed Feb 17 00:57:46 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.4 released.
+
+Wed Feb 17 00:44:55 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (ruby_startup): set script name to "mod_ruby".
+
+	* mod_ruby.c (ruby_error_pos): use snprintf() instead of sprintf().
+
+	* mod_ruby.c (ruby_error_print): set r->content_type to "text/plain".
+
+Wed Feb 17 00:39:15 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c (ruby_exec_request): new function.
+
+	* apache.c (request_aref): new method.
+
+	* apache.c (request_aset): new method.
+
+Tue Feb 16 22:00:13 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (ruby_setenv2): emulate new function ruby_setenv2.
+
+Tue Feb 16 15:42:09 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.3 released.
+
+Mon Feb 15 18:39:12 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c: remove RubySafeLevel command.
+
+	* mod_ruby.c (ruby_startup): set safe level to 1.
+
+Fri Feb 12 03:54:43 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c: stdin support.
+
+	* apache.c: remove rb_query.
+
+	* configure.rb: new file.
+
+Sat Feb  6 23:46:37 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* apache.c: new class StringStream.
+
+	* mod_ruby.c (load_script): catch SystemExit.
+
+	* mod_ruby.c (query_aset): join multiple value in query
+	string with '\0'.
+
+	* mod_ruby.c (ruby_handler): use thread for $SAFE.
+
+	* apache.c (f_getenv): environment variable support.
+
+Sat Jan  9 03:55:21 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.2 released.
+
+Mon Dec 21 12:05:03 1998  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.1 released.
+
+Local variables:
+mode: ChangeLog
+tab-width: 8
+End:
