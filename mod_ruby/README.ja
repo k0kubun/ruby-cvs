@@ -22,7 +22,7 @@ mod_rubyとは?
 
   2) `make'とタイプし、mod_rubyをコンパイルしてください。
 
-  3) `make install'とタイプし、mod_ruby.{so|o}を`apachelibexec'にコピー
+  3) `make install'とタイプし、mod_ruby.sooを`apachelibexec'にコピー
      してください。
 
   4) Apacheにmod_rubyをロードさせるため、`httpd.conf'を編集してください。

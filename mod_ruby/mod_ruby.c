@@ -47,11 +47,10 @@
 #include <unistd.h>
 #endif
 
-#include "eruby.h"
-
 #include "mod_ruby.h"
 #include "ruby_config.h"
 #include "apachelib.h"
+#include "eruby.h"
 
 extern char **environ;
 static char **origenviron;

@@ -1,3 +1,11 @@
+Mon Jun 21 16:22:22 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.3 released.
+
+Mon Jun 21 16:09:26 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* Makefile.RB: removed --enable-shared option:-p
+
 Tue Jun  1 15:17:50 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* Makefile.RB: added --enable-shared option.

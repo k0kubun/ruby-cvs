@@ -1,3 +1,15 @@
+Mon Jun 21 16:21:54 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.2 released.
+
+Mon Jun 21 16:08:24 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* include eRuby sources.
+
+	* mod_ruby.c: renamed from ruby_module.c for static linking.
+
+	* Makefile.RB: use .so instead of CONFIG["DLEXT"].
+
 Tue Jun  1 16:03:58 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* Makefile.RB: use shared library for eRuby.
