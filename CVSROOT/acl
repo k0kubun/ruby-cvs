@@ -13,6 +13,7 @@
 group:admin:matz,shugo,akira,knu
 
 group:ruby:@all
+group:eruby:shugo
 group:mod_ruby:shugo
 group:rubicon:dave,andy
 
@@ -28,6 +29,7 @@ group:rubicon:dave,andy
 grant:@admin:.*
 
 grant:@ruby:ruby
+grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
 
