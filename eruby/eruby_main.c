@@ -52,31 +52,31 @@ EXTERN VALUE rb_load_path;
 #define TAG_FATAL	0x8
 #define TAG_MASK	0xf
 
-static void write_escaping_html(char *str, int len)
+static void write_escaping_html(FILE *out, char *str, int len)
 {
     int i;
     for (i = 0; i < len; i++) {
 	switch (str[i]) {
 	case '&':
-	    fputs("&amp;", stdout);
+	    fputs("&amp;", out);
 	    break;
 	case '<':
-	    fputs("&lt;", stdout);
+	    fputs("&lt;", out);
 	    break;
 	case '>':
-	    fputs("&gt;", stdout);
+	    fputs("&gt;", out);
 	    break;
 	case '"':
-	    fputs("&quot;", stdout);
+	    fputs("&quot;", out);
 	    break;
 	default:
-	    putc(str[i], stdout);
+	    putc(str[i], out);
 	    break;
 	}
     }
 }
 
-static void error_pos(int cgi)
+static void error_pos(FILE *out, int cgi)
 {
     char buff[BUFSIZ];
     ID last_func = rb_frame_last_func();
@@ -90,13 +90,13 @@ static void error_pos(int cgi)
 	    snprintf(buff, BUFSIZ, "%s:%d", ruby_sourcefile, ruby_sourceline);
 	}
 	if (cgi)
-	    write_escaping_html(buff, strlen(buff));
+	    write_escaping_html(out, buff, strlen(buff));
 	else
-	    fputs(buff, stdout);
+	    fputs(buff, out);
     }
 }
 
-static void exception_print(int cgi)
+static void exception_print(FILE *out, int cgi)
 {
     VALUE errat;
     VALUE eclass;
@@ -109,35 +109,35 @@ static void exception_print(int cgi)
 	VALUE mesg = RARRAY(errat)->ptr[0];
 
 	if (NIL_P(mesg)) {
-	    error_pos(cgi);
+	    error_pos(out, cgi);
 	}
 	else {
 	    if (cgi)
-		write_escaping_html(RSTRING(mesg)->ptr, RSTRING(mesg)->len);
+		write_escaping_html(out, RSTRING(mesg)->ptr, RSTRING(mesg)->len);
 	    else
-		fwrite(RSTRING(mesg)->ptr, 1, RSTRING(mesg)->len, stdout);
+		fwrite(RSTRING(mesg)->ptr, 1, RSTRING(mesg)->len, out);
 	}
     }
 
     eclass = CLASS_OF(ruby_errinfo);
     einfo = rb_obj_as_string(ruby_errinfo);
     if (eclass == rb_eRuntimeError && RSTRING(einfo)->len == 0) {
-	printf(": unhandled exception\n");
+	fprintf(out, ": unhandled exception\n");
     }
     else {
 	VALUE epath;
 
 	epath = rb_class_path(eclass);
 	if (RSTRING(einfo)->len == 0) {
-	    printf(": ");
+	    fprintf(out, ": ");
 	    if (cgi)
-		write_escaping_html(RSTRING(epath)->ptr, RSTRING(epath)->len);
+		write_escaping_html(out, RSTRING(epath)->ptr, RSTRING(epath)->len);
 	    else
-		fwrite(RSTRING(epath)->ptr, 1, RSTRING(epath)->len, stdout);
+		fwrite(RSTRING(epath)->ptr, 1, RSTRING(epath)->len, out);
 	    if (cgi)
-		printf("<br>\n");
+		fprintf(out, "<br>\n");
 	    else
-		printf("\n");
+		fprintf(out, "\n");
 	}
 	else {
 	    char *tail  = 0;
@@ -148,31 +148,31 @@ static void exception_print(int cgi)
 		len = tail - RSTRING(einfo)->ptr;
 		tail++;		/* skip newline */
 	    }
-	    printf(": ");
+	    fprintf(out, ": ");
 	    if (cgi)
-		write_escaping_html(RSTRING(einfo)->ptr, len);
+		write_escaping_html(out, RSTRING(einfo)->ptr, len);
 	    else
-		fwrite(RSTRING(einfo)->ptr, 1, len, stdout);
+		fwrite(RSTRING(einfo)->ptr, 1, len, out);
 	    if (epath) {
-		printf(" (");
+		fprintf(out, " (");
 		if (cgi)
-		    write_escaping_html(RSTRING(epath)->ptr, RSTRING(epath)->len);
+		    write_escaping_html(out, RSTRING(epath)->ptr, RSTRING(epath)->len);
 		else
-		    fwrite(RSTRING(epath)->ptr, 1, RSTRING(epath)->len, stdout);
+		    fwrite(RSTRING(epath)->ptr, 1, RSTRING(epath)->len, out);
 		if (cgi)
-		    printf(")<br>\n");
+		    fprintf(out, ")<br>\n");
 		else
-		    printf(")\n");
+		    fprintf(out, ")\n");
 	    }
 	    if (tail) {
 		if (cgi)
-		    write_escaping_html(tail, RSTRING(einfo)->len - len - 1);
+		    write_escaping_html(out, tail, RSTRING(einfo)->len - len - 1);
 		else
-		    fwrite(tail, 1, RSTRING(einfo)->len - len - 1, stdout);
+		    fwrite(tail, 1, RSTRING(einfo)->len - len - 1, out);
 		if (cgi)
-		    printf("<br>\n");
+		    fprintf(out, "<br>\n");
 		else
-		    printf("\n");
+		    fprintf(out, "\n");
 	    }
 	}
     }
@@ -190,19 +190,20 @@ static void exception_print(int cgi)
 	for (i=1; i<ep->len; i++) {
 	    if (TYPE(ep->ptr[i]) == T_STRING) {
 		if (cgi) {
-		    printf("<div class=\"backtrace\">from ");
-		    write_escaping_html(RSTRING(ep->ptr[i])->ptr,
+		    fprintf(out, "<div class=\"backtrace\">from ");
+		    write_escaping_html(out,
+					RSTRING(ep->ptr[i])->ptr,
 					RSTRING(ep->ptr[i])->len);
 		}
 		else {
-		    printf("        from ");
+		    fprintf(out, "        from ");
 		    fwrite(RSTRING(ep->ptr[i])->ptr, 1,
-			   RSTRING(ep->ptr[i])->len, stdout);
+			   RSTRING(ep->ptr[i])->len, out);
 		}
 		if (cgi)
-		    printf("<br></div>\n");
+		    fprintf(out, "<br></div>\n");
 		else
-		    printf("\n");
+		    fprintf(out, "\n");
 	    }
 	    if (i == TRACE_HEAD && ep->len > TRACE_MAX) {
 		char buff[BUFSIZ];
@@ -214,40 +215,40 @@ static void exception_print(int cgi)
 		    snprintf(buff, BUFSIZ, "         ... %ld levels...<br></div>\n",
 			     ep->len - TRACE_HEAD - TRACE_TAIL);
 		if (cgi)
-		    write_escaping_html(buff, strlen(buff));
+		    write_escaping_html(out, buff, strlen(buff));
 		else
-		    fputs(buff, stdout);
+		    fputs(buff, out);
 		i = ep->len - TRACE_TAIL;
 	    }
 	}
     }
 }
 
-static void print_generated_code(VALUE code, int cgi)
+static void print_generated_code(FILE *out, VALUE code, int cgi)
 {
     if (cgi) {
-	printf("<tr><th id=\"code\">\n");
-	printf("GENERATED CODE\n");
-	printf("</th></tr>\n");
-	printf("<tr><td headers=\"code\">\n");
-	printf("<pre><code>\n");
+	fprintf(out, "<tr><th id=\"code\">\n");
+	fprintf(out, "GENERATED CODE\n");
+	fprintf(out, "</th></tr>\n");
+	fprintf(out, "<tr><td headers=\"code\">\n");
+	fprintf(out, "<pre><code>\n");
     }
     else {
-	printf("--- generated code ---\n");
+	fprintf(out, "--- generated code ---\n");
     }
 
     if (cgi) {
-	write_escaping_html(RSTRING(code)->ptr, RSTRING(code)->len);
+	write_escaping_html(out, RSTRING(code)->ptr, RSTRING(code)->len);
     }
     else {
-	fwrite(RSTRING(code)->ptr, 1, RSTRING(code)->len, stdout);
+	fwrite(RSTRING(code)->ptr, 1, RSTRING(code)->len, out);
     }
     if (cgi) {
-	printf("</code></pre>\n");
-	printf("</td></tr>\n");
+	fprintf(out, "</code></pre>\n");
+	fprintf(out, "</td></tr>\n");
     }
     else {
-	printf("----------------------\n");
+	fprintf(out, "----------------------\n");
     }
 }
 
@@ -286,14 +287,11 @@ static void print_http_headers()
     printf("Server: %s\r\n", tmp);
     printf("Date: %s\r\n", rfc1123_time(time(NULL)));
     printf("Connection: close\r\n");
-
-    return;
 }
 
-static void error_print(int state, int mode, VALUE code)
+static void error_print(FILE *out, int state, int cgi, int mode, VALUE code)
 {
     char buff[BUFSIZ];
-    int cgi = mode == MODE_CGI || mode == MODE_NPHCGI;
 
     rb_defout = rb_stdout;
     if (cgi) {
@@ -302,79 +300,79 @@ static void error_print(int state, int mode, VALUE code)
 	    imgdir = "UNKNOWN_IMG_DIR";
         if (mode == MODE_NPHCGI)
             print_http_headers();
-        printf("Content-Type: text/html\r\n");
-        printf("Content-Style-Type: text/css\r\n");
-        printf("\r\n");
-	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n");
-	printf("<html>\n");
-	printf("<head>\n");
-	printf("<title>eRuby</title>\n");
-	printf("<style type=\"text/css\">\n");
-	printf("<!--\n");
-	printf("body { background-color: #ffffff }\n");
-	printf("table { width: 100%%; padding: 5pt; border-style: none }\n");
-	printf("th { color: #6666ff; background-color: #b0d0d0; text-align: left }\n");
-	printf("td { color: #336666; background-color: #d0ffff }\n");
-	printf("strong { color: #ff0000; font-weight: bold }\n");
-	printf("div.backtrace { text-indent: 15%% }\n");
-	printf("#version { color: #ff9900 }\n");
-	printf("-->\n");
-	printf("</style>\n");
-	printf("</head>\n");
-	printf("<body>\n");
-        printf("<table summary=\"eRuby error information\">\n");
-        printf("<caption>\n");
-	printf("<img src=\"%s/logo.png\" alt=\"eRuby\">\n", imgdir);
-        printf("<span id=version>version: %s</span>\n", ERUBY_VERSION);
-        printf("</caption>\n");
-        printf("<tr><th id=\"error\">\n");
-        printf("ERROR\n");
-        printf("</th></tr>\n");
-        printf("<tr><td headers=\"error\">\n");
+        fprintf(out, "Content-Type: text/html\r\n");
+        fprintf(out, "Content-Style-Type: text/css\r\n");
+        fprintf(out, "\r\n");
+	fprintf(out, "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n");
+	fprintf(out, "<html>\n");
+	fprintf(out, "<head>\n");
+	fprintf(out, "<title>eRuby</title>\n");
+	fprintf(out, "<style type=\"text/css\">\n");
+	fprintf(out, "<!--\n");
+	fprintf(out, "body { background-color: #ffffff }\n");
+	fprintf(out, "table { width: 100%%; padding: 5pt; border-style: none }\n");
+	fprintf(out, "th { color: #6666ff; background-color: #b0d0d0; text-align: left }\n");
+	fprintf(out, "td { color: #336666; background-color: #d0ffff }\n");
+	fprintf(out, "strong { color: #ff0000; font-weight: bold }\n");
+	fprintf(out, "div.backtrace { text-indent: 15%% }\n");
+	fprintf(out, "#version { color: #ff9900 }\n");
+	fprintf(out, "-->\n");
+	fprintf(out, "</style>\n");
+	fprintf(out, "</head>\n");
+	fprintf(out, "<body>\n");
+        fprintf(out, "<table summary=\"eRuby error information\">\n");
+        fprintf(out, "<caption>\n");
+	fprintf(out, "<img src=\"%s/logo.png\" alt=\"eRuby\">\n", imgdir);
+        fprintf(out, "<span id=version>version: %s</span>\n", ERUBY_VERSION);
+        fprintf(out, "</caption>\n");
+        fprintf(out, "<tr><th id=\"error\">\n");
+        fprintf(out, "ERROR\n");
+        fprintf(out, "</th></tr>\n");
+        fprintf(out, "<tr><td headers=\"error\">\n");
     }
 
     switch (state) {
     case TAG_RETURN:
-	error_pos(cgi);
-	printf(": unexpected return\n");
+	error_pos(out, cgi);
+	fprintf(out, ": unexpected return\n");
 	break;
     case TAG_NEXT:
-	error_pos(cgi);
-	printf(": unexpected next\n");
+	error_pos(out, cgi);
+	fprintf(out, ": unexpected next\n");
 	break;
     case TAG_BREAK:
-	error_pos(cgi);
-	printf(": unexpected break\n");
+	error_pos(out, cgi);
+	fprintf(out, ": unexpected break\n");
 	break;
     case TAG_REDO:
-	error_pos(cgi);
-	printf(": unexpected redo\n");
+	error_pos(out, cgi);
+	fprintf(out, ": unexpected redo\n");
 	break;
     case TAG_RETRY:
-	error_pos(cgi);
-	printf(": retry outside of rescue clause\n");
+	error_pos(out, cgi);
+	fprintf(out, ": retry outside of rescue clause\n");
 	break;
     case TAG_RAISE:
     case TAG_FATAL:
-	exception_print(cgi);
+	exception_print(out, cgi);
 	break;
     default:
-	error_pos(cgi);
+	error_pos(out, cgi);
 	snprintf(buff, BUFSIZ, ": unknown longjmp status %d", state);
-	fputs(buff, stdout);
+	fputs(buff, out);
 	break;
     }
     if (cgi) {
-        printf("</td></tr>\n");
+        fprintf(out, "</td></tr>\n");
     }
 
     if (!NIL_P(code))
-	print_generated_code(code, cgi);
+	print_generated_code(out, code, cgi);
 
     if (cgi) {
-        printf("</table>\n");
-	printf("</body>\n");
-	printf("</html>\n");
+        fprintf(out, "</table>\n");
+	fprintf(out, "</body>\n");
+	fprintf(out, "</html>\n");
     }
 }
 
@@ -532,11 +530,18 @@ static void run()
     Init_stack(&code);
     code = eruby_load(eruby_filename, 0, &state);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
-	error_print(state, eruby_mode, code);
-	exit(0);
+	if (RTEST(ruby_debug) &&
+	    (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)) {
+	    error_print(stdout, state, 1, eruby_mode, code);
+	    exit(0);
+	}
+	else {
+	    error_print(stderr, state, 0, eruby_mode, code);
+	    exit(1);
+	}
     }
     if (eruby_mode == MODE_FILTER && (RTEST(ruby_debug) || RTEST(ruby_verbose))) {
-	print_generated_code(code, 0);
+	print_generated_code(stderr, code, 0);
     }
     out = RSTRING(rb_defout)->ptr;
     nout = RSTRING(rb_defout)->len;

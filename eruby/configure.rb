@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated automatically using autoconf.rb version 0.2.2
+# Generated automatically using autoconf.rb version 0.2.3
 
 require "mkmf"
 
@@ -161,6 +161,9 @@ def AC_PROG_INSTALL
   AC_MSG_CHECKING("for a BSD compatible install")
   $ac_cv_path_install = callcc { |c|
     for dir in ENV["PATH"].split(/:/)
+      if %r'^(/|\./|/etc/.*|/usr/sbin/.*|/usr/etc/.*|/sbin/.*|/usr/afsws/bin/.*|/usr/ucb/.*)$' =~ dir + "/" # '
+	next
+      end
       for prog in [ "ginstall", "scoinst", "install" ]
 	file = File.join(dir, prog)
 	if File.file?(file)
@@ -531,3 +534,8 @@ AC_SUBST("MKDLLIB")
 
 AC_CONFIG_HEADER("config.h")
 AC_OUTPUT("Makefile")
+
+# Local variables:
+# mode: Ruby
+# tab-width: 8
+# End:

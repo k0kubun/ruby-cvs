@@ -73,7 +73,7 @@ EXT_OBJS = eruby_ext.@OBJEXT@
 @VPATH@.c.@OBJEXT@:
 	$(CC) $(CFLAGS) -c $<
 
-all: $(LIBERUBY_A) $(ERUBY) $(DLLIB) $(MANPAGE)
+all: $(LIBERUBY_A) $(ERUBY) $(DLLIB) $(MANPAGE) Makefile
 
 install: install-main
 	@-$(INSTALL_DIR) $(archdir)

@@ -1,3 +1,8 @@
+Wed Oct 10 11:35:09 2001  Shugo Maeda  <shugo@modruby.net>
+
+	* eruby_main.c (run): print error messages to stderr if $DEBUG is
+	false.
+
 Tue Sep  4 15:33:38 2001  Shugo Maeda <shugo@modruby.net>
 
 	* eruby_main.c (run): call Init_stack().
