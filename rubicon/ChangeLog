@@ -1,3 +1,9 @@
+2001-11-13  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestIO.rb, TestKernel.rb: change 'puts' test: as of
+	1.7.2, arrays no longer have their contents joined by "\n" on
+	output. 
+
 2001-11-11  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestIO.rb: Can't test /dev/tty when run from cron.

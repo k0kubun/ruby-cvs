@@ -1488,8 +1488,12 @@ class TestKernel < Rubicon::TestCase
       File.open(fname) do |file|
         assert_equal("line 1\n",  file.gets)
         assert_equal("line 2\n",  file.gets)
-        assert_equal("printtest\n",  file.gets)
-        assert_equal("4\n",  file.gets)
+        if $rubyVersion < "1.7.2"
+          assert_equal("printtest\n",  file.gets)
+          assert_equal("4\n",  file.gets)
+        else
+          assert_equal("printtest4\n",  file.gets)
+        end
       end
     ensure
       teardownTestDir
