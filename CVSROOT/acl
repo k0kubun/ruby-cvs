@@ -50,6 +50,7 @@ group:div:seki,nahi
 group:rwiki:seki,nahi,kazu
 group:rwiki-installer:kazu
 group:drb:seki
+group:raa:nahi
 group:interbase:matz,bizenn
 group:rice:akira
 group:irc:iga,knu,gnhurst
@@ -62,6 +63,7 @@ group:devices:matju
 group:hybris:matju
 group:csv:nahi
 group:devel-logger:nahi
+group:http-access2:nahi
 group:soap4r:nahi
 group:snmp:sean,jd
 
@@ -101,6 +103,7 @@ grant:@cvsmailer:app/cvsmailer
 grant:@div:app/div
 grant:@rwiki-installer:app/rwiki/installer
 grant:@rwiki:app/rwiki
+grant:@raa:app/raa
 grant:@drb:lib/drb
 grant:@interbase:lib/interbase
 grant:@rice:lib/rice
@@ -114,6 +117,7 @@ grant:@devices:lib/devices
 grant:@hybris:lib/hybris
 grant:@csv:lib/csv
 grant:@devel-logger:lib/devel-logger
+grant:@http-access2:lib/http-access2
 grant:@soap4r:lib/soap4r
 grant:@snmp:lib/snmp
 
