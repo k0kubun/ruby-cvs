@@ -648,7 +648,7 @@ class TestArray < Rubicon::TestCase
     assert_equal("\xc2\xa9B\xe2\x89\xa0", [0xa9, 0x42, 0x2260].pack("U*"))
 
 
-    $stderr.puts "Not tested:
+    skipping "Not tested:
         D,d & double-precision float, native format\\
         E & double-precision float, little-endian byte order\\
         e & single-precision float, little-endian byte order\\

@@ -67,7 +67,7 @@ class TestDir < Rubicon::TestCase
   def test_s_foreach
     expected = @files
     assert_exception(Errno::ENOENT) { Dir.foreach("_wombat") {}}
-    assert(nil != Dir.foreach("_test") { |f|
+    assert_nil(Dir.foreach("_test") { |f|
                    assert_equal(expected.shift, f) } )
   end
 
