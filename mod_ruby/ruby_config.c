@@ -168,7 +168,7 @@ const char *ruby_cmd_require(cmd_parms *cmd, void *dummy, char *arg)
 	if ((state = ruby_require(arg))) {
 	    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, cmd->server,
 			 "mod_ruby: failed to require %s", arg);
-	    ruby_log_error(cmd->server, state);
+	    ruby_log_error(cmd->server, ruby_get_error_info(state));
 	}
     }
     else {

@@ -54,6 +54,7 @@ typedef struct request_data {
     VALUE headers_out;
     VALUE err_headers_out;
     VALUE subprocess_env;
+    VALUE notes;
     VALUE finfo;
     VALUE error_message;
     VALUE exception;
@@ -92,6 +93,7 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->headers_out);
     rb_gc_mark(data->err_headers_out);
     rb_gc_mark(data->subprocess_env);
+    rb_gc_mark(data->notes);
     rb_gc_mark(data->finfo);
     rb_gc_mark(data->error_message);
     rb_gc_mark(data->exception);
@@ -128,6 +130,7 @@ static VALUE apache_request_new(request_rec *r)
     data->headers_out = Qnil;
     data->err_headers_out = Qnil;
     data->subprocess_env = Qnil;
+    data->notes = Qnil;
     data->finfo = Qnil;
     data->error_message = Qnil;
     data->exception = Qnil;
@@ -673,6 +676,19 @@ static VALUE request_subprocess_env(VALUE self)
 				data->request->subprocess_env);
     }
     return data->subprocess_env;
+}
+
+static VALUE request_notes(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    if (NIL_P(data->notes)) {
+	data->notes =
+	    rb_apache_table_new(rb_cApacheTable,
+				data->request->notes);
+    }
+    return data->notes;
 }
 
 static VALUE request_finfo(VALUE self)
@@ -1294,6 +1310,7 @@ void rb_init_apache_request()
 		     request_err_headers_out, 0);
     rb_define_method(rb_cApacheRequest, "subprocess_env",
 		     request_subprocess_env, 0);
+    rb_define_method(rb_cApacheRequest, "notes", request_notes, 0);
     rb_define_method(rb_cApacheRequest, "finfo", request_finfo, 0);
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);

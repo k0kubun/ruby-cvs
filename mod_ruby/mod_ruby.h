@@ -30,7 +30,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.5"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.6"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
@@ -71,6 +71,7 @@ extern array_header *ruby_required_libraries;
 
 VALUE rb_protect_funcall(VALUE recv, ID mid, int *state, int argc, ...);
 void ruby_log_error(server_rec *s, VALUE errmsg);
+VALUE ruby_get_error_info(int state);
 int ruby_running();
 int ruby_require(char*);
 void ruby_add_path(const char *path);

@@ -160,6 +160,7 @@ static const handler_rec ruby_handlers[] =
 };
 
 static void ruby_startup(server_rec*, pool*);
+static void ruby_child_init(server_rec*, pool*);
 
 MODULE_VAR_EXPORT module ruby_module =
 {
@@ -179,7 +180,7 @@ MODULE_VAR_EXPORT module ruby_module =
     ruby_fixup_handler,		/* fixups */
     ruby_log_handler,		/* logger */
     ruby_header_parser_handler,	/* header parser */
-    NULL,			/* child_init */
+    ruby_child_init,		/* child_init */
     NULL,			/* child_exit */
     ruby_post_read_request_handler,	/* post read-request */
 #ifdef EAPI
@@ -360,7 +361,7 @@ static void get_exception_info(VALUE str)
     /* ruby_errinfo = Qnil; */
 }
 
-static VALUE get_error_info(int state)
+VALUE ruby_get_error_info(int state)
 {
     char buff[BUFSIZ];
     VALUE errmsg;
@@ -412,7 +413,7 @@ static void ruby_print_error(request_rec *r, int state)
     ap_rputs("<body>\n", r);
     ap_rputs("<pre>\n", r);
 
-    errmsg = get_error_info(state);
+    errmsg = ruby_get_error_info(state);
     ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
     logmsg = STRING_LITERAL("mod_ruby: error in ruby\n");
     rb_str_concat(logmsg, errmsg);
@@ -438,7 +439,7 @@ static void handle_error(request_rec *r, int state)
 {
     VALUE errmsg, reqobj;
 
-    errmsg = get_error_info(state);
+    errmsg = ruby_get_error_info(state);
     reqobj = (VALUE) ap_get_module_config(r->request_config, &ruby_module);
     if (reqobj)
 	rb_apache_request_set_error(reqobj, errmsg, ruby_errinfo);
@@ -486,6 +487,7 @@ static void ruby_cleanup(void *data)
     EXTERN VALUE ruby_dln_librefs;
     int i;
 
+    ruby_finalize();
     for (i = 0; i < RARRAY(ruby_dln_librefs)->len; i++) {
 	ap_os_dso_unload((void *) NUM2LONG(RARRAY(ruby_dln_librefs)->ptr[i]));
     }
@@ -575,7 +577,7 @@ static void ruby_startup(server_rec *s, pool *p)
 		if ((state = ruby_require(list[i]))) {
 		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, s,
 				 "mod_ruby: failed to require %s", list[i]);
-		    ruby_log_error(s, get_error_info(state));
+		    ruby_log_error(s, ruby_get_error_info(state));
 		}
 	    }
 	}
@@ -599,6 +601,16 @@ static void ruby_startup(server_rec *s, pool *p)
     if (ruby_module.dynamic_load_handle) 
 	ap_register_cleanup(p, NULL, ruby_cleanup, ap_null_cleanup);
 #endif
+}
+
+static void ruby_child_cleanup(void *data)
+{
+    ruby_finalize();
+}
+
+static void ruby_child_init(server_rec *s, pool *p)
+{
+    ap_register_cleanup(p, NULL, ruby_child_cleanup, ap_null_cleanup);
 }
 
 static void mod_ruby_clearenv()
@@ -914,10 +926,14 @@ static int ruby_authen_handler(request_rec *r)
     int retval;
 
     if (dconf->ruby_authen_handler == NULL) return DECLINED;
+#if 0
     ap_table_set(r->notes, "ruby_in_authen_handler", "true");
+#endif
     retval = ruby_handler(r, dconf->ruby_authen_handler,
 			  rb_intern("authenticate"), 0, 0);
+#if 0
     ap_table_unset(r->notes, "ruby_in_authen_handler");
+#endif
     return retval;
 }
 

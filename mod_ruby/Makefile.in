@@ -66,6 +66,7 @@ RUBYLIBS	= apache/ruby-run.rb \
 		  apache/eruby-run.rb \
 		  apache/erb-run.rb \
 		  apache/rd2html.rb \
+		  apache/ruby-debug.rb \
 		  auto-reload.rb
 
 OBJS	= mod_ruby.@OBJEXT@ \

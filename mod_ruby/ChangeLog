@@ -1,3 +1,23 @@
+Wed Jan 30 17:41:47 2002  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.6 released.
+
+Wed Jan 30 17:34:01 2002  Shugo Maeda <shugo@modruby.net>
+
+	* lib/apache/ruby-debug.rb: new file.
+
+Wed Jan 23 17:51:05 2002  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_cleanup): call ruby_finalize().
+
+	* mod_ruby.c (ruby_child_init): new function to initialize child
+	processes.
+
+	* mod_ruby.c (ruby_child_cleanup): new function to cleanup child
+	processes.
+
+	* request.c (request_notes): new method.
+
 Wed Jan 16 14:02:51 2002  Shugo Maeda <shugo@modruby.net>
 
 	* apachelib.h (CSTR2OBJ): use rb_tainted_str_new2().
