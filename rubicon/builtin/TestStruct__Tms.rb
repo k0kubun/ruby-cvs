@@ -1,6 +1,7 @@
 $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 
+TimesClass = $rubyVersion >= "1.7" ? Process : Time
 
 class TestStruct__Tms < Rubicon::TestCase
 
@@ -26,30 +27,30 @@ class TestStruct__Tms < Rubicon::TestCase
   end
 
   def cstime
-    assert(Time.times.cstime > 0.0)
+    assert(TimesClass.times.cstime > 0.0)
   end
 
   def cutime
-    assert(Time.times.cutime > 0.0)
+    assert(TimesClass.times.cutime > 0.0)
   end
 
   def stime
-    assert(Time.times.stime > 0.0)
+    assert(TimesClass.times.stime > 0.0)
   end
 
   def utime
-    assert(Time.times.utime > 0.0)
+    assert(TimesClass.times.utime > 0.0)
   end
 
   def s_aref
-    assert(Time.times['utime'] != 0)
-    assert(Time.times['stime'] != 0)
-    assert(Time.times['cutime'] != 0)
-    assert(Time.times['cstime'] != 0)
+    assert(TimesClass.times['utime'] != 0)
+    assert(TimesClass.times['stime'] != 0)
+    assert(TimesClass.times['cutime'] != 0)
+    assert(TimesClass.times['cstime'] != 0)
   end
 
   def s_members
-    assert_equals(4, Time.times.members.length)
+    assert_equals(4, TimesClass.times.members.length)
   end
   
   def test_all

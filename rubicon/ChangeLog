@@ -1,3 +1,8 @@
+2001-03-28  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestStruct__Tms.rb,TestTime,TestProcess: the .times
+ 	method moved to Process in 1.7
+
 2001-03-20  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestMarshal.rb: Add test for Bignum marshalling.

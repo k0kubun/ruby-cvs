@@ -386,10 +386,11 @@ class TestTime < Rubicon::TestCase
   end
 
   def test_zone
+    gmt = $rubyVersion < "1.7" ? "GMT" : "UTC"
     t = Time.now.gmtime
-    assert_equals("GMT",t.zone)
+    assert_equals(gmt, t.zone)
     t = Time.now
-    assert("GMT" != t.zone)
+    assert(gmt != t.zone)
   end
 
   def test_s__load
@@ -484,7 +485,11 @@ class TestTime < Rubicon::TestCase
   end
 
   def test_s_times
-    assert_instance_of(Struct::Tms, Time.times)
+    if $rubyVersion < "1.7"
+      assert_instance_of(Struct::Tms, Time.times)
+    else
+      assert_instance_of(Struct::Tms, Process.times)
+    end
   end
 
 end
