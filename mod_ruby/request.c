@@ -477,6 +477,19 @@ static VALUE request_prev(VALUE self)
     return rb_get_request_object(data->request->prev);
 }
 
+static VALUE request_last(VALUE self)
+{
+    request_data *data;
+    request_rec *last;
+
+    data = get_request_data(self);
+
+    for (last = data->request; last->next; last = last->next)
+        continue;
+
+    return rb_get_request_object(last);
+}
+
 static VALUE request_main(VALUE self)
 {
     request_data *data;
@@ -1307,6 +1320,52 @@ static VALUE request_set_user(VALUE self, VALUE val)
 }
 #endif
 
+/* Should only be called from inside of response handlers */
+static VALUE request_internal_redirect(VALUE self, VALUE uri)
+{
+    request_data *data;
+
+    Check_Type(uri, T_STRING);
+    data = get_request_data(self);
+    ap_internal_redirect(STR2CSTR(uri), data->request);
+    return Qnil;
+}
+
+static VALUE request_custom_response(VALUE self, VALUE status, VALUE string)
+{
+    request_data *data;
+
+    Check_Type(status, T_FIXNUM);
+    Check_Type(string, T_STRING);
+    data = get_request_data(self);
+    ap_custom_response(data->request, NUM2INT(status), STR2CSTR(string));
+    return Qnil;
+}
+
+static VALUE request_is_initial(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    if (ap_is_initial_req(data->request)) {
+        return Qtrue;
+    } else {
+        return Qfalse;
+    }
+}
+
+static VALUE request_is_main(VALUE self)
+{
+    request_data *data;
+
+    data = get_request_data(self);
+    if (data->request->main) {
+        return Qfalse;
+    } else {
+        return Qtrue;
+    }
+}
+
 static VALUE request_auth_type(VALUE self)
 {
     request_data *data;
@@ -1371,6 +1430,45 @@ static VALUE request_set_auth_name(VALUE self, VALUE val)
     return val;
 }
 
+static VALUE request_bytes_sent(VALUE self)
+{
+    request_data *data;
+    request_rec *last;
+
+    data = get_request_data(self);
+
+    for (last = data->request; last->next; last = data->request->next)
+        continue;
+
+#ifndef APACHE2
+    if (last->sent_bodyct && !last->bytes_sent)
+        ap_bgetopt(last->connection->client, BO_BYTECT, &last->bytes_sent);
+#endif
+
+    return INT2NUM(last->bytes_sent);
+}
+
+static VALUE request_send_fd(VALUE self, VALUE io)
+{
+    OpenFile *fptr;
+    long bytes_sent;
+    request_data *data;
+
+    request_set_sync(self, Qtrue);
+    rb_apache_request_flush(self);    
+    data = get_request_data(self);
+
+    GetOpenFile(io, fptr);
+
+#ifdef APACHE2
+    ap_send_fd((apr_file_t *)fptr->f, data->request, 0, -1, &bytes_sent);
+#else
+    bytes_sent = ap_send_fd_length(fptr->f, data->request, -1);
+#endif
+
+    return INT2NUM((int)bytes_sent);
+}
+
 void rb_init_apache_request()
 {
     rb_eApachePrematureChunkEndError =
@@ -1410,6 +1508,7 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "server", request_server, 0);
     rb_define_method(rb_cApacheRequest, "next", request_next, 0);
     rb_define_method(rb_cApacheRequest, "prev", request_prev, 0);
+    rb_define_method(rb_cApacheRequest, "last", request_last, 0);
     rb_define_method(rb_cApacheRequest, "main", request_main, 0);
     rb_define_method(rb_cApacheRequest, "protocol", request_protocol, 0);
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
@@ -1503,6 +1602,14 @@ void rb_init_apache_request()
 		     request_soft_timeout, 1);
     rb_define_method(rb_cApacheRequest, "kill_timeout",
 		     request_kill_timeout, 0);
+    rb_define_method(rb_cApacheRequest, "internal_redirect",
+		     request_internal_redirect, 1);
+    rb_define_method(rb_cApacheRequest, "custom_response",
+		     request_custom_response, 2);
+    rb_define_method(rb_cApacheRequest, "main?",
+		     request_is_main, 0);
+    rb_define_method(rb_cApacheRequest, "initial?",
+		     request_is_initial, 0);
     rb_define_method(rb_cApacheRequest, "note_auth_failure",
 		     request_note_auth_failure, 0);
     rb_define_method(rb_cApacheRequest, "note_basic_auth_failure",
@@ -1531,4 +1638,6 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "auth_type=", request_set_auth_type, 1);
     rb_define_method(rb_cApacheRequest, "auth_name", request_auth_name, 0);
     rb_define_method(rb_cApacheRequest, "auth_name=", request_set_auth_name, 1);
+    rb_define_method(rb_cApacheRequest, "bytes_sent", request_bytes_sent, 0);
+    rb_define_method(rb_cApacheRequest, "send_fd", request_send_fd, 1);
 }

@@ -40,6 +40,7 @@
 #include "util_script.h"
 
 #include "ruby.h"
+#include "rubyio.h"
 #include "version.h"
 #include "util.h"
 
@@ -109,6 +110,17 @@ typedef struct {
 #define MR_OUTPUT_NOSYNC	1
 #define MR_OUTPUT_SYNC		2
 #define MR_OUTPUT_SYNC_HEADER	3
+
+/* copied from eval.c */
+#define TAG_RETURN      0x1
+#define TAG_BREAK       0x2
+#define TAG_NEXT        0x3
+#define TAG_RETRY       0x4
+#define TAG_REDO        0x5
+#define TAG_RAISE       0x6
+#define TAG_THROW       0x7
+#define TAG_FATAL       0x8
+#define TAG_MASK        0xf
 
 extern MODULE_VAR_EXPORT module ruby_module;
 extern array_header *ruby_required_libraries;

@@ -225,17 +225,6 @@ MODULE_VAR_EXPORT module ruby_module =
 };
 #endif
 
-/* copied from eval.c */
-#define TAG_RETURN	0x1
-#define TAG_BREAK	0x2
-#define TAG_NEXT	0x3
-#define TAG_RETRY	0x4
-#define TAG_REDO	0x5
-#define TAG_RAISE	0x6
-#define TAG_THROW	0x7
-#define TAG_FATAL	0x8
-#define TAG_MASK	0xf
-
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
 #define STR_CAT_LITERAL(str, s) rb_str_cat(str, s, sizeof(s) - 1)
 
@@ -846,17 +835,19 @@ static void per_request_cleanup(request_rec *r, int flush)
 {
     VALUE reqobj;
 
+    while (r->next)
+      r = r->next;
+
     rb_protect(exec_end_proc, Qnil, NULL);
     if (flush) {
 	reqobj = rb_get_request_object(r);
 	if (reqobj != Qnil)
-	    rb_apache_request_flush(rb_request);
+	    rb_apache_request_flush(reqobj);
     }
     if (r->main) {
 	rb_request = rb_get_request_object(r->main);
 	rb_stdin = rb_stdout = rb_defout = rb_request;
-    }
-    else {
+    } else {
 	rb_request = Qnil;
 	rb_stdin = orig_stdin;
 	rb_stdout = orig_stdout;

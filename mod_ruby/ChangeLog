@@ -1,3 +1,24 @@
+Tue Apr 30 14:44:00 2002  Sean Chittenden <sean@chittenden.org>
+
+	* mod_ruby.h: Moved several define's from mod_ruby.c.
+
+	* mod_ruby.c (per_request_cleanup): fixed SEGV for internal
+	subrequest clean up.
+
+	* request.c (request_last) new method.
+
+	* request.c (request_internal_redirect) ditto.
+
+	* request.c (request_custom_response) ditto.
+
+	* request.c (request_is_main) ditto.
+
+	* request.c (request_is_initial) ditto.
+
+	* request.c (request_bytes_sent) ditto.
+
+	* request.c (request_send_fd) ditto.
+
 Fri Apr 19 17:34:28 2002  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.8 released.
