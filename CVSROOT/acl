@@ -47,6 +47,7 @@ group:rwiki-installer:kazu
 group:interbase:matz,bizenn
 group:irc:iga,knu
 group:metaruby:matju,aleksi
+group:xlib:matju
 
 group:www:@all
 
@@ -83,6 +84,7 @@ grant:@rwiki:app/rwiki
 grant:@interbase:lib/interbase
 grant:@irc:lib/irc
 grant:@metaruby:lib/metaruby
+grant:@xlib:lib/xlib
 
 grant:@www:www
 
