@@ -86,18 +86,13 @@ if $ENABLE_SHARED
   when /-linux/
     $DLDFLAGS = '-Wl,-soname,liberuby.so.$(MAJOR).$(MINOR)'
     $LIBERUBY_ALIASES = "liberuby.so.$(MAJOR).$(MINOR) liberuby.so"
-  when /-freebsd/
+  when /-(freebsd|netbsd)/
     $LIBERUBY_SO = "liberuby.so.$(MAJOR).$(MINOR)"
-    if PLATFORM =~ /elf/
-      $LIBERUBY_SO = "liberuby.so.$(MAJOR).$(MINOR).$(TEENY)"
-      $LIBERUBY_ALIASES = ""
-    end
-  when /-netbsd/
-    $LIBERUBY_SO = "liberuby.so.$(MAJOR).$(MINOR)"
-    if PLATFORM =~ /elf/
-      $LIBERUBY_ALIASES = "liberuby.so.$(MAJOR) liberuby.so"
+    if PLATFORM =~ /elf/ || PLATFORM =~ /-freebsd[3-9]/
+      $LIBERUBY_SO = "liberuby.so.$(MAJOR_MINOR)"
+      $LIBERUBY_ALIASES = "liberuby.so"
     else
-      $LIBERUBY_ALIASES = ""
+      $LIBERUBY_ALIASES = "liberuby.so.$(MAJOR) liberuby.so"
     end
   when /-solaris/
     $XLDFLAGS = "-R$(prefix)/lib"
@@ -167,6 +162,7 @@ TARGET = eruby#{CONFIG["EXEEXT"]}
 MAJOR = #{$MAJOR}
 MINOR = #{$MINOR}
 TEENY = #{$TEENY}
+MAJOR_MINOR = #{$MAJOR.to_i * 10 + $MINOR.to_i}
 
 LIBERUBY_A = #{$LIBERUBY_A}
 LIBERUBY_SO = #{$LIBERUBY_SO}
