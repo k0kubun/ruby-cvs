@@ -700,15 +700,8 @@ static void per_request_init(request_rec *r)
 	rb_request = rb_apache_request_new(r);
 }
 
-static VALUE exec_end_proc(VALUE arg)
-{
-    rb_exec_end_proc();
-    return Qnil;
-}
-
 static void per_request_cleanup()
 {
-    rb_protect(exec_end_proc, Qnil, NULL);
     rb_set_kcode(default_kcode);
 }
 
@@ -885,6 +878,12 @@ static int ruby_header_parser_handler(request_rec *r)
 			rb_intern("header_parse"), 1);
 }
 
+static VALUE exec_end_proc(VALUE arg)
+{
+    rb_exec_end_proc();
+    return Qnil;
+}
+
 static void ruby_cleanup_handler(void *data)
 {
     request_rec *r = (request_rec *) data;
@@ -892,6 +891,7 @@ static void ruby_cleanup_handler(void *data)
 
     ruby_handler(r, dconf->ruby_cleanup_handler,
 		 rb_intern("cleanup"), 1);
+    rb_protect(exec_end_proc, Qnil, NULL);
     rb_request = Qnil;
 }
 
