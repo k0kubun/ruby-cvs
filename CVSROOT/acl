@@ -16,6 +16,8 @@ group:ruby:@all
 group:eruby:shugo
 group:mod_ruby:shugo
 group:rubicon:dave,andy
+group:cvsmailer:knu
+group:irc:iga,knu
 
 
 #
@@ -32,6 +34,8 @@ grant:@ruby:ruby
 grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
+grant:@cvsmailer:app/cvsmailer
+grant:@irc:lib/irc
 
 # Deny access if we reach here
 deny:@all:.*
