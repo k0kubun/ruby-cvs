@@ -415,5 +415,26 @@ AC_SUBST("LIBERUBY_SO")
 AC_SUBST("LIBERUBY_ALIASES")
 AC_SUBST("AROPT")
 
+if $DLEXT != $OBJEXT
+  $MKDLLIB = ""
+  if /mswin32/ =~ RUBY_PLATFORM
+    if /nmake/i =~ $make
+      $MKDLLIB << "set LIB=$(LIBPATH:/=\\);$(LIB)\n\t"
+    else
+      $MKDLLIB << "\tenv LIB='$(subst /,\\\\,$(LIBPATH));$(LIB)' \\\n\t"
+    end
+  end
+  $MKDLLIB << "$(LDSHARED) $(DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)"
+else
+  case RUBY_PLATFORM
+  when "m68k-human"
+    $MKDLLIB = "ar cru $(DLLIB) $(EXT_OBJS) $(LIBS)"
+  else
+    $MKDLLIB = "ld $(DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)"
+  end
+end
+
+AC_SUBST("MKDLLIB")
+
 AC_CONFIG_HEADER("config.h")
 AC_OUTPUT("Makefile")

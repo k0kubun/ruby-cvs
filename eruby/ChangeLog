@@ -1,3 +1,7 @@
+Fri May 25 14:09:13 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb.in: check for MKDLLIB.
+
 Fri May 25 14:02:40 2001  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb.in: new file.
