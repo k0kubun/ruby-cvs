@@ -7,26 +7,26 @@ ENV["PATH"] += ":/sbin:/usr/sbin:/usr/local/sbin:\
 /usr/apache/bin:/usr/local/apache/bin"
 
 $USE_ERUBY = false
-$ERUBYDIR = "../eruby"
+$ERUBY_INCLUDEDIR = "../eruby"
 
 opts = GetoptLong.new(["--enable-eruby", GetoptLong::NO_ARGUMENT],
-		      ["--eruby-dir", GetoptLong::REQUIRED_ARGUMENT],
+		      ["--eruby-include-dir", GetoptLong::REQUIRED_ARGUMENT],
 		      ["--help", GetoptLong::NO_ARGUMENT],)
 begin
   for name, arg in opts
     case name
     when "--enable-eruby"
       $USE_ERUBY = true
-    when "--eruby-dir"
-      $ERUBYDIR = arg
+    when "--eruby-include-dir"
+      $ERUBY_INCLUDEDIR = arg
     when "--help"
       $stderr.print <<EOF
 Usage: #{$0} [options]
 Configuration:
-  --help		print this message
+  --help			print this message
 
-  --enable-eruby	enable eruby
-  --eruby-dir=DIR	eruby in DIR
+  --enable-eruby		enable eruby
+  --eruby-include-dir=DIR	eruby in DIR
 EOF
       exit 1
     end
@@ -36,8 +36,8 @@ rescue
 end
 
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
-if $LIBRUBYARG == "libruby.a"
-  $LIBRUBYARG = $hdrdir + "/libruby.a"
+if $LIBRUBYARG =~ /\.a$/
+  $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
 end
 
 $APACHE_CFLAGS = `apxs -q CFLAGS`
@@ -56,16 +56,17 @@ begin
 
 CC = #{CONFIG["CC"]}
 
-ERUBYDIR = #{$ERUBYDIR}
-LIBERUBY = #{ $USE_ERUBY ? "$(ERUBYDIR)/liberuby.a" : "" }
+ERUBY_INCLUDEDIR = #{$ERUBY_INCLUDEDIR}
+LIBERUBY = #{ $USE_ERUBY ? "-leruby" : "" }
 
 CFLAGS = #{CONFIG["CCDLFLAGS"]} -I#{$hdrdir} -I#{$APACHE_INCLUDEDIR} \\
-	 #{$CFLAGS} #{ $USE_ERUBY ? "-I$(ERUBYDIR) -DUSE_ERUBY" : "" }
+	 #{$CFLAGS} #{ $USE_ERUBY ? "-I$(ERUBY_INCLUDEDIR) -DUSE_ERUBY" : "" }
 LDSHARED = #{CONFIG["LDSHARED"]}
 DLDFLAGS = #{CONFIG["DLDFLAGS"]}
 INSTALL = #{CONFIG["INSTALL"]}
 INSTALL_DATA = #{CONFIG["INSTALL_DATA"]}
 
+RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 LIBRUBYARG = #$LIBRUBYARG
 OBJS = ruby_module.o ruby_config.o apachelib.o
 TARGET = mod_ruby.#{CONFIG["DLEXT"]}
@@ -94,3 +95,8 @@ EOMF
 ensure
   mfile.close
 end
+
+# Local variables:
+# mode: Ruby
+# tab-width: 8
+# End:

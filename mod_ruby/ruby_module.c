@@ -747,6 +747,11 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     if (kcode_orig) rb_set_kcode(kcode_orig);
     (void) ap_release_mutex(mod_ruby_mutex);
 
+#if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
+    rb_exec_end_proc();
+#endif
+    rb_gc();
+
     if (exit_status < 0) {
 	return OK;
     }
