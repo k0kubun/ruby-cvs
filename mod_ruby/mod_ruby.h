@@ -1,6 +1,9 @@
 /*
  * $Id$
- * Copyright (C) 1998-1999  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  ZetaBITS, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ *
+ * Author: Shugo Maeda <shugo@ruby-lang.org>
  *
  * This file is part of mod_ruby.
  *
@@ -23,7 +26,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.2.0"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.2.1"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {

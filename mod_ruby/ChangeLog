@@ -1,3 +1,9 @@
+Mon Oct  2 23:32:17 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* mod_ruby.c (ruby_handler0): kill all threads on exit.
+
+	* changed copyright.
+
 Mon Sep 11 16:06:25 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* version 0.2.0 released.

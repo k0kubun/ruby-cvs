@@ -1,6 +1,9 @@
 /*
  * $Id$
- * Copyright (C) 1998-1999  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  ZetaBITS, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ *
+ * Author: Shugo Maeda <shugo@ruby-lang.org>
  *
  * This file is part of mod_ruby.
  *
@@ -588,6 +591,21 @@ static VALUE thread_join(VALUE thread)
     return rb_funcall(thread, rb_intern("join"), 0);
 }
 
+static VALUE kill_threads(VALUE arg)
+{
+    VALUE threads = rb_thread_list();
+    VALUE current = rb_thread_current();
+    VALUE th;
+    int i;
+
+    for (i = 0; i < RARRAY(threads)->len; i++) {
+	th = RARRAY(threads)->ptr[i];
+	if (th != current)
+	    rb_protect(thread_kill, th, NULL);
+    }
+    return Qnil;
+}
+
 static VALUE load_ruby_script(request_rec *r)
 {
     ruby_server_config *sconf =
@@ -726,8 +744,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     ap_soft_timeout("load ruby script", r);
     load_thread = rb_thread_create(load, r);
     rb_protect(thread_join, load_thread, NULL);
-    if (wcb_thread != Qnil)
-	rb_protect(thread_kill, wcb_thread, NULL);
+    rb_protect(kill_threads, Qnil, NULL);
     ap_kill_timeout(r);
 
     if (kcode_orig) rb_set_kcode(kcode_orig);

@@ -1,6 +1,9 @@
 /*
  * $Id$
- * Copyright (C) 1998-1999  Network Applied Communication Laboratory, Inc.
+ * Copyright (C) 2000  ZetaBITS, Inc.
+ * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ *
+ * Author: Shugo Maeda <shugo@ruby-lang.org>
  *
  * This file is part of mod_ruby.
  *
