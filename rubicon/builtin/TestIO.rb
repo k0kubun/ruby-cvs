@@ -20,6 +20,16 @@ class TestIO < Rubicon::TestCase
   end
 
   def teardown
+
+    3.upto(255) { |fd|
+      begin
+        io = IO.new(fd)
+        $stderr.puts "Failed on fd #{fd}"
+        exit
+      rescue Errno::EBADF
+      end
+    }
+
     File.delete(@file) if File.exist?(@file)
     teardownTestDir
   end
@@ -61,11 +71,13 @@ class TestIO < Rubicon::TestCase
     count = 0
     io.each { count += 1 }
     assert_equal(10, count)
+    io.close
 
     f = File.open(@file)
     io = IO.new(f.fileno, "r")
     f.close
-    assert_exception(IOError) { io.gets }
+    assert_exception(Errno::EBADF) { io.gets }
+    io.close
 
     f = File.open(@file, "r")
     f.sysread(3*19)
@@ -75,7 +87,7 @@ class TestIO < Rubicon::TestCase
     count = 0
     io.each { count += 1 }
     assert_equal(7, count)
-    f.close
+    io.close
   end
 
   def test_s_pipe
@@ -114,6 +126,7 @@ class TestIO < Rubicon::TestCase
       assert_equal(10, count)
     end
     assert_nil(res)
+    p.close
 
     # WRITE
     p = IO.popen("cat >#@file", "w")
@@ -135,17 +148,16 @@ class TestIO < Rubicon::TestCase
     if p
       assert_equal(parent, $$)
       assert_equal("Hello\n", p.gets)
+      Process.wait
     else
       assert_equal(parent, Process.ppid)
       puts "Hello"
       exit
     end
     p.close
-
   end
 
   def test_s_popen_spawn
-
     # Spawn an interpreter - WRITE
     parent = $$
     pipe = IO.popen("-", "w")
@@ -155,6 +167,7 @@ class TestIO < Rubicon::TestCase
       pipe.puts "12"
       Process.wait
       assert_equal(12, $?>>8)
+      pipe.close
     else
       buff = $stdin.gets
       exit buff.to_i
@@ -168,6 +181,8 @@ class TestIO < Rubicon::TestCase
       assert_equal(parent, $$)
       p.puts "Hello\n"
       assert_equal("Goodbye\n", p.gets)
+      Process.wait
+      p.close
     else
       puts "Goodbye" if $stdin.gets == "Hello\n"
       exit
@@ -189,9 +204,10 @@ class TestIO < Rubicon::TestCase
     assert_nil(select(nil, nil, nil, 0))
     assert_exception(ArgumentError) { select(nil, nil, nil, -1) }
 
-    $stdin = File.open(@file)
-    res = select([$stdin], [$stdout, $stderr], [$stdin,$stdout,$stderr], 1)
-    assert_equal([[$stdin], [$stdout, $stderr], []], res)
+    File.open(@file) do |file|
+      res = select([file], [$stdout, $stderr], [file,$stdout,$stderr], 1)
+      assert_equal([[file], [$stdout, $stderr], []], res)
+    end
 
     read, write = *IO.pipe
     read.fcntl(F_SETFL, File::NONBLOCK)
@@ -204,6 +220,7 @@ class TestIO < Rubicon::TestCase
     write.close
     assert_equal([[read],[],[]], select([read], nil,  [read], .1))
     assert_nil(read.gets)
+    read.close
   end
 
   class Dummy
@@ -242,6 +259,8 @@ class TestIO < Rubicon::TestCase
         count += 1
       end
       assert_equal(10, count)
+      io[0].close
+      io[1].close
     end
   end
 
@@ -249,6 +268,7 @@ class TestIO < Rubicon::TestCase
     read, write = *IO.pipe
     read.close
     assert_exception(IOError) { read.gets }
+    write.close
   end
 
   def test_close_read
@@ -257,6 +277,7 @@ class TestIO < Rubicon::TestCase
     assert_equal("Hello\n", pipe.gets)
     pipe.close_read
     assert_exception(IOError) { pipe.gets }
+    pipe.close
   end
 
   def test_close_write
@@ -265,6 +286,7 @@ class TestIO < Rubicon::TestCase
     assert_equal("Hello\n", pipe.gets)
     pipe.close_write
     assert_exception(IOError) { pipe.puts "Hello" }
+    pipe.close
   end
 
   def test_closed?
@@ -388,7 +410,6 @@ class TestIO < Rubicon::TestCase
     assert_equal(0, $stdin.fileno)
     assert_equal(1, $stdout.fileno)
     assert_equal(2, $stderr.fileno)
-    assert(File.open(@file).fileno > 2)
   end
 
   def test_flush
@@ -398,6 +419,8 @@ class TestIO < Rubicon::TestCase
     assert_nil(select([read], nil,  [read], .1))
     write.flush
     assert_equal([[read],[],[]], select([read], nil,  [read], .1))
+    read.close
+    write.close
   end
 
   def test_getc
@@ -458,13 +481,13 @@ class TestIO < Rubicon::TestCase
   end
 
   def test_ioctl
-    skipping()
+    skipping("Platform dependent")
   end
 
   # see tty?
   def test_isatty
-    assert(!File.new(@file).isatty)
-    assert(!File.new("/dev/tty").isatty)
+    File.open(@file) { |f|  assert(!f.isatty) }
+    File.open("/dev/tty") { |f| assert(f.isatty) }
   end
 
   def test_lineno
@@ -767,7 +790,9 @@ class TestIO < Rubicon::TestCase
 
   # Stat is pretty much tested elsewhere, so we're minimal here
   def test_stat
-    assert_instance_of(IO.new($stdin.fileno).stat, File::Stat)
+    io = IO.new($stdin.fileno)
+    assert_instance_of(io.stat, File::Stat)
+    io.close
   end
 
   def test_sync
@@ -785,6 +810,8 @@ class TestIO < Rubicon::TestCase
     write.sync = true
     write.print "there"
     assert_equal([[read],[],[]], select([read], nil,  [read], .1))
+    read.close
+    write.close
   end
 
   def test_sysread
@@ -828,13 +855,12 @@ class TestIO < Rubicon::TestCase
     assert_equal(0, $stdin.to_i)
     assert_equal(1, $stdout.to_i)
     assert_equal(2, $stderr.to_i)
-    File.open(@file) {|f| assert(f.to_i > 2)}
   end
 
   # see isatty
   def test_tty?
-    assert(!File.new(@file).tty?)
-    assert(!File.new("/dev/tty").tty?)
+    File.open(@file) { |f|  assert(!f.tty?) }
+    File.open("/dev/tty") { |f| assert(f.tty?) }
   end
 
   def test_ungetc
