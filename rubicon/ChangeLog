@@ -1,5 +1,13 @@
+2001-11-25    <Administrator@WALTER>
+
+
 2001-11-25    <Dave@Thomases.com>
 
+	* GNUmakefile: added. Now 'make' picks up GNUmakefile, and nmake
+	the Makefile.
+	
+	* util\checkstat.c (main): Modify to compile with MSVC
+	
 	* builtin\TestIO.rb: MsWin32 doesn't support bi-directional pipes,
 	so start removinh them from the tests.
 

@@ -18,14 +18,16 @@ class TestFile__Stat < FileInfoTest
     assert_equal(-1, @s2 <=> @s1)
   end
 
-  def test_atime
-    assert_equal(@aTime1, @s1.atime)
-    assert_equal(@aTime2, @s2.atime)
+  Windows.dont do     # not on FAT filesystems
+    def test_atime
+      assert_equal(@aTime1, @s1.atime)
+      assert_equal(@aTime2, @s2.atime)
+    end
   end
 
   def test_blksize
-    blksize = `perl -e "print((stat('.'))[11])"`.to_i
-    if $? != 0 || blksize == 0
+    blksize = checkstat(".").split[8].to_i
+    if $? != 0 || blksize == -1
       skipping("Couldn't find block size")
     else
       assert_equal(blksize, File.stat('.').blksize)

@@ -26,8 +26,10 @@ class TestFile < Rubicon::TestCase
     teardownTestDir
   end
 
-  def test_s_atime
-    assert_equal(@aTime, File.atime(@file))
+  Windows.dont do    # FAT file systems only store mtime
+    def test_s_atime
+      assert_equal(@aTime, File.atime(@file))
+    end
   end
 
   def test_s_basename
@@ -117,23 +119,20 @@ class TestFile < Rubicon::TestCase
       skipping("$HOME not set")
     end
 
-    pw = File.open("/etc/passwd")
-    if pw
-      begin
-        users = pw.readlines
-        line = ''
+    begin
+      File.open("/etc/passwd") do |pw|
+	users = pw.readlines
+	line = ''
 	line = users.pop while users.nitems > 0 and (line.length == 0 || /^\+:/ =~ line)
-        if line.length > 0 
-          name, home  = line.split(':').indices(0, -2)
-          assert_equal(home, File.expand_path("~#{name}"))
-          assert_equal(home, File.expand_path("~#{name}", "/tmp/gumby"))
-          assert_equal(File.join(home, 'a'),
-                             File.expand_path("~#{name}/a", "/tmp/gumby"))
-        end
-      ensure 
-        pw.close
+	if line.length > 0 
+	  name, home  = line.split(':').indices(0, -2)
+	  assert_equal(home, File.expand_path("~#{name}"))
+	  assert_equal(home, File.expand_path("~#{name}", "/tmp/gumby"))
+	  assert_equal(File.join(home, 'a'),
+		       File.expand_path("~#{name}/a", "/tmp/gumby"))
+	end
       end
-    else
+    rescue Errno::ENOENT
       skipping("~user")
     end
   end
@@ -456,8 +455,10 @@ class TestFile < Rubicon::TestCase
 
   # Instance methods
 
-  def test_atime
-    File.open(@file) { |f| assert_equal(@aTime, f.atime) }
+  Windows.dont do   # FAT filesystems don't store this properly
+    def test_atime
+      File.open(@file) { |f| assert_equal(@aTime, f.atime) }
+    end
   end
 
   # Apparently you can't remove read permission on a file

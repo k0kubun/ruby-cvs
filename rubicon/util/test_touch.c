@@ -18,8 +18,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#include <unistd.h>
-#include <utime.h>
+#ifndef _WIN32
+#  include <unistd.h>
+#  include <utime.h>
+#else
+#  include <sys/utime.h>
+#endif
 
 
 #define NOTIME  0
