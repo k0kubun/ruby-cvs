@@ -65,7 +65,9 @@ end
 
 class Complex < Numeric
   @RCS_ID='-$Id$-'
-  
+
+  undef step
+
   def Complex.generic?(other)
     other.kind_of?(Integer) or
     other.kind_of?(Float) or
