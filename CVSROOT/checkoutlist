@@ -12,3 +12,5 @@
 #
 # comment lines begin with '#'
 mailto-committers.pl
+commitinfo.rb
+loginfo.rb
