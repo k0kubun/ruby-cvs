@@ -83,6 +83,8 @@ static const command_rec ruby_cmds[] =
      "Ruby ENV key and value" },
     {"RubyTimeOut", ruby_cmd_timeout, NULL, RSRC_CONF, TAKE1,
      "time to wait execution of ruby script"},
+    {"RubySafeLevel", ruby_cmd_safe_level, NULL, RSRC_CONF, TAKE1,
+     "set default $SAFE"},
     {NULL}
 };
 
@@ -258,15 +260,6 @@ static void ruby_startup(server_rec *s, pool *p)
 
     origenviron = environ;
 
-    list = (char **) conf->required_files->elts;
-    for (i = 0; i < conf->required_files->nelts; i++) {
-	if (ruby_require(list[i])) {
-	    fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
-		    list[i]);
-	    exit(1);
-	}
-    }
-
 #if RUBY_VERSION_CODE >= 160
     ruby_init_loadpath();
 #else
@@ -277,7 +270,14 @@ static void ruby_startup(server_rec *s, pool *p)
     orig_load_path = rb_load_path;
     rb_global_variable(&orig_load_path);
 
-    rb_set_safe_level(1);
+    list = (char **) conf->required_files->elts;
+    for (i = 0; i < conf->required_files->nelts; i++) {
+	if (ruby_require(list[i])) {
+	    fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
+		    list[i]);
+	    exit(1);
+	}
+    }
 
     ruby_is_running = 1;
 }
@@ -558,9 +558,13 @@ static VALUE kill_threads(VALUE arg)
 
 static VALUE load_ruby_script(request_rec *r)
 {
+    ruby_server_config *sconf =
+	(ruby_server_config *) ap_get_module_config(r->server->module_config,
+						    &ruby_module);
     int state;
     request_data *data;
 
+    rb_set_safe_level(sconf->safe);
     rb_load_protect(rb_str_new2(r->filename), 1, &state);
 #if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
     rb_exec_end_proc();
@@ -578,10 +582,14 @@ static VALUE load_ruby_script(request_rec *r)
 #ifdef USE_ERUBY
 static VALUE load_eruby_script(request_rec *r)
 {
+    ruby_server_config *sconf =
+	(ruby_server_config *) ap_get_module_config(r->server->module_config,
+						    &ruby_module);
     VALUE script;
     int state;
     request_data *data;
 
+    rb_set_safe_level(sconf->safe);
     eruby_noheader = 0;
     eruby_charset = eruby_default_charset;
     script = eruby_load(r->filename, 1, &state);

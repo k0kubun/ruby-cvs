@@ -37,6 +37,7 @@
 #include "ruby_config.h"
 
 #define MR_DEFAULT_TIMEOUT 299
+#define MR_DEFAULT_SAFE_LEVEL 1
 
 void *ruby_create_server_config(pool *p, server_rec *s)
 {
@@ -46,6 +47,7 @@ void *ruby_create_server_config(pool *p, server_rec *s)
     conf->required_files = ap_make_array(p, 1, sizeof(char*));
     conf->env = ap_make_table(p, 1);
     conf->timeout = MR_DEFAULT_TIMEOUT;
+    conf->safe = MR_DEFAULT_SAFE_LEVEL;
     return conf;
 }
 
@@ -133,6 +135,16 @@ const char *ruby_cmd_timeout(cmd_parms *cmd, void *config, char *arg)
 						    &ruby_module);
 
     conf->timeout = atoi(arg);
+    return NULL;
+}
+
+const char *ruby_cmd_safe_level(cmd_parms *cmd, void *config, char *arg)
+{
+    ruby_server_config *conf =
+	(ruby_server_config *) ap_get_module_config(cmd->server->module_config,
+						    &ruby_module);
+
+    conf->safe = atoi(arg);
     return NULL;
 }
 

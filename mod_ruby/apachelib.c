@@ -331,8 +331,8 @@ VALUE ruby_create_request(request_rec *r)
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
 			      (void (*) _((void*))) request_mark, free, data);
     data->request = r;
-    data->inbuf = rb_str_new("", 0);
-    data->outbuf = rb_str_new("", 0);
+    data->inbuf = rb_tainted_str_new("", 0);
+    data->outbuf = rb_tainted_str_new("", 0);
     data->headers_in = ruby_create_table(rb_cApacheInTable, r->headers_in);
     data->headers_out = ruby_create_table(rb_cApacheTable, r->headers_out);
     data->send_http_header = 0;

@@ -1,3 +1,7 @@
+Thu Nov 23 18:22:30 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* ruby_config.c (ruby_cmd_safe_level): new directive.
+
 Mon Oct 16 18:27:36 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* version 0.2.1 released.

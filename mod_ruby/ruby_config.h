@@ -34,6 +34,7 @@ const char *ruby_cmd_require(cmd_parms*, void*, char*);
 const char *ruby_cmd_pass_env(cmd_parms*, void*, char*);
 const char *ruby_cmd_set_env(cmd_parms*, ruby_dir_config*, char*, char*);
 const char *ruby_cmd_timeout(cmd_parms*, void*, char*);
+const char *ruby_cmd_safe_level(cmd_parms*, void*, char*);
 
 #endif /* !RUBY_CONFIG_H */
 
