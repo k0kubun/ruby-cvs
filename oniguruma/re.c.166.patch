@@ -1,0 +1,38 @@
+--- re.c.orig	Wed Feb 13 18:02:15 2002
++++ re.c	Mon Feb 25 20:50:46 2002
+@@ -395,6 +395,7 @@ make_regexp(s, len, flag)
+ {
+     Regexp *rp;
+     char *err;
++    int r;
+ 
+     /* Handle escaped characters first. */
+ 
+@@ -403,11 +404,12 @@ make_regexp(s, len, flag)
+        from that.
+     */
+ 
+-    rp = ALLOC(Regexp);
+-    MEMZERO((char *)rp, Regexp, 1);
+-    rp->buffer = ALLOC_N(char, 16);
+-    rp->allocated = 16;
+-    rp->fastmap = ALLOC_N(char, 256);
++    r = re_alloc_pattern(&rp);
++    if (r) {
++      err = re_error_code_to_str(r);
++      rb_reg_raise(s, len, err, 0);
++    }
++      
+     if (flag) {
+ 	rp->options = flag;
+     }
+@@ -551,8 +553,7 @@ rb_reg_prepare_re(re)
+ 	if (FL_TEST(re, KCODE_FIXED))
+ 	    kcode_set_option(re);
+ 	rb_reg_check(re);
+-	RREGEXP(re)->ptr->fastmap_accurate = 0;
+-	err = re_compile_pattern(RREGEXP(re)->str, RREGEXP(re)->len, RREGEXP(re)->ptr);
++	err = re_recompile_pattern(RREGEXP(re)->str, RREGEXP(re)->len, RREGEXP(re)->ptr);
+ 	if (err != NULL) {
+ 	    rb_reg_raise(RREGEXP(re)->str, RREGEXP(re)->len, err, re);
+ 	}
