@@ -166,3 +166,8 @@ AC_SUBST("MKDLLIB")
 
 AC_CONFIG_HEADER("config.h")
 AC_OUTPUT("Makefile")
+
+# Local variables:
+# mode: Ruby
+# tab-width: 8
+# End:
