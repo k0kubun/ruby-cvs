@@ -161,16 +161,10 @@ class TestIO < Rubicon::TestCase
     end
     assert_nil(res)
 
-    MsWin32.only do
-      assert(false, "popen is leaving subprocesses, so can't run test")
-    end
 
     # WRITE
-    p = IO.popen("#$interpreter -e 'puts readlines' >#{fname}", "w")
-    begin
+    IO.popen("#$interpreter -e 'puts readlines' >#{fname}", "w") do |p|
       5.times { |i| p.printf "Line %d\n", i }
-    ensure
-      p.close
     end
 
     count = 0
