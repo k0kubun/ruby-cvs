@@ -66,13 +66,6 @@ if $ENABLE_SHARED
     $LIBERUBY_ALIASES = 'liberuby.sl.$(MAJOR).$(MINOR) liberuby.sl'
   when /-aix/
     $DLDFLAGS = '-Wl,-bE:eruby.imp'
-    if $RUBY_SHARED
-      $LIBRUBYARG = "-Wl," + $libdir + "/" + CONFIG["LIBRUBY_SO"]
-      $LIBRUBYARG.sub!(/\.so\.[.0-9]*$/, '.so')
-      $XLDFLAGS = ""
-    else
-      $XLDFLAGS = "-Wl,-bE:#{$topdir}/ruby.imp"
-    end
     $LIBERUBYARG = "-L$(prefix)/lib -Wl,liberuby.so"
     if $DLDFLAGS !~ /-Wl,/
       $LIBRUBYARG.gsub!(/-Wl,/, '')

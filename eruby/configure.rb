@@ -120,7 +120,7 @@ def AC_MSG_RESULT(result)
   case result
   when true
     result = "yes"
-  when false
+  when false, nil
     result = "no"
   end
   puts(result)
@@ -243,7 +243,6 @@ end
 
 case PLATFORM
 when /-aix/
-  $DLDFLAGS = "-Wl,-bE:mod_ruby.imp -Wl,-bI:httpd.exp -Wl,-bM:SRE -Wl,-bnoentry -lc"
   if $RUBY_SHARED
     $LIBRUBYARG = "-Wl,$(libdir)/" + CONFIG["LIBRUBY_SO"]
     $LIBRUBYARG.sub!(/\.so\.[.0-9]*$/, '.so')
@@ -363,13 +362,6 @@ if $ENABLE_SHARED
     $LIBERUBY_ALIASES = 'liberuby.sl.$(MAJOR).$(MINOR) liberuby.sl'
   when /-aix/
     $DLDFLAGS = '-Wl,-bE:eruby.imp'
-    if $RUBY_SHARED
-      $LIBRUBYARG = "-Wl," + $libdir + "/" + CONFIG["LIBRUBY_SO"]
-      $LIBRUBYARG.sub!(/\.so\.[.0-9]*$/, '.so')
-      $XLDFLAGS = ""
-    else
-      $XLDFLAGS = "-Wl,-bE:#{$topdir}/ruby.imp"
-    end
     $LIBERUBYARG = "-L$(prefix)/lib -Wl,liberuby.so"
     if $DLDFLAGS !~ /-Wl,/
       $LIBRUBYARG.gsub!(/-Wl,/, '')
