@@ -88,7 +88,7 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_getwd
-    assert_equal(`pwd`, Dir.getwd)
+    assert_equal(`pwd`.chomp, Dir.getwd)
   end
 
   def test_s_glob
@@ -114,51 +114,101 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_mkdir
-    assert_fail("untested")
+    assert_equal(0, Dir.chdir("_test"))
+    assert_equal(0, Dir.mkdir("_lower1"))
+    assert(File.stat("_lower1").directory?)
+    assert_equal(0, Dir.chdir("_lower1"))
+    assert_equal(0, Dir.chdir(".."))
+    assert_equal(0, Dir.mkdir("_lower2", 0777))
+    $stderr.puts "Anyone think of a way to test permissions?"
+    assert_equal(0, Dir.delete("_lower1"))
+    assert_equal(0, Dir.delete("_lower2"))
   end
 
   def test_s_new
-    assert_fail("untested")
+    assert_exception(ArgumentError) { Dir.new }
+    assert_exception(ArgumentError) { Dir.new("a", "b") }
+    assert_exception(Errno::ENOENT) { Dir.new("_wombat") }
+
+    assert_equal(Dir, Dir.new(".").type)
   end
 
   def test_s_open
-    assert_fail("untested")
+    assert_exception(ArgumentError) { Dir.open }
+    assert_exception(ArgumentError) { Dir.open("a", "b") }
+    assert_exception(Errno::ENOENT) { Dir.open("_wombat") }
+
+    assert_equal(Dir, Dir.open(".").type)
+    assert_nil(Dir.open(".") { |d| assert_equal(Dir, d.type) } )
   end
 
   def test_s_pwd
-    assert_fail("untested")
+    assert_equal(`pwd`.chomp, Dir.pwd)
   end
 
   def test_s_rmdir
-    assert_fail("untested")
+    assert_exception(Errno::ENOENT)    { Dir.rmdir "_wombat" } 
+    assert_exception(Errno::ENOTEMPTY) { Dir.rmdir "_test" } 
+    sys("rm _test/*")
+    assert_equal(0, Dir.rmdir("_test"))
+    assert_exception(Errno::ENOENT)    { Dir.rmdir "_test" } 
   end
 
   def test_s_unlink
-    assert_fail("untested")
+    assert_exception(Errno::ENOENT)    { Dir.unlink "_wombat" } 
+    assert_exception(Errno::ENOTEMPTY) { Dir.unlink "_test" } 
+    sys("rm _test/*")
+    assert_equal(0, Dir.unlink("_test"))
+    assert_exception(Errno::ENOENT)    { Dir.unlink "_test" } 
   end
 
   def test_close
-    assert_fail("untested")
+    d = Dir.new(".")
+    d.read
+    assert_nil(d.close)
+    assert_exception(IOError) { d.read }
   end
 
   def test_each
-    assert_fail("untested")
+    expected = @files
+    d = Dir.new("_test")
+    assert_equal(d, d.each { |f|
+                   assert_equal(expected.shift, f) } )
   end
 
   def test_read
-    assert_fail("untested")
+    d = Dir.new("_test")
+    @files.each { |expected| assert_equal(expected, d.read);  }
+    assert_nil(d.read)
   end
 
   def test_rewind
-    assert_fail("untested")
+    d = Dir.new("_test")
+    @files.each { |expected| assert_equal(expected, d.read); }
+    assert_nil(d.read)
+    d.rewind
+    @files.each { |expected| assert_equal(expected, d.read); }
+    assert_nil(d.read)
   end
 
   def test_seek
-    assert_fail("untested")
+    d = Dir.new("_test")
+    d.read
+    pos = d.tell
+    assert_equal(Fixnum, pos.type)
+    name = d.read
+    assert_equal(d, d.seek(pos))
+    assert_equal(name, d.read)
   end
 
   def test_tell
-    assert_fail("untested")
+    d = Dir.new("_test")
+    d.read
+    pos = d.tell
+    assert_equal(Fixnum, pos.type)
+    name = d.read
+    assert_equal(d, d.seek(pos))
+    assert_equal(name, d.read)
   end
 
 end
