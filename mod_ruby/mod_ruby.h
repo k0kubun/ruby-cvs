@@ -105,6 +105,12 @@ typedef struct {
     array_header *ruby_cleanup_handler;
 } ruby_dir_config;
 
+typedef struct {
+    char *filename;
+    ruby_server_config *server_config;
+    ruby_dir_config *dir_config;
+} ruby_library_context;
+
 #define MR_DEFAULT_TIMEOUT 270
 #define MR_DEFAULT_SAFE_LEVEL 1
 

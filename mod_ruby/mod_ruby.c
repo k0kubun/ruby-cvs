@@ -538,6 +538,7 @@ static void ruby_startup(server_rec *s, pool *p)
 {
     VALUE stack_start;
     ruby_server_config *conf = get_server_config(s);
+    ruby_library_context *libraries;
     char **list;
     int i, n;
     int state;
@@ -602,13 +603,16 @@ static void ruby_startup(server_rec *s, pool *p)
 	default_kcode = rb_get_kcode();
 
 	if (ruby_required_libraries) {
-	    list = (char **) ruby_required_libraries->elts;
+	    libraries = (ruby_library_context *) ruby_required_libraries->elts;
 	    n = ruby_required_libraries->nelts;
 	    for (i = 0; i < n; i++) {
-		if ((state = ruby_require(list[i], NULL, NULL))) {
+		if ((state = ruby_require(libraries[i].filename,
+					  libraries[i].server_config,
+					  libraries[i].dir_config))) {
 		    ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO,
 				 APLOG_STATUS(0) s,
-				 "mod_ruby: failed to require %s", list[i]);
+				 "mod_ruby: failed to require %s",
+				 libraries[i].filename);
 		    ruby_log_error(s, ruby_get_error_info(state));
 		}
 	    }
