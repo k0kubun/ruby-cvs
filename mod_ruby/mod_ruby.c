@@ -55,7 +55,6 @@ static char **origenviron;
 extern VALUE ruby_errinfo;
 extern VALUE rb_defout;
 extern VALUE rb_stdin;
-static VALUE rb_origstdin;
 
 #ifdef MULTITHREAD
 static mutex *mod_ruby_mutex = NULL;
@@ -182,11 +181,6 @@ static VALUE f_exit(int argc, VALUE *argv, VALUE obj)
     return Qnil;		/* not reached */
 }
 
-static VALUE io_clone(VALUE io)
-{
-    return rb_funcall(io, rb_intern("clone"), 0);
-}
-
 static void ruby_startup(server_rec *s, pool *p)
 {
     ruby_server_config *conf =
@@ -229,12 +223,6 @@ static void ruby_startup(server_rec *s, pool *p)
 		    list[i]);
 	    exit(1);
 	}
-    }
-
-    rb_origstdin = rb_protect(io_clone, (VALUE) rb_stdin, &state);
-    if (state) {
-	fprintf(stderr, "Can't close $stdin, exiting...\n");
-	exit(1);
     }
 
     ruby_is_running = 1;
@@ -658,6 +646,11 @@ static VALUE load_eruby_script(request_rec *r)
     return Qnil;
 }
 
+static VALUE open_null(VALUE arg)
+{
+    return rb_funcall(rb_cFile, rb_intern("open"), 1, rb_str_new2("/dev/null"));
+}
+
 static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
     VALUE wcb_thread = Qnil;
@@ -691,7 +684,8 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 	    return SERVER_ERROR;
     }
     else {
-	rb_protect(stdin_reopen, (VALUE) rb_origstdin, &state);
+	VALUE file = rb_protect(open_null, Qnil, &state);
+	rb_protect(stdin_reopen, (VALUE) file, &state);
 	if (state)
 	    return SERVER_ERROR;
     }

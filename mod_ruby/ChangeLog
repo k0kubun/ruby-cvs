@@ -1,3 +1,10 @@
+Thu Jul 13 12:25:34 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* Makefile.RB: expand CONFIG["LIBRUBYARG"] for ruby-1.5.
+
+	* mod_ruby.c (ruby_handler0): use /dev/null instead of an original
+	stdin for apache -X.
+
 Wed Jun 14 13:11:48 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* apachelib.c (request_aref): don't call STR2CSTR() with

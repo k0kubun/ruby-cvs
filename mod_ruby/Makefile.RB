@@ -47,7 +47,11 @@ rescue
   exit(1)
 end
 
-$LIBRUBYARG = CONFIG["LIBRUBYARG"]
+begin
+  $LIBRUBYARG = Config.expand(CONFIG["LIBRUBYARG"])
+rescue
+  $LIBRUBYARG = CONFIG["LIBRUBYARG"]
+end
 if $LIBRUBYARG =~ /\.a$/
   $shared = false
   $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
