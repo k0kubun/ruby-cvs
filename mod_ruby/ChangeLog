@@ -1,3 +1,9 @@
+Tue Feb 27 10:56:24 2001  Colin Steele <colin@webg2.com>
+
+	* apachelib.c (request_status): new method.
+
+	* apachelib.c (request_set_status): new method.
+
 Wed Jan 24 16:52:48 2001  Shugo Maeda <shugo@modruby.net>
 
 	* apachelib.c (ruby_init_apachelib): fixed Apache::InTable#[].

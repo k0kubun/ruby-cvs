@@ -573,6 +573,23 @@ static VALUE request_request_time(VALUE self)
     return rb_time_new(data->request->request_time, 0);
 }
 
+static VALUE request_status(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2NUM(data->request->status);
+}
+
+static VALUE request_set_status(VALUE self, VALUE status)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    data->request->status = NUM2INT(status);
+    return status;
+}
+
 static VALUE request_status_line(VALUE self)
 {
     request_data *data;
@@ -1164,6 +1181,8 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "filename", request_filename, 0);
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);
     rb_define_method(rb_cApacheRequest, "request_time", request_request_time, 0);
+    rb_define_method(rb_cApacheRequest, "status", request_status, 0);
+    rb_define_method(rb_cApacheRequest, "status=", request_set_status, 1);
     rb_define_method(rb_cApacheRequest, "status_line", request_status_line, 0);
     rb_define_method(rb_cApacheRequest, "status_line=", request_set_status_line, 1);
     rb_define_method(rb_cApacheRequest, "request_method", request_request_method, 0);
