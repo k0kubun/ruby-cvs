@@ -25,7 +25,8 @@ end
 
 def create_file(filename, config)
   print "creating ", filename, "\n"
-  open(filename + ".in") do |fin|
+  dir = File.dirname($0)
+  open(File.join(dir, filename) + ".in") do |fin|
     open(filename, "w") do |fout|
       while line = fin.gets
 	line.gsub!(/@[A-Za-z_]+@/) do |s|
@@ -107,6 +108,14 @@ rescue
 end
 
 config = {}
+
+if RUBY_VERSION < "1.6"
+  $stderr.print("mod_ruby requires Ruby 1.6.x or later.\n")
+  exit 1
+end
+if RUBY_VERSION < "1.6.4"
+  $stderr.print("warning: mod_ruby recommends Ruby 1.6.4 or later.\n")
+end
 
 config["srcdir"] = File.dirname($0)
 config["topdir"] = $topdir
