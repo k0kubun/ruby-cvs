@@ -1,3 +1,16 @@
+Mon May 28 11:35:46 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_startup): don't initialize ruby if
+	ruby_running(). (for static Apache module)
+
+	* mod_ruby.c: use EXTERN.
+
+	* libruby.module.in: use MODULE_LIBS to expand LIBRUBYARG.
+
+	* configure.rb.in: set $ERUBY_INCLUDES instead of modify $CFLAGS.
+
+	* Makefile.in: RUBY_SO_NAME for cygwin.
+
 Sat May 26 04:11:21 2001  Shugo Maeda <shugo@modruby.net>
 
 	* install-rb: new file.

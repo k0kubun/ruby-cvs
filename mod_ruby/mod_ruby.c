@@ -56,15 +56,17 @@
 #endif
 #include "config.h"
 
+#ifndef WIN32
 extern char **environ;
 static char **origenviron;
+#endif /* WIN32 */
 
-extern VALUE ruby_errinfo;
-extern VALUE rb_defout;
-extern VALUE rb_stdin;
-extern VALUE rb_stdout;
+EXTERN VALUE ruby_errinfo;
+EXTERN VALUE rb_defout;
+EXTERN VALUE rb_stdin;
+EXTERN VALUE rb_stdout;
 
-extern VALUE rb_load_path;
+EXTERN VALUE rb_load_path;
 static VALUE default_load_path;
 
 static ID id_handler;
@@ -220,7 +222,7 @@ void ruby_add_path(const char *path)
 #if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
 static void mod_ruby_dso_unload(void *data)
 {
-    extern VALUE ruby_dln_librefs;
+    EXTERN VALUE ruby_dln_librefs;
     int i;
 
     for (i = 0; i < RARRAY(ruby_dln_librefs)->len; i++) {
@@ -241,13 +243,45 @@ static void ruby_startup(server_rec *s, pool *p)
     mod_ruby_mutex = ap_create_mutex("mod_ruby_mutex");
 #endif
 
-    ruby_init();
-    rb_init_apache();
+    if (!ruby_running()) {
+	ruby_init();
+	rb_init_apache();
 #ifdef USE_ERUBY
-    eruby_init();
+	eruby_init();
 #endif
 
-    id_handler = rb_intern("handler");
+	id_handler = rb_intern("handler");
+
+	rb_define_global_const("MOD_RUBY",
+			       STRING_LITERAL(MOD_RUBY_STRING_VERSION));
+
+#ifndef WIN32
+	origenviron = environ;
+#endif /* WIN32 */
+
+	ruby_init_loadpath();
+	default_load_path = rb_load_path;
+	rb_global_variable(&default_load_path);
+	list = (char **) conf->load_path->elts;
+	n = conf->load_path->nelts;
+	for (i = 0; i < n; i++) {
+	    ruby_add_path(list[i]);
+	}
+
+	default_kcode = rb_get_kcode();
+
+	list = (char **) conf->required_files->elts;
+	n = conf->required_files->nelts;
+	for (i = 0; i < n; i++) {
+	    if (ruby_require(list[i])) {
+		fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
+			list[i]);
+		exit(1);
+	    }
+	}
+
+	ruby_is_running = 1;
+    }
 
 #if MODULE_MAGIC_NUMBER >= 19980507
     {
@@ -265,34 +299,6 @@ static void ruby_startup(server_rec *s, pool *p)
 #endif
     }
 #endif
-
-    rb_define_global_const("MOD_RUBY",
-			   STRING_LITERAL(MOD_RUBY_STRING_VERSION));
-
-    origenviron = environ;
-
-    ruby_init_loadpath();
-    default_load_path = rb_load_path;
-    rb_global_variable(&default_load_path);
-    list = (char **) conf->load_path->elts;
-    n = conf->load_path->nelts;
-    for (i = 0; i < n; i++) {
-	ruby_add_path(list[i]);
-    }
-
-    default_kcode = rb_get_kcode();
-
-    list = (char **) conf->required_files->elts;
-    n = conf->required_files->nelts;
-    for (i = 0; i < n; i++) {
-	if (ruby_require(list[i])) {
-	    fprintf(stderr, "Require of Ruby file `%s' failed, exiting...\n", 
-		    list[i]);
-	    exit(1);
-	}
-    }
-
-    ruby_is_running = 1;
 
 #if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
     if (ruby_module.dynamic_load_handle) 

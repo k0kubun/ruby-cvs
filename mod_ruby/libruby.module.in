@@ -1,4 +1,4 @@
 Name: ruby_module
 ConfigStart
-	LIBS="@LIBERUBYARG@ @LIBRUBYARG@ @LIBS@ $LIBS"
+	LIBS="@MODULE_LIBS@ $LIBS"
 ConfigEnd

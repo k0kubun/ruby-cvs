@@ -271,6 +271,7 @@ $srcdir = File.dirname($0)
 $VPATH = ""
 
 $RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
+$RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
 $arch = CONFIG["arch"]
 $ruby_version = Config::CONFIG["ruby_version"] ||
   CONFIG["MAJOR"] + "." + CONFIG["MINOR"]
@@ -321,6 +322,7 @@ AC_SUBST("hdrdir")
 AC_SUBST("VPATH")
 
 AC_SUBST("RUBY_INSTALL_NAME")
+AC_SUBST("RUBY_SO_NAME")
 AC_SUBST("arch")
 AC_SUBST("ruby_version")
 AC_SUBST("prefix")
@@ -378,8 +380,8 @@ AC_WITH("apache") { |withval|
   $TARGET = "libruby.a"
   $INSTALL_TARGET = "install-static"
   st = File.stat($APACHE_SRCDIR)
-  $APACHE_SRC_OWNER = st.uid
-  $APACHE_SRC_GROUP = st.gid
+  $APACHE_SRC_UID = st.uid
+  $APACHE_SRC_GID = st.gid
   AC_MSG_RESULT("yes")
 }.if_not_given {
   AC_MSG_RESULT("no")
@@ -412,8 +414,8 @@ AC_SUBST("INSTALL_TARGET")
 AC_SUBST("APACHE_SRCDIR")
 AC_SUBST("APACHE_INCLUDES")
 AC_SUBST("APACHE_LIBEXECDIR")
-AC_SUBST("APACHE_SRC_OWNER")
-AC_SUBST("APACHE_SRC_GROUP")
+AC_SUBST("APACHE_SRC_UID")
+AC_SUBST("APACHE_SRC_GID")
 
 case PLATFORM
 when /-aix/
@@ -446,7 +448,7 @@ AC_MSG_RESULT($ENABLE_ERUBY)
 
 AC_WITH("eruby-includes") { |withval|
   if $ENABLE_ERUBY
-    $CFLAGS += " -I#{withval}"
+    $ERUBY_INCLUDES = "-I#{withval}"
   end
 }
 
@@ -456,8 +458,17 @@ AC_WITH("eruby-libraries") { |withval|
   end
 }
 
+AC_SUBST("ERUBY_INCLUDES")
 AC_SUBST("LIBERUBYARG")
 
-$MODULE_LIBS = "#{$LIBERUBYARG} #{Config.expand($LIBRUBYARG)} #{$LIBS}"
+librubyarg = $LIBRUBYARG.dup
+Config.expand(librubyarg)
+$MODULE_LIBS = "#{$LIBERUBYARG} #{librubyarg} #{$LIBS}"
+AC_SUBST("MODULE_LIBS")
 
 AC_OUTPUT("Makefile", "libruby.module")
+
+# Local variables:
+# mode: Ruby
+# tab-width: 8
+# End:

@@ -24,8 +24,8 @@ AC_ARG_WITH("apache",
   $TARGET = "libruby.a"
   $INSTALL_TARGET = "install-static"
   st = File.stat($APACHE_SRCDIR)
-  $APACHE_SRC_OWNER = st.uid
-  $APACHE_SRC_GROUP = st.gid
+  $APACHE_SRC_UID = st.uid
+  $APACHE_SRC_GID = st.gid
   AC_MSG_RESULT("yes")
 }.if_not_given {
   AC_MSG_RESULT("no")
@@ -60,8 +60,8 @@ AC_SUBST("INSTALL_TARGET")
 AC_SUBST("APACHE_SRCDIR")
 AC_SUBST("APACHE_INCLUDES")
 AC_SUBST("APACHE_LIBEXECDIR")
-AC_SUBST("APACHE_SRC_OWNER")
-AC_SUBST("APACHE_SRC_GROUP")
+AC_SUBST("APACHE_SRC_UID")
+AC_SUBST("APACHE_SRC_GID")
 
 case PLATFORM
 when /-aix/
@@ -96,7 +96,7 @@ AC_MSG_RESULT($ENABLE_ERUBY)
 AC_ARG_WITH("eruby-includes",
 	    "  --with-eruby-includes=DIR   eruby include files are in DIR") { |withval|
   if $ENABLE_ERUBY
-    $CFLAGS += " -I#{withval}"
+    $ERUBY_INCLUDES = "-I#{withval}"
   end
 }
 
@@ -107,8 +107,17 @@ AC_ARG_WITH("eruby-libraries",
   end
 }
 
+AC_SUBST("ERUBY_INCLUDES")
 AC_SUBST("LIBERUBYARG")
 
-$MODULE_LIBS = "#{$LIBERUBYARG} #{Config.expand($LIBRUBYARG)} #{$LIBS}"
+librubyarg = $LIBRUBYARG.dup
+Config.expand(librubyarg)
+$MODULE_LIBS = "#{$LIBERUBYARG} #{librubyarg} #{$LIBS}"
+AC_SUBST("MODULE_LIBS")
 
 AC_OUTPUT("Makefile", "libruby.module")
+
+# Local variables:
+# mode: Ruby
+# tab-width: 8
+# End:
