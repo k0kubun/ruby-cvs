@@ -2,7 +2,7 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
- * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
+ * Copyright (C) 2001  Shugo Maeda <shugo@modruby.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -104,8 +104,10 @@ static void cleanup_request_object(void *data)
 
     reqobj = (VALUE) ap_get_module_config(r->request_config, &ruby_module);
     if (reqobj == 0) return;
-    if (TYPE(reqobj) == T_DATA)
+    if (TYPE(reqobj) == T_DATA) {
+	free(RDATA(reqobj)->data);
 	RDATA(reqobj)->data = NULL;
+    }
     ap_set_module_config(r->request_config, &ruby_module, 0);
     rb_apache_unregister_object(reqobj);
 }
@@ -620,14 +622,18 @@ static VALUE request_headers_in(VALUE self)
 
     data = get_request_data(self);
     if (NIL_P(data->headers_in)) {
+#if 0
 	if (ap_table_get(data->request->notes, "ruby_in_authen_handler")) {
+#endif
 	    data->headers_in = rb_apache_table_new(rb_cApacheTable,
 						   data->request->headers_in);
+#if 0
 	}
 	else {
 	    data->headers_in = rb_apache_table_new(rb_cApacheRestrictedTable,
 						   data->request->headers_in);
 	}
+#endif
     }
     return data->headers_in;
 }
@@ -1122,9 +1128,11 @@ static VALUE request_get_basic_auth_pw(VALUE self)
     int res;
 
     data = get_request_data(self);
+#if 0
     if (ap_table_get(data->request->notes, "ruby_in_authen_handler") == NULL) {
 	rb_raise(rb_eSecurityError, "Only RubyAuthenHandler can get password");
     }
+#endif
     if ((res = ap_get_basic_auth_pw(data->request, &pw)) != OK) {
 	rb_apache_exit(res);
     }

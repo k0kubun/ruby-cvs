@@ -1,6 +1,6 @@
 /*
  * $Id$
- * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
+ * Copyright (C) 2001  Shugo Maeda <shugo@modruby.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

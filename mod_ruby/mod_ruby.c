@@ -2,7 +2,7 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
- * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
+ * Copyright (C) 2001  Shugo Maeda <shugo@modruby.net>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -493,13 +493,16 @@ static void ruby_cleanup(void *data)
 
 static void ruby_startup(server_rec *s, pool *p)
 {
+    VALUE stack_start;
     ruby_server_config *conf = get_server_config(s);
     char **list;
     int i, n;
     int state;
+    void Init_stack _((VALUE*));
 
     if (!ruby_running()) {
 	ruby_init();
+	Init_stack(&stack_start);
 	rb_init_apache();
 #ifdef USE_ERUBY
 	eruby_init();

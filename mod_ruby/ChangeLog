@@ -1,3 +1,14 @@
+Mon Oct 15 12:25:28 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_startup): call Init_stack().
+
+	* request.c (cleanup_request_object): free RDATA(reqobj)->data.
+
+	* request.c (request_headers_in): allow non-auth handlers to
+	access Authorization header fields.
+
+	* request.c (request_get_basic_auth_pw): allow non-auth handlers.
+
 Fri Oct 12 17:48:57 2001  Shugo Maeda <shugo@modruby.net>
 
 	* apachelib.h (DEFINE_ATTR_READER): raise exception if data == NULL.
