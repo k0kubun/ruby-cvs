@@ -1,4 +1,4 @@
-#!/usr/bin/ruby
+#!/usr/bin/env ruby
 
 unless filename = ARGV.shift
   puts "usage: bin2c filename"

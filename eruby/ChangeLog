@@ -1,3 +1,27 @@
+Tue Mar 28 14:38:00 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.0.5 released.
+
+Tue Mar 28 11:40:09 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby.h: add ERUBY_ prefix to eruby_compile_status.
+
+Tue Dec 21 17:04:19 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby.c (eruby_init): new global variable $NOHEADER.
+
+	* eruby.c (eruby_compile): fixed <%% bug.
+
+Fri Nov 26 20:59:39 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby_main.c (parse_options): remove -B/-E option.
+
+	* eruby.c (eruby_compile): % at beginning of line embeds one line code.
+
+Wed Nov 17 16:44:31 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby_main.c (defout_cancel): clears output buffer.
+	
 Tue Aug 10 13:49:12 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.0.4 released.

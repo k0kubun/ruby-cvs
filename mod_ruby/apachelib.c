@@ -32,7 +32,7 @@
 #include "multithread.h"
 
 #include "ruby.h"
-
+#include "version.h"
 #include "apachelib.h"
 
 extern VALUE rb_defout;
@@ -76,7 +76,7 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->buff);
 }
 
-VALUE ruby_create_request(request_rec *r)
+VALUE ruby_create_request(request_rec *r, int sync)
 {
     request_data *data;
     VALUE result;
@@ -87,8 +87,44 @@ VALUE ruby_create_request(request_rec *r)
     data->request = r;
     data->buff = rb_str_new("", 0);
     data->send_http_header = 0;
-    data->sync = 1;
+    data->sync = sync;
     return result;
+}
+
+int ruby_request_buffer_length(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return RSTRING(data->buff)->len;
+}
+
+static VALUE request_to_s(VALUE self)
+{
+    request_data *data;
+    int len;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->buff;
+}
+
+static VALUE request_replace(int argc, VALUE *argv, VALUE self)
+{
+    request_data *data;
+    int len;
+
+    Data_Get_Struct(self, request_data, data);
+    return rb_funcall2(data->buff, rb_frame_last_func(), argc, argv);
+}
+
+static VALUE request_cancel(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    RSTRING(data->buff)->len = 0;
+    RSTRING(data->buff)->ptr[0] = '\0';
+    return Qnil;
 }
 
 static VALUE request_write(VALUE self, VALUE str)
@@ -542,6 +578,9 @@ void ruby_init_apachelib()
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
     rb_include_module(rb_cApacheRequest, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheRequest), "new");
+    rb_define_method(rb_cApacheRequest, "to_s", request_to_s, 0);
+    rb_define_method(rb_cApacheRequest, "replace", request_replace, -1);
+    rb_define_method(rb_cApacheRequest, "cancel", request_cancel, 0);
     rb_define_method(rb_cApacheRequest, "write", request_write, 1);
     rb_define_method(rb_cApacheRequest, "putc", request_putc, 1);
     rb_define_method(rb_cApacheRequest, "print", request_print, -1);
@@ -671,7 +710,7 @@ void ruby_init_apachelib()
 		    INT2NUM(HTTP_LOCKED));
 #ifdef HTTP_FAILED_DEPENDENCY
     rb_define_const(rb_mApache, "HTTP_FAILED_DEPENDENCY",
-		    INT2NUM(HTTP_FAILED_DEPENDENCY));
+			      INT2NUM(HTTP_FAILED_DEPENDENCY));
 #endif
     rb_define_const(rb_mApache, "HTTP_INTERNAL_SERVER_ERROR",
 		    INT2NUM(HTTP_INTERNAL_SERVER_ERROR));
@@ -689,7 +728,7 @@ void ruby_init_apachelib()
 		    INT2NUM(HTTP_VARIANT_ALSO_VARIES));
 #ifdef HTTP_INSUFFICIENT_STORAGE
     rb_define_const(rb_mApache, "HTTP_INSUFFICIENT_STORAGE",
-		    INT2NUM(HTTP_INSUFFICIENT_STORAGE));
+			      INT2NUM(HTTP_INSUFFICIENT_STORAGE));
 #endif
     rb_define_const(rb_mApache, "HTTP_NOT_EXTENDED",
 		    INT2NUM(HTTP_NOT_EXTENDED));

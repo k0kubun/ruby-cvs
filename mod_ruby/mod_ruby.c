@@ -108,7 +108,14 @@ MODULE_VAR_EXPORT module ruby_module =
     NULL,			/* header parser */
     NULL,			/* child_init */
     NULL,			/* child_exit */
-    NULL			/* post read-request */
+    NULL,			/* post read-request */
+#ifdef EAPI
+    NULL,			/* add_module */
+    NULL,			/* remove_module */
+    NULL,			/* rewrite_command */
+    NULL,			/* new_connection */
+    NULL			/* close_connection */
+#endif /* EAPI */
 };
 
 /* copied from eval.c */
@@ -197,8 +204,10 @@ static void ruby_startup(server_rec *s, pool *p)
     rb_define_global_function("p", f_p, -1);
     rb_define_global_function("exit", f_exit, -1);
     ruby_init_apachelib();
+    eruby_init();
 
-    rb_define_global_const("MOD_RUBY", STRING_LITERAL(MOD_RUBY_STRING_VERSION));
+    rb_define_global_const("MOD_RUBY",
+			   STRING_LITERAL(MOD_RUBY_STRING_VERSION));
 
     origenviron = environ;
     ap_table_set(conf->env, "PATH", getenv("PATH"));
@@ -638,13 +647,16 @@ static VALUE load_ruby_script(request_rec *r)
     request_data *data;
     struct to_arg arg;
 
-    rb_defout = ruby_create_request(r);
+    rb_defout = ruby_create_request(r, 1);
     arg.thread = rb_thread_current();
     arg.timeout = sconf->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
     ruby_errinfo = Qnil;
     rb_load_protect(rb_str_new2(r->filename), 1, &state);
     rb_protect(thread_kill, timeout_thread, NULL);
+#if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
+    rb_exec_end_proc();
+#endif
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
 	ruby_error_print(r, state, data->sync);
@@ -683,22 +695,30 @@ static VALUE load_eruby_script(request_rec *r)
     request_data *data;
     struct to_arg arg;
 
-    rb_defout = ruby_create_request(r);
+    rb_defout = ruby_create_request(r, 0);
+    r->content_type = ap_psprintf(r->pool, "text/html; charset=%s", get_charset());
     arg.thread = rb_thread_current();
     arg.timeout = sconf->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
     ruby_errinfo = Qnil;
-    r->content_type = ap_psprintf(r->pool, "text/html; charset=%s", get_charset());
-    r->content_encoding = "7bit";
-    ap_send_http_header(r);
     script = eruby_load(r->filename, 1, &state);
     if (!NIL_P(script)) unlink(RSTRING(script)->ptr);
     rb_protect(thread_kill, timeout_thread, NULL);
+#if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
+    rb_exec_end_proc();
+#endif
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
 	ruby_error_print(r, state, data->sync);
     }
     else {
+	if (!eruby_noheader) {
+	    int len = ruby_request_buffer_length(rb_defout);
+
+	    ap_table_set(r->headers_out, "Content-Length",
+			 ap_psprintf(r->pool, "%d", len));
+	    ap_send_http_header(r);
+	}
 	rb_request_flush(rb_defout);
     }
     rb_defout = orig_defout;
@@ -752,9 +772,6 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     (void) ap_release_mutex(mod_ruby_mutex);
 
     load_thread = Qnil;
-#if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
-    rb_exec_end_proc();
-#endif
     rb_gc();
 
     if (exit_status < 0) {

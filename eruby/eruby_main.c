@@ -40,7 +40,6 @@ extern VALUE rb_defout;
 
 static char *eruby_filename = NULL;
 static int eruby_mode = MODE_UNKNOWN;
-static int eruby_no_header = 0;
 
 static char *get_charset()
 {
@@ -439,10 +438,18 @@ static void error_print(int state, int mode, VALUE script)
     }
 }
 
-static VALUE str_write(VALUE self, VALUE str)
+static VALUE defout_write(VALUE self, VALUE str)
 {
     str = rb_obj_as_string(str);
     rb_str_cat(self, RSTRING(str)->ptr, RSTRING(str)->len);
+    return Qnil;
+}
+
+static VALUE defout_cancel(VALUE self)
+{
+    if (RSTRING(self)->len == 0) return;
+    RSTRING(self)->len = 0;
+    RSTRING(self)->ptr[0] = '\0';
     return Qnil;
 }
 
@@ -485,8 +492,6 @@ static void usage(char *progname)
     fprintf(stderr, "\
 usage: %s [switches] [inputfile]\n\n\
   -d, --debug		set debugging flags (set $DEBUG to true)\n\
-  -B[str]		set begin block delimiter\n\
-  -E[str]		set end block delimiter\n\
   -K[kcode]		specifies KANJI (Japanese) code-set\n\
   -M[mode]		specifies runtime mode\n\
 			  f: filter mode\n\
@@ -540,6 +545,7 @@ static void parse_options(int argc, char **argv)
 	    set_mode(++s);
 	    s++;
 	    goto again;
+#if 0
 	case 'B':
 	    if (*++s == '\0') {
 		s = argv[++i];
@@ -570,6 +576,7 @@ static void parse_options(int argc, char **argv)
 	    eruby_end_delimiter1 = *s++;
 	    eruby_end_delimiter2 = *s;
 	    break;
+#endif
 	case 'K':
 	    rb_set_kcode(++s);
 	    s++;
@@ -583,7 +590,7 @@ static void parse_options(int argc, char **argv)
 	    s++;
 	    goto again;
 	case 'n':
-	    eruby_no_header = 1;
+	    eruby_noheader = 1;
 	    s++;
 	    goto again;
 	case '\0':
@@ -597,7 +604,7 @@ static void parse_options(int argc, char **argv)
 		ruby_debug = Qtrue;
 	    }
 	    else if (strcmp("noheader", s) == 0) {
-		eruby_no_header = 1;
+		eruby_noheader = 1;
 	    }
 	    else if (strcmp("version", s) == 0) {
 		show_version();
@@ -658,7 +665,9 @@ int main(int argc, char **argv)
 	rb_set_safe_level(1);
 
     rb_defout = rb_str_new("", 0);
-    rb_define_singleton_method(rb_defout, "write", str_write, 1);
+    rb_define_singleton_method(rb_defout, "write", defout_write, 1);
+    rb_define_singleton_method(rb_defout, "cancel", defout_cancel, 0);
+    eruby_init();
     script = eruby_load(eruby_filename, 0, &state);
     if (state) {
 	error_print(state, eruby_mode, script);
@@ -666,13 +675,13 @@ int main(int argc, char **argv)
 	    unlink(RSTRING(script)->ptr);
 	return 0;
     }
-    if (eruby_mode == MODE_FILTER && (ruby_debug || ruby_verbose)) {
+    if (eruby_mode == MODE_FILTER && (RTEST(ruby_debug) || RTEST(ruby_verbose))) {
 	print_generated_code(script, 0);
     }
     unlink(RSTRING(script)->ptr);
     out = RSTRING(rb_defout)->ptr;
     nout = RSTRING(rb_defout)->len;
-    if (!eruby_no_header &&
+    if (!eruby_noheader &&
 	(eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)) {
 	if (eruby_mode == MODE_NPHCGI)
 	    print_http_headers();

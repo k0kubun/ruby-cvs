@@ -34,7 +34,8 @@ extern VALUE rb_mApache;
 extern VALUE rb_mApacheWritable;
 extern VALUE rb_cApacheRequest;
 extern VALUE rb_eApacheTimeoutError;
-VALUE ruby_create_request(request_rec *r);
+VALUE ruby_create_request(request_rec *r, int sync);
+int ruby_request_buffer_length(VALUE self);
 VALUE rb_request_flush(VALUE request);
 void ruby_init_apachelib();
 

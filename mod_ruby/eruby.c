@@ -12,21 +12,24 @@
 
 #include "eruby.h"
 
-char eruby_begin_delimiter1	= '<';
-char eruby_begin_delimiter2	= '%';
-char eruby_end_delimiter1	= '%';
-char eruby_end_delimiter2	= '>';
-char eruby_expr_char		= '=';
-char eruby_comment_char		= '#';
+int eruby_noheader = 0;
 
-enum embedded_string_type {
+static char eruby_begin_delimiter[] = "<%";
+static char eruby_end_delimiter[] = "%>";
+static char eruby_expr_char = '=';
+static char eruby_comment_char = '#';
+static char eruby_line_beg_char = '%';
+
+enum embedded_program_type {
     EMBEDDED_STMT,
     EMBEDDED_EXPR,
     EMBEDDED_COMMENT,
 };
 
-static int compile_embedded_string(FILE *in, FILE *out,
-				   enum embedded_string_type type)
+#define EOP (-2)
+
+static int parse_embedded_program(FILE *in, FILE *out,
+				  enum embedded_program_type type)
 {
     int c, prevc = EOF;
 
@@ -35,11 +38,15 @@ static int compile_embedded_string(FILE *in, FILE *out,
     for (;;) {
 	c = getc(in);
     again:
-	if (c == eruby_end_delimiter1) {
-	    if (prevc == eruby_end_delimiter1)
-		continue;
+	if (c == eruby_end_delimiter[0]) {
 	    c = getc(in);
-	    if (c == eruby_end_delimiter2) {
+	    if (c == eruby_end_delimiter[1]) {
+		if (prevc == eruby_end_delimiter[0]) {
+		    if (type != EMBEDDED_COMMENT)
+			putc(eruby_end_delimiter[1], out);
+		    prevc = eruby_end_delimiter[1];
+		    continue;
+		}
 		if (type == EMBEDDED_EXPR)
 		    fputs(")); ", out);
 		else if (type == EMBEDDED_STMT && prevc != '\n')
@@ -48,14 +55,14 @@ static int compile_embedded_string(FILE *in, FILE *out,
 	    }
 	    else if (c == EOF) {
 		if (ferror(in))
-		    return SYSTEM_ERROR;
+		    return ERUBY_SYSTEM_ERROR;
 		else
-		    return MISSING_END_DELIMITER;
+		    return ERUBY_MISSING_END_DELIMITER;
 	    }
 	    else {
 		if (type != EMBEDDED_COMMENT)
-		    putc(eruby_end_delimiter1, out);
-		prevc = eruby_end_delimiter1;
+		    putc(eruby_end_delimiter[0], out);
+		prevc = eruby_end_delimiter[0];
 		goto again;
 	    }
 	}
@@ -63,9 +70,9 @@ static int compile_embedded_string(FILE *in, FILE *out,
 	    switch (c) {
 	    case EOF:
 		if (ferror(in))
-		    return SYSTEM_ERROR;
+		    return ERUBY_SYSTEM_ERROR;
 		else
-		    return MISSING_END_DELIMITER;
+		    return ERUBY_MISSING_END_DELIMITER;
 	    case '\n':
 		putc(c, out);
 		prevc = c;
@@ -78,7 +85,32 @@ static int compile_embedded_string(FILE *in, FILE *out,
 	    }
 	}
     }
-    return MISSING_END_DELIMITER;
+    return ERUBY_MISSING_END_DELIMITER;
+}
+
+static int parse_embedded_line(FILE *in, FILE *out)
+{
+    int c;
+
+    for (;;) {
+	c = getc(in);
+    again:
+	switch (c) {
+	case EOF:
+	    if (ferror(in))
+		return ERUBY_SYSTEM_ERROR;
+	    else
+		return ERUBY_MISSING_END_DELIMITER;
+	case '\n':
+	    putc(c, out);
+	    return 0;
+	    break;
+	default:
+	    putc(c, out);
+	    break;
+	}
+    }
+    return ERUBY_MISSING_END_DELIMITER;
 }
 
 int eruby_compile(FILE *in, FILE *out)
@@ -103,40 +135,61 @@ int eruby_compile(FILE *in, FILE *out)
     for (;;) {
 	c = getc(in);
     again:
-	if (c == eruby_begin_delimiter1) {
+	if (c == eruby_begin_delimiter[0]) {
 	    c = getc(in);
-	    if (c == eruby_begin_delimiter2) {
-		if (prevc != EOF) {
-		    fputs("\"; ", out);
-		}
+	    if (c == eruby_begin_delimiter[1]) {
 		c = getc(in);
-		if (c == eruby_begin_delimiter2) {
-		    if (prevc == EOF) fputs("print \"", out);
-		    putc(eruby_begin_delimiter1, out);
-		    putc(eruby_begin_delimiter2, out);
-		    prevc = eruby_begin_delimiter2;
+		if (c == EOF) {
+		    return ERUBY_MISSING_END_DELIMITER;
+		}
+		else if (c == eruby_begin_delimiter[1]) { /* <%% => <% */
+		    if (prevc < 0) fputs("print \"", out);
+		    fwrite(eruby_begin_delimiter, 1, 2, out);
+		    prevc = eruby_begin_delimiter[1];
 		    continue;
 		}
-		else if (c == eruby_comment_char) {
-		    err = compile_embedded_string(in, out, EMBEDDED_COMMENT);
-		    if (err) return err;
-		}
-		else if (c == eruby_expr_char) {
-		    err = compile_embedded_string(in, out, EMBEDDED_EXPR);
-		    if (err) return err;
-		}
 		else {
-		    if (ungetc(c, in) == EOF)
-			return SYSTEM_ERROR;
-		    err = compile_embedded_string(in, out, EMBEDDED_STMT);
+		    if (prevc >= 0)
+			fputs("\"; ", out);
+		    if (c == eruby_comment_char) {
+			err = parse_embedded_program(in, out, EMBEDDED_COMMENT);
+			if (err) return err;
+		    }
+		    else if (c == eruby_expr_char) {
+			err = parse_embedded_program(in, out, EMBEDDED_EXPR);
+			if (err) return err;
+		    }
+		    else {
+			if (ungetc(c, in) == EOF)
+			    return ERUBY_SYSTEM_ERROR;
+		    }
+		    err = parse_embedded_program(in, out, EMBEDDED_STMT);
 		    if (err) return err;
+		    prevc = EOP;
 		}
-		prevc = EOF;
 	    } else {
-		if (prevc == EOF) fputs("print \"", out);
-		putc(eruby_begin_delimiter1, out);
-		prevc = eruby_begin_delimiter1;
+		if (prevc < 0) fputs("print \"", out);
+		putc(eruby_begin_delimiter[0], out);
+		prevc = eruby_begin_delimiter[0];
 		goto again;
+	    }
+	}
+	else if (c == eruby_line_beg_char && prevc == EOF) {
+	    c = getc(in);
+	    if (c == EOF) {
+		return ERUBY_MISSING_END_DELIMITER;
+	    }
+	    else if (c == eruby_line_beg_char) { /* %% => % */
+		if (prevc < 0) fputs("print \"", out);
+		fputc(c, out);
+		prevc = c;
+	    }
+	    else {
+		if (ungetc(c, in) == EOF)
+		    return ERUBY_SYSTEM_ERROR;
+		err = parse_embedded_line(in, out);
+		if (err) return err;
+		prevc = EOF;
 	    }
 	}
 	else {
@@ -144,25 +197,25 @@ int eruby_compile(FILE *in, FILE *out)
 	    case EOF:
 		goto end;
 	    case '\n':
-		if (prevc == EOF) fputs("print \"", out);
+		if (prevc < 0) fputs("print \"", out);
 		fputs("\\n\"\n", out);
 		prevc = EOF;
 		break;
 	    case '\t':
-		if (prevc == EOF) fputs("print \"", out);
+		if (prevc < 0) fputs("print \"", out);
 		fputs("\\t", out);
 		prevc = c;
 		break;
 	    case '\\':
 	    case '"':
 	    case '#':
-		if (prevc == EOF) fputs("print \"", out);
+		if (prevc < 0) fputs("print \"", out);
 		putc('\\', out);
 		putc(c, out);
 		prevc = c;
 		break;
 	    default:
-		if (prevc == EOF) fputs("print \"", out);
+		if (prevc < 0) fputs("print \"", out);
 		putc(c, out);
 		prevc = c;
 		break;
@@ -171,11 +224,11 @@ int eruby_compile(FILE *in, FILE *out)
     }
  end:
     if (ferror(in))
-	return SYSTEM_ERROR;
+	return ERUBY_SYSTEM_ERROR;
     if (prevc != EOF) {
 	putc('"', out);
     }
-    return 0;
+    return ERUBY_OK;
 }
 
 static char *check_dir(char *dir)
@@ -234,10 +287,10 @@ VALUE eruby_compile_file(char *filename)
     if (in != stdin) fclose(in);
     fclose(out);
     switch (err) {
-    case MISSING_END_DELIMITER:
+    case ERUBY_MISSING_END_DELIMITER:
 	rb_raise(rb_eSyntaxError, "missing end delimiter");
 	break;
-    case SYSTEM_ERROR:
+    case ERUBY_SYSTEM_ERROR:
 	rb_sys_fail(filename);
 	break;
     default:
@@ -253,6 +306,21 @@ VALUE eruby_load(char *filename, int wrap, int *state)
     if (*state)	return Qnil;
     rb_load_protect(scriptname, wrap, state);
     return scriptname;
+}
+
+static VALUE noheader_getter()
+{
+    return eruby_noheader ? Qtrue : Qfalse;
+}
+
+static void noheader_setter(VALUE val)
+{
+    eruby_noheader = RTEST(val);
+}
+
+void eruby_init()
+{
+    rb_define_virtual_variable("$NOHEADER", noheader_getter, noheader_setter);
 }
 
 /*

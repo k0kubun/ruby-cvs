@@ -1,3 +1,12 @@
+Tue Mar 28 14:41:12 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.5 released.
+
+Wed Dec 15 23:25:39 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (load_eruby_script): do not set Content-Encoding,
+	but set Content-Length.
+
 Thu Aug 12 11:50:49 1999  Katsuyuki Komatsu <komatsu@sarion.co.jp>
 
 	* Makefile.RB: overwrite XLDFLAGS and DLDFLAGS for AIX.
