@@ -42,6 +42,58 @@ class TestRegularExpressions < Rubicon::TestCase
     assert_equal("<a.gif>", x.sub(/.*\.([^\.]+)/, '<\&>'))
   end
 
+  def testGlobal
+    file_name = nil
+    start = File.dirname($0)
+    for base in [".", "language"]
+      file_name = File.join(start, base, 'regexp.test')
+      puts file_name
+      break if File.exist? file_name
+      file_name = nil
+    end
+
+    fail("Could not find file containing regular expression tests") unless file_name
+
+    lineno =  0
+    IO.foreach(file_name) do |line|
+      lineno += 1
+      line.chomp!
+      next if /^#/ =~ line || /^$/ =~ line
+      pat, subject, result, repl, expect = line.split /\t/, 6
+      begin
+	for mes in [subject, expect]
+	  if mes
+	    mes.gsub!(/\\n/, "\n")
+	    mes.gsub!(/\\000/, "\0")
+	    mes.gsub!(/\\255/, "\255") #"
+	  end
+	end
+
+	reg = Regexp.new(pat, false).match subject
+        
+	case result
+	when 'y'
+          assert(reg, "Expected a match: #{lineno}: '#{line}'")
+          if repl != '-'
+            eu = eval('"' + repl + '"')
+            assert_equal(expect, eu, "#{lineno}: '#{line}'")
+          end
+	when 'n'
+	  assert(!reg, "Did not expect a match: #{lineno} '#{line}'")
+	when 'c'
+          assert_fail("'#{line}' should not have compiled")
+	end
+      rescue RegexpError
+        assert_equal('c', result, 
+                     "Regular expression did not compile: #{lineno} '#{line}'")
+	fail_msg = $!.to_s
+        assert_equal(expect, fail_msg)
+      rescue
+	assert_fail("#$!: #{lineno}: '#{line}'")
+      end
+    end
+  end
+
 end
 
 # Run these tests if invoked directly

@@ -1,3 +1,12 @@
+2001-11-10  Dave Thomas  <Dave@Thomases.com>
+
+	* language/TestRegularExpressions.rb: Guy Decoux supplied a total
+	of almost 3,000 regular expression tests, based on various P*
+	language ones.
+
+	* builtin/ArrayBase.rb: Matt Armstrong submitted patches for
+	indexing past the end of an array.
+
 2001-11-09  Dave Thomas  <Dave@Thomases.com>
 
 	* Various: Add support for generating the results in XML format,

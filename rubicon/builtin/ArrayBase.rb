@@ -125,6 +125,10 @@ class ArrayBase < Rubicon::TestCase
     assert_equal(99,  a[-2])
     assert_equal(1,   a[-100])
     assert_nil(a[-101])
+    assert_nil(a[-101,0])
+    assert_nil(a[-101,1])
+    assert_nil(a[-101,-1])
+    assert_nil(a[10,-1])
 
     assert_equal(@cls[1],   a[0,1])
     assert_equal(@cls[100], a[99,1])
@@ -132,6 +136,8 @@ class ArrayBase < Rubicon::TestCase
     assert_equal(@cls[100], a[99,100])
     assert_equal(@cls[100], a[-1,1])
     assert_equal(@cls[99],  a[-2,1])
+    assert_equal(@cls[],    a[-100,0])
+    assert_equal(@cls[1],   a[-100,1])
 
     assert_equal(@cls[10, 11, 12], a[9, 3])
     assert_equal(@cls[10, 11, 12], a[-91, 3])

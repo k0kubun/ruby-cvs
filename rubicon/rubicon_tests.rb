@@ -174,7 +174,7 @@ module Rubicon
     def teardown
       if $os != MsWin32
 	begin
-	  loop { Process.wait; puts "\n\nCHILD REAPED\n\n" }
+	  loop { Process.wait; $stderr.puts "\n\nCHILD REAPED\n\n" }
 	rescue Errno::ECHILD
 	end
       end
