@@ -31,16 +31,18 @@ test:		$(UTILSTUFF)
 release:	clean
 		ruby -i -pe 'sub!(/V\d+(\.\d+)+/, "V$(VERSION)") if /VERSION =/' rubicon.rb
 		cvs commit
-		cvs rtag $(VERSION) rubicon
+		cvs rtag `echo V$(VERSION) | sed s/\\\\./_/` rubicon
+		ln -fs rubicon ../rubicon-$(VERSION)
 		tar 	--directory=..			\
 			--create			\
+			--dereference			\
 			--file=rubicon-$(VERSION).tgz 	\
 			--compress 			\
 			--exclude='CVS' 		\
 			--exclude='*/.*'		\
-			rubicon
+			rubicon-$(VERSION)
 
 clean:
 		rm -f $(UTILSTUFF)
-		rm -f rubicon.tgz
+		rm -f rubicon*.tgz
 		find . -name \*~ -print | xargs rm -f
