@@ -467,8 +467,12 @@ static void give_img_logo(int mode)
 static void init()
 {
     ruby_init();
+#if RUBY_VERSION_CODE >= 160
+    ruby_init_loadpath();
+#else
 #if RUBY_VERSION_CODE >= 145
     rb_ary_push(rb_load_path, rb_str_new2("."));
+#endif
 #endif
     if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI)
 	rb_set_safe_level(1);
