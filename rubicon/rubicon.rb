@@ -30,7 +30,7 @@ module Rubicon
     #
     def skipping(info, from=nil)
       unless from
-        caller[0] =~ /`(.*)'/
+        caller[0] =~ /`(.*)'/ #`
         from = $1
       end
       $stderr.puts "Skipping: #{from} - #{info}"
@@ -40,7 +40,7 @@ module Rubicon
     # Skip a test if not super user
     #
     def super_user
-      caller[0] =~ /`(.*)'/
+      caller[0] =~ /`(.*)'/ #`
       skipping("not super user", $1)
     end
 
@@ -50,6 +50,19 @@ module Rubicon
     def sys(cmd)
       assert(system(cmd), cmd)
       assert_equal(0, $?, "cmd: #{$?}")
+    end
+
+    #
+    # Run a block in a sub process and return exit status
+    #
+    def runChild(&block)
+      pid=fork 
+      if pid.nil?
+          block.call
+          exit 0
+      end
+      Process.waitpid(pid,0)
+      return ($? >> 8) & 0xff
     end
     
 
