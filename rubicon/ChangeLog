@@ -1,3 +1,12 @@
+2001-01-18  Dave Thomas  <Dave@Thomases.com>
+
+	* language/TestFloats.rb: Add Aleksi's new tests (thanks).
+
+2001-01-17  Dave Thomas  <Dave@Thomases.com>
+
+	* Makefile (test): Allow name of interpreter to be overridded, so
+	that we can test multiple Ruby's on the same box
+
 2001-01-17  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* builtin/TestKernel.rb: replace NotImplementError by
@@ -6,7 +15,7 @@
 2001-01-13  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/many: Old tests had a bug where they'd try to taint
-	frozen objects. Changed the order to tain first, then freeze.
+	frozen objects. Changed the order to taint first, then freeze.
 
 2001-01-11  Dave Thomas  <Dave@Thomases.com>
 

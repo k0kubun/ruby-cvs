@@ -16,12 +16,13 @@ VPATH = util
 
 UTILSTUFF =	util/checkstat util/test_touch
 
+RUBY	  ?=	ruby
 
 default:	test
 
 
 test:		$(UTILSTUFF)
-		cd builtin && ruby AllBuiltinTests.rb
+		cd builtin && $(RUBY) AllBuiltinTests.rb
 
 # Release must have VERSION variable set
 #
