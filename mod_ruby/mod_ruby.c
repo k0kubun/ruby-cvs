@@ -71,10 +71,26 @@ static VALUE default_load_path;
 static const char *default_kcode;
 
 #ifdef MULTITHREAD
-static mutex *mod_ruby_mutex = NULL;
+#error mod_ruby does not support multi-thread yet.
 #endif
 static int ruby_is_running = 0;
 array_header *ruby_required_libraries = NULL;
+
+static int ruby_object_handler(request_rec *r);
+static int ruby_trans_handler(request_rec *r);
+static int ruby_authen_handler(request_rec *r);
+static int ruby_authz_handler(request_rec *r);
+static int ruby_access_handler(request_rec *r);
+static int ruby_type_handler(request_rec *r);
+static int ruby_fixup_handler(request_rec *r);
+static int ruby_log_handler(request_rec *r);
+static int ruby_header_parser_handler(request_rec *r);
+static int ruby_post_read_request_handler(request_rec *r);
+
+static int ruby_script_handler(request_rec *r);
+#ifdef USE_ERUBY
+static int eruby_script_handler(request_rec *r);
+#endif
 
 static const command_rec ruby_cmds[] =
 {
@@ -108,24 +124,20 @@ static const command_rec ruby_cmds[] =
      "set fixup handler object"},
     {"RubyLogHandler", ruby_cmd_log_handler, NULL, OR_ALL, TAKE1,
      "set log handler object"},
-    {"RubyHeaderParserHandler", ruby_cmd_header_parser_handler, NULL, OR_ALL, TAKE1,
+    {"RubyHeaderParserHandler", ruby_cmd_header_parser_handler,
+     NULL, OR_ALL, TAKE1,
      "set header parser object"},
+    {"RubyPostReadRequestHandler", ruby_cmd_post_read_request_handler,
+     NULL, OR_ALL, TAKE1,
+     "set post-read-request handler object"},
+    {"RubyInitHandler", ruby_cmd_init_handler,
+     NULL, OR_ALL, TAKE1,
+     "set init handler object"},
+    {"RubyCleanupHandler", ruby_cmd_cleanup_handler,
+     NULL, OR_ALL, TAKE1,
+     "set cleanup handler object"},
     {NULL}
 };
-
-static int ruby_script_handler(request_rec*);
-#ifdef USE_ERUBY
-static int eruby_script_handler(request_rec*);
-#endif
-static int ruby_object_handler(request_rec*);
-static int ruby_trans_handler(request_rec*);
-static int ruby_authen_handler(request_rec*);
-static int ruby_authz_handler(request_rec*);
-static int ruby_access_handler(request_rec*);
-static int ruby_type_handler(request_rec*);
-static int ruby_fixup_handler(request_rec*);
-static int ruby_log_handler(request_rec*);
-static int ruby_header_parser_handler(request_rec*);
 
 static const handler_rec ruby_handlers[] =
 {
@@ -149,7 +161,7 @@ MODULE_VAR_EXPORT module ruby_module =
     NULL,			/* merge server config */
     ruby_cmds,			/* command table */
     ruby_handlers,		/* handlers */
-    ruby_trans_handler,	/* filename translation */
+    ruby_trans_handler,		/* filename translation */
     ruby_authen_handler,	/* check_user_id */
     ruby_authz_handler,		/* check auth */
     ruby_access_handler,	/* check access */
@@ -159,7 +171,7 @@ MODULE_VAR_EXPORT module ruby_module =
     ruby_header_parser_handler,	/* header parser */
     NULL,			/* child_init */
     NULL,			/* child_exit */
-    NULL,			/* post read-request */
+    ruby_post_read_request_handler,	/* post read-request */
 #ifdef EAPI
     NULL,			/* add_module */
     NULL,			/* remove_module */
@@ -450,10 +462,6 @@ static void ruby_startup(server_rec *s, pool *p)
     int i, n;
     int state;
 
-#ifdef MULTITHREAD
-    mod_ruby_mutex = ap_create_mutex("mod_ruby_mutex");
-#endif
-
     if (!ruby_running()) {
 	ruby_init();
 	rb_init_apache();
@@ -691,16 +699,17 @@ static void per_request_init(request_rec *r)
     rb_request = rb_apache_request_new(r);
 }
 
-static void per_request_cleanup()
-{
-    rb_request = Qnil;
-    rb_set_kcode(default_kcode);
-}
-
 static VALUE exec_end_proc(VALUE arg)
 {
     rb_exec_end_proc();
     return Qnil;
+}
+
+static void per_request_cleanup()
+{
+    rb_protect(exec_end_proc, Qnil, NULL);
+    rb_request = Qnil;
+    rb_set_kcode(default_kcode);
 }
 
 typedef struct handler_arg {
@@ -743,53 +752,64 @@ static VALUE ruby_handler_0(void *arg)
     return INT2NUM(retval);
 }
 
-static int ruby_handler(request_rec *r, char *handler, ID mid)
+static int ruby_handler(request_rec *r,
+			array_header *handlers_arr, ID mid, int run_all)
 {
-    ruby_server_config *sconf = get_server_config(r->server);
-    ruby_dir_config *dconf = get_dir_config(r);
-    int safe_level = dconf->safe_level;
+    ruby_server_config *sconf;
+    ruby_dir_config *dconf;
+    int safe_level;
     int retval;
     int state;
     VALUE ret;
     handler_arg_t arg;
+    int i, handlers_len;
+    char **handlers;
 
-    (void) ap_acquire_mutex(mod_ruby_mutex);
+    if (handlers_arr == NULL)
+	return DECLINED;
+
+    sconf = get_server_config(r->server);
+    dconf = get_dir_config(r);
+    safe_level = dconf->safe_level;
+    handlers = (char **) handlers_arr->elts;
+    handlers_len = handlers_arr->nelts;
+    retval = DECLINED;
+
     per_request_init(r);
-    ap_soft_timeout("call ruby handler", r);
-    arg.r = r;
-    arg.handler = handler;
-    arg.mid = mid;
-    if ((state = run_safely(safe_level, sconf->timeout,
-			    ruby_handler_0, &arg, &ret)) == 0) {
-	retval = NUM2INT(ret);
+    for (i = 0; i < handlers_len; i++) {
+	arg.r = r;
+	arg.handler = handlers[i];
+	arg.mid = mid;
+	ap_soft_timeout("call ruby handler", r);
+	if ((state = run_safely(safe_level, sconf->timeout,
+				ruby_handler_0, &arg, &ret)) == 0) {
+	    retval = NUM2INT(ret);
+	}
+	else {
+	    ruby_log_error(r->server, state);
+	    retval = SERVER_ERROR;
+	}
+	ap_kill_timeout(r);
+	if (retval != DECLINED && (!run_all || retval != OK))
+	    break;
     }
-    else {
-	ruby_log_error(r->server, state);
-	retval = SERVER_ERROR;
-    }
-    rb_protect(exec_end_proc, Qnil, NULL);
-    ap_kill_timeout(r);
     per_request_cleanup();
-    (void) ap_release_mutex(mod_ruby_mutex);
     return retval;
 }
 
 static int ruby_object_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
-
-    if (dconf->ruby_handler == NULL) return DECLINED;
-    return ruby_handler(r, dconf->ruby_handler,
-			rb_intern("handler"));
+    
+    return ruby_handler(r, dconf->ruby_handler, rb_intern("handler"), 0);
 }
 
 static int ruby_trans_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
 
-    if (dconf->ruby_trans_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_trans_handler,
-			rb_intern("translate_name"));
+			rb_intern("translate_uri2file"), 0);
 }
 
 static int ruby_authen_handler(request_rec *r)
@@ -798,10 +818,10 @@ static int ruby_authen_handler(request_rec *r)
     int retval;
 
     if (dconf->ruby_authen_handler == NULL) return DECLINED;
-    ap_table_set(r->notes, "In-RubyAuthenHandler", "true");
+    ap_table_set(r->notes, "ruby_in_authen_handler", "true");
     retval = ruby_handler(r, dconf->ruby_authen_handler,
-			  rb_intern("check_user_id"));
-    ap_table_unset(r->notes, "In-RubyAuthenHandler");
+			  rb_intern("authenticate"), 0);
+    ap_table_unset(r->notes, "ruby_in_authen_handler");
     return retval;
 }
 
@@ -809,18 +829,16 @@ static int ruby_authz_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
 
-    if (dconf->ruby_authz_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_authz_handler,
-			rb_intern("check_auth"));
+			rb_intern("authorize"), 0);
 }
 
 static int ruby_access_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
 
-    if (dconf->ruby_access_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_access_handler,
-			rb_intern("check_access"));
+			rb_intern("check_access"), 1);
 }
 
 static int ruby_type_handler(request_rec *r)
@@ -829,7 +847,7 @@ static int ruby_type_handler(request_rec *r)
 
     if (dconf->ruby_type_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_type_handler,
-			rb_intern("find_types"));
+			rb_intern("find_types"), 0);
 }
 
 static int ruby_fixup_handler(request_rec *r)
@@ -838,7 +856,7 @@ static int ruby_fixup_handler(request_rec *r)
 
     if (dconf->ruby_fixup_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_fixup_handler,
-			rb_intern("fixup"));
+			rb_intern("fixup"), 1);
 }
 
 static int ruby_log_handler(request_rec *r)
@@ -847,16 +865,52 @@ static int ruby_log_handler(request_rec *r)
 
     if (dconf->ruby_log_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_log_handler,
-			rb_intern("log_transaction"));
+			rb_intern("log_transaction"), 1);
 }
 
 static int ruby_header_parser_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
+    int retval;
 
+    if (dconf->ruby_init_handler &&
+	ap_table_get(r->notes, "ruby_init_ran") == NULL) {
+	retval = ruby_handler(r, dconf->ruby_init_handler,
+			      rb_intern("init"), 1);
+	if (retval != OK && retval != DECLINED)
+	    return retval;
+    }
     if (dconf->ruby_header_parser_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_header_parser_handler,
-			rb_intern("header_parse"));
+			rb_intern("header_parse"), 1);
+}
+
+static void ruby_cleanup_handler(void *data)
+{
+    request_rec *r = (request_rec *) data;
+    ruby_dir_config *dconf = get_dir_config(r);
+
+    ruby_handler(r, dconf->ruby_cleanup_handler,
+		 rb_intern("cleanup"), 1);
+}
+
+static int ruby_post_read_request_handler(request_rec *r)
+{
+    ruby_dir_config *dconf = get_dir_config(r);
+    int retval;
+
+    ap_register_cleanup(r->pool, (void *) r, ruby_cleanup_handler, 
+			ap_null_cleanup);
+
+    if (dconf->ruby_init_handler) {
+	retval = ruby_handler(r, dconf->ruby_init_handler,
+			      rb_intern("init"), 1);
+	ap_table_set(r->notes, "ruby_init_ran", "true");
+	if (retval != OK && retval != DECLINED)
+	    return retval;
+    }
+    return ruby_handler(r, dconf->ruby_post_read_request_handler,
+			rb_intern("post_read_request"), 1);
 }
 
 static int script_handler(VALUE (*func)(void*), request_rec *r)
@@ -872,8 +926,6 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
 	return NOT_FOUND;
     if (S_ISDIR(r->finfo.st_mode))
 	return FORBIDDEN;
-
-    (void) ap_acquire_mutex(mod_ruby_mutex);
 
     per_request_init(r);
     rb_setup_cgi_env(r);
@@ -900,7 +952,6 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
     rb_defout = orig_defout;
     per_request_cleanup();
 
-    (void) ap_release_mutex(mod_ruby_mutex);
     return retval;
 }
 
@@ -959,7 +1010,7 @@ static VALUE load_eruby_script(void *arg)
 	    ret = rb_iv_get(ruby_errinfo, "status");
 	}
 	else {
-	    print_error(r, state);
+	    ruby_print_error(r, state);
 	    return INT2NUM(OK);
 	}
     }

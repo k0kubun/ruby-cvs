@@ -40,15 +40,18 @@ typedef struct {
     char *kcode;
     table *env;
     int safe_level;
-    char *ruby_handler;
-    char *ruby_trans_handler;
-    char *ruby_authen_handler;
-    char *ruby_authz_handler;
-    char *ruby_access_handler;
-    char *ruby_type_handler;
-    char *ruby_fixup_handler;
-    char *ruby_log_handler;
-    char *ruby_header_parser_handler;
+    array_header *ruby_handler;
+    array_header *ruby_trans_handler;
+    array_header *ruby_authen_handler;
+    array_header *ruby_authz_handler;
+    array_header *ruby_access_handler;
+    array_header *ruby_type_handler;
+    array_header *ruby_fixup_handler;
+    array_header *ruby_log_handler;
+    array_header *ruby_header_parser_handler;
+    array_header *ruby_post_read_request_handler;
+    array_header *ruby_init_handler;
+    array_header *ruby_cleanup_handler;
 } ruby_dir_config;
 
 extern MODULE_VAR_EXPORT module ruby_module;

@@ -423,7 +423,7 @@ static VALUE request_headers_in(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->headers_in)) {
-	if (ap_table_get(data->request->notes, "In-RubyAuthenHandler")) {
+	if (ap_table_get(data->request->notes, "ruby_in_authen_handler")) {
 	    data->headers_in = rb_apache_table_new(rb_cApacheTable,
 						   data->request->headers_in);
 	}
@@ -914,7 +914,7 @@ static VALUE request_get_basic_auth_pw(VALUE self)
     int res;
 
     Data_Get_Struct(self, request_data, data);
-    if (ap_table_get(data->request->notes, "In-RubyAuthenHandler") == NULL) {
+    if (ap_table_get(data->request->notes, "ruby_in_authen_handler") == NULL) {
 	rb_raise(rb_eSecurityError, "Only RubyAuthenHandler can get password");
     }
     if ((res = ap_get_basic_auth_pw(data->request, &pw)) != OK) {

@@ -1,3 +1,15 @@
+Fri Jun 22 12:14:14 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (load_eruby_script): don't use print_error().
+
+	* mod_ruby.c (ruby_handler): multi-handler support.
+
+	* ruby_config.c (ruby_cmd_post_read_request_handler): new handler.
+
+	* ruby_config.c (ruby_cmd_init_handler): ditto.
+
+	* ruby_config.c (ruby_cmd_cleanup_handler): ditto.
+
 Thu Jun 21 18:40:44 2001  Shugo Maeda <shugo@modruby.net>
 
 	* lib/apache/eruby-run.rb: don't check ExecCGI.
