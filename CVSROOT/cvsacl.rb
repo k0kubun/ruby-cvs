@@ -1,7 +1,7 @@
 #
 # CVS ACL checker module
 #
-# $devId: cvsacl.rb,v 1.2 2001/01/31 05:18:14 knu Exp $
+# $devId: cvsacl.rb,v 1.3 2001/02/22 21:18:01 knu Exp $
 # $Id$
 #
 
@@ -98,15 +98,16 @@ def check_acl(aclfile, hostname, user, modulename)
 
 	case command
 	when :debug
-	  if arg1 != '0' || arg1 != 'off'
+	  case arg1
+	  when '0', 'off'
+	    puts "DEBUG: debug mode: off" if debug
+	    debug = false
+	  else
 	    debug = arg1
 	    puts "DEBUG: debug mode: " + debug
 	    puts "DEBUG: repo host: " + hostname
 	    puts "DEBUG: user: " + user
 	    puts "DEBUG: module: " + modulename
-	  else
-	    debug = false
-	    puts "DEBUG: debug mode: off" if debug
 	  end
 	when :host
 	  h = hostname.downcase
