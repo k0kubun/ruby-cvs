@@ -527,7 +527,9 @@ static void run()
     int state;
     char *out;
     int nout;
+    void Init_stack _((void*));
 
+    Init_stack(&code);
     code = eruby_load(eruby_filename, 0, &state);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	error_print(state, eruby_mode, code);
