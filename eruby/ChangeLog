@@ -1,3 +1,7 @@
+Thu Apr 19 16:58:40 2001  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby_lib.c (output): use buffer.
+
 Thu Apr 19 15:40:57 2001  Shugo Maeda <shugo@ruby-lang.org>
 
 	* eruby.h: new constant ERUBY_VERSION_CODE.
