@@ -1,3 +1,7 @@
+2002-01-30  Nobuyoshi Nakada  <nobu.nakada@nifty.ne.jp>
+
+	* builtin/TestKanjiIndex.rb: new tests.
+
 2002-01-29  Nobuyoshi Nakada  <nobu.nakada@nifty.ne.jp>
 
 	* builtin/TestFile.rb (TestFile::test_s_expand_path): avoid
