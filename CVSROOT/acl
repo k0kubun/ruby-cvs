@@ -52,6 +52,7 @@ group:xlib:matju
 group:gnome-ruby-old:iga
 group:opengl:yoshi
 group:math3d:yoshi
+group:devices:matju
 
 group:www:@all
 
@@ -91,6 +92,7 @@ grant:@xlib:lib/xlib
 grant:@gnome-ruby-old:lib/gnome-ruby-old
 grant:@opengl:lib/opengl
 grant:@math3d:lib/math3d
+grant:@devices:lib/devices
 
 grant:@www:www
 
