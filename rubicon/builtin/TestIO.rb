@@ -695,12 +695,9 @@ class TestIO < Rubicon::TestCase
     File.open(@file) do |file|
       assert_equal("line 1\n",  file.gets)
       assert_equal("line 2\n",  file.gets)
-      if $rubyVersion < "1.7.2"
-        assert_equal("dummy\n",  file.gets)
-        assert_equal("4\n",  file.gets)
-      else
-        assert_equal("dummy4\n",  file.gets)
-      end
+      assert_equal("dummy\n",  file.gets)
+      assert_equal("4\n",  file.gets)
+      assert_equal("dummy4\n",  file.gets)
     end
   end
 

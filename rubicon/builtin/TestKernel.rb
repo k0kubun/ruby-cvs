@@ -516,7 +516,11 @@ class TestKernel < Rubicon::TestCase
     assert_instance_of(String, String(123))
     assert_equal("123", String(123))
     assert_equal("123.45", String(123.45))
-    assert_equal("123",    String([1, 2, 3]))
+    if $rubyVersion < "1.7.2"
+      assert_equal("123",    String([1, 2, 3]))
+    else
+      assert_equal("1\n2\n3",    String([1, 2, 3]))
+    end
     assert_equal("Hello",    String(Caster.new))
   end
 
@@ -1497,12 +1501,8 @@ class TestKernel < Rubicon::TestCase
       File.open(fname) do |file|
         assert_equal("line 1\n",  file.gets)
         assert_equal("line 2\n",  file.gets)
-        if $rubyVersion < "1.7.2"
-          assert_equal("printtest\n",  file.gets)
-          assert_equal("4\n",  file.gets)
-        else
-          assert_equal("printtest4\n",  file.gets)
-        end
+        assert_equal("printtest\n",  file.gets)
+        assert_equal("4\n",  file.gets)
       end
     ensure
       teardownTestDir
