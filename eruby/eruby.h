@@ -8,6 +8,8 @@
 
 #define ERUBY_VERSION "0.0.1"
 
+#define ERUBY_MIME_TYPE "application/x-httpd-eruby"
+
 enum eruby_compile_status {
     COMPILE_OK = 0,
     MISSING_END_DELIMITER,

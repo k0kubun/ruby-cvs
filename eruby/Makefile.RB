@@ -17,7 +17,7 @@ CC = #{CONFIG["CC"]}
 prefix = #{CONFIG["prefix"]}
 bindir = #{CONFIG["bindir"]}
 
-CFLAGS = -I#$hdrdir #{CFLAGS} #{$defs.join(" ")}
+CFLAGS = -I#$hdrdir #{CFLAGS}
 LDFLAGS = #{CONFIG["LDFLAGS"]}
 LIBS = #{CONFIG["LIBS"]}
 INSTALL = #{CONFIG["INSTALL"]}
@@ -26,6 +26,7 @@ INSTALL_DATA = #{CONFIG["INSTALL_DATA"]}
 
 LIBRUBYARG = #$LIBRUBYARG
 OBJS = eruby.o eruby_logo.o eruby_main.o
+LIBERUBY = liberuby.a
 TARGET = eruby
 
 .c.o:
@@ -41,6 +42,9 @@ clean:
 
 distclean: clean
 	rm -f Makefile
+
+$(LIBERUBY): eruby.o
+	ar rcu $@ eruby.o
 
 $(TARGET): $(OBJS)
 	$(CC) $(LDFLAGS) $(OBJS) $(LIBRUBYARG) $(LIBS) -o $@
