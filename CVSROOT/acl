@@ -50,6 +50,8 @@ group:irc:iga,knu,gnhurst
 group:metaruby:matju,aleksi
 group:xlib:matju
 group:gnome-ruby-old:iga
+group:opengl:yoshi
+group:math3d:yoshi
 
 group:www:@all
 
@@ -87,6 +89,8 @@ grant:@irc:lib/irc
 grant:@metaruby:lib/metaruby
 grant:@xlib:lib/xlib
 grant:@gnome-ruby-old:lib/gnome-ruby-old
+grant:@opengl:lib/opengl
+grant:@math3d:lib/math3d
 
 grant:@www:www
 
