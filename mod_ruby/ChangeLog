@@ -1,3 +1,17 @@
+Fri May 25 19:15:39 2001  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.in: static Apache module support..
+
+	* configure.rb.in: new file.
+
+	* Makefile.tmpl: new file.
+
+	* Makefile.libdir: new file.
+
+	* libruby.module.in: new file.
+
+	* ruby_shared_stub.c: new file.
+
 Fri May 18 16:45:46 2001  Shugo Maeda <shugo@modruby.net>
 
 	* Makefile.RB: removed.

@@ -29,10 +29,11 @@ AR = @AR@
 LD = @LD@
 RANLIB = @RANLIB@
 
-APACHE_INCLUDEDIR = @APACHE_INCLUDEDIR@
+APACHE_SRCDIR = @APACHE_SRCDIR@
+APACHE_INCLUDES = @APACHE_INCLUDES@
 APACHE_LIBEXECDIR = $(DESTDIR)@APACHE_LIBEXECDIR@
 
-CFLAGS = @CFLAGS@ -I. -I$(hdrdir) -I$(APACHE_INCLUDEDIR)
+CFLAGS = @CFLAGS@ -I. -I$(hdrdir) $(APACHE_INCLUDES) @DEFS@
 LDFLAGS = @LDFLAGS@
 LIBS = $(LIBRUBYARG) @LIBS@
 XLDFLAGS = @XLDFLAGS@
@@ -46,7 +47,7 @@ INSTALL_DIR = $(RUBY) -r ftools -e 'File.makedirs(*ARGV)'
 LIBRUBYARG = @LIBRUBYARG@
 LIBERUBYARG = @LIBERUBYARG@
 
-TARGET = mod_ruby.so
+TARGET = @TARGET@
 
 OBJS	= mod_ruby.@OBJEXT@ \
 	  ruby_config.@OBJEXT@ \
@@ -62,22 +63,40 @@ OBJS	= mod_ruby.@OBJEXT@ \
 
 all: $(TARGET)
 
-install: $(TARGET)
-	@-$(INSTALL_DIR) $(APACHE_LIBEXECDIR)
+install: @install@
 	@-$(INSTALL_DIR) $(rubylibdir)/apache
-	@-$(INSTALL_DLLIB) $(TARGET) $(APACHE_LIBEXECDIR)
 	@-$(INSTALL_DATA) ruby/apache/ruby.rb $(rubylibdir)/apache
 	@-$(INSTALL_DATA) ruby/apache/eruby.rb $(rubylibdir)/apache
 	@-$(INSTALL_DATA) ruby/apache/rd2html.rb $(rubylibdir)/apache
 
+install-static:
+	@-$(INSTALL_DIR) $(APACHE_SRCDIR)/src/modules/ruby
+	@-$(INSTALL_DATA) $(TARGET) $(APACHE_SRCDIR)/src/modules/ruby
+	@-$(INSTALL_DATA) mod_ruby.c $(APACHE_SRCDIR)/src/modules/ruby
+	@-$(INSTALL_DATA) Makefile.tmpl $(APACHE_SRCDIR)/src/modules/ruby
+	@-$(INSTALL_DATA) Makefile.libdir $(APACHE_SRCDIR)/src/modules/ruby
+	@-$(INSTALL_DATA) libruby.module $(APACHE_SRCDIR)/src/modules/ruby
+	@-$(INSTALL_DATA) ruby_shared_stub.c $(APACHE_SRCDIR)/src/modules/ruby
+
+install-shared:
+	@-$(INSTALL_DIR) $(APACHE_LIBEXECDIR)
+	@-$(INSTALL_DLLIB) $(TARGET) $(APACHE_LIBEXECDIR)
+
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(TARGET)
+	rm -f $(OBJS)
 
 distclean: clean
-	rm -f mod_ruby.imp Makefile
+	rm -f Makefile
+	rm -f libruby.module
+	rm -f mod_ruby.imp
 	find . -name '*~' | xargs rm -f
 
-$(TARGET): $(OBJS)
+libruby.a: $(OBJS)
+	$(AR) rcu $@ $(OBJS)
+	$(RANLIB) $@
+
+mod_ruby.so: $(OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) \
 		$(LIBERUBYARG) $(LIBRUBYARG) $(LIBS)
 
