@@ -2,6 +2,22 @@ require 'rubicon'
 
 class StringBase < Rubicon::TestCase
 
+  def initialize(*args)
+    begin
+      S("Foo")[/./, 1]
+      @aref_re_nth = true
+    rescue
+      @aref_re_nth = false
+    end
+    begin
+      S("Foo")[/Bar/] = S("")
+      @aref_re_silent = true
+    rescue
+      @aref_re_silent = false
+    end
+    super
+  end
+
   def S(str)
     @cls.new(str)
   end
@@ -32,6 +48,15 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("Bar"), S("FooBar")[S("Bar")])
     assert_equal(nil,      S("FooBar")[S("xyzzy")])
     assert_equal(nil,      S("FooBar")[S("plugh")])
+
+    if @aref_re_nth
+      assert_equal(S("Foo"), S("FooBar")[/([A-Z]..)([A-Z]..)/, 1])
+      assert_equal(S("Bar"), S("FooBar")[/([A-Z]..)([A-Z]..)/, 2])
+      assert_equal(nil,      S("FooBar")[/([A-Z]..)([A-Z]..)/, 3])
+      assert_equal(S("Bar"), S("FooBar")[/([A-Z]..)([A-Z]..)/, -1])
+      assert_equal(S("Foo"), S("FooBar")[/([A-Z]..)([A-Z]..)/, -2])
+      assert_equal(nil,      S("FooBar")[/([A-Z]..)([A-Z]..)/, -3])
+    end
   end
 
   def test_ASET # '[]='
@@ -71,8 +96,24 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("BarBar"), s)
     s[/..r$/] = S("Foo")
     assert_equal(S("BarFoo"), s)
-    s[/xyzzy/] = S("None")
-    assert_equal(S("BarFoo"), s)
+    if @aref_re_silent
+      s[/xyzzy/] = S("None")
+      assert_equal(S("BarFoo"), s)
+    else
+      assert_exception (IndexError) { s[/xyzzy/] = S("None") }
+    end
+    if @aref_re_nth
+      s[/([A-Z]..)([A-Z]..)/, 1] = S("Foo")
+      assert_equal(S("FooFoo"), s)
+      s[/([A-Z]..)([A-Z]..)/, 2] = S("Bar")
+      assert_equal(S("FooBar"), s)
+      assert_exception (IndexError) { s[/([A-Z]..)([A-Z]..)/, 3] = "None" }
+      s[/([A-Z]..)([A-Z]..)/, -1] = S("Foo")
+      assert_equal(S("FooFoo"), s)
+      s[/([A-Z]..)([A-Z]..)/, -2] = S("Bar")
+      assert_equal(S("BarFoo"), s)
+      assert_exception (IndexError) { s[/([A-Z]..)([A-Z]..)/, -3] = "None" }
+    end
 
     s = S("FooBar")
     s[S("Foo")] = S("Bar")
@@ -799,9 +840,17 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("Foo"), a)
 
     a=S("FooBar")
-    assert_nil(a.slice!(/xyzzy/))
+    if @aref_re_silent
+      assert_nil(a.slice!(/xyzzy/))
+    else
+      assert_exception(IndexError) {a.slice!(/xyzzy/)}
+    end
     assert_equal(S("FooBar"), a)
-    assert_nil(a.slice!(/plugh/))
+    if @aref_re_silent
+      assert_nil(a.slice!(/plugh/))
+    else
+      assert_exception(IndexError) {a.slice!(/plugh/)}
+    end
     assert_equal(S("FooBar"), a)
 
     a=S("FooBar")

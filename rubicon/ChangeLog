@@ -1,3 +1,32 @@
+2001-10-25  Dave Thomas  <Dave@Thomases.com>
+
+	* Various: Fixes to remove implicit dependence on order of tests
+	(found when NT ran under Lapidary, which uses different order to
+	runit).
+
+2001-10-25  Nobu Nakad <nobu.nokada@softhome.net>
+	* AllTests.rb: Invoking without arguments, run testsuits under
+	rubicon's directory, not current directory.
+
+	* builtin/StringBase.rb: Tests for String#[re] bug fix.
+
+	* builtin/TestFile.rb: On linux with devfsd, /dev/fd0 is not a
+	block device.
+
+	* builtin/TestKernel.rb: Allocation framework changed at 1.7.1
+	2001-10-16. Alias of global variable improved (DT: only on 1.7)
+
+	* builtin/TestModulePrivate.rb: Module#instance_methods doesn't
+	preserve the order.
+
+	* builtin/TestRegexp.rb: Duped Regexp's ID differs from original's
+	one.
+
+	* builtin/TestThread.rb: Should wait until t1 wake up.
+
+	* language/TestScope.rb: Tests for special variables($_, $~ and so
+	on) and thread (modified by DT: only for >= 1.7)
+
 2001-08-02  Dave Thomas  <Dave@Thomases.com>
 
 	* rubicon.rb (runChild): Fix typo (thanks to Yamada-san for

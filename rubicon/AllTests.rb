@@ -19,7 +19,7 @@ tests = Rubicon::BulkTestRunner.new("All Tests")
 # and tell is what files to test
 if ARGV.size.zero?
   for dir in SUB_DIRS
-    Dir[File.join(dir, "Test*.rb")].each { |file| tests.addFile(file) }
+    Dir[File.join(base, dir, "Test*.rb")].each { |file| tests.addFile(file) }
   end
 else
   ARGV.each { |file| tests.addFile(file) }

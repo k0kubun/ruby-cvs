@@ -27,7 +27,7 @@ class TestModulePrivate < Rubicon::TestCase
     t1 = T1.new
     assert_equal("m1", t1.m1)
     assert_equal("m1", t1.new_m1)
-    assert_equal(["new_m1", "m1"], T1.instance_methods)
+    assert_set_equal(["new_m1", "m1"], T1.instance_methods)
   end
 
   # --------------------------------------------------------

@@ -234,6 +234,7 @@ class TestThread < Rubicon::TestCase
       Thread.critical = false
       t1.run
       _wait
+      t1.join
       assert_equals(true, wokeup)
     end
   end

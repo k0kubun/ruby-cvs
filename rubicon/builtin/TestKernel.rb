@@ -1797,12 +1797,18 @@ class TestKernel < Rubicon::TestCase
     innerLine = trace_func_test(__FILE__, __LINE__)
     set_trace_func(nil)
     assert_equal(["line", __FILE__, line+2, :test_s_set_trace_func, TestKernel],
-                 @res[0])
+                 @res.shift)
+    if defined? Object.allocate
+      assert_equal(["c-call", __FILE__, line+2, :allocate, String],
+		   @res.shift)
+      assert_equal(["c-return", __FILE__, line+2, :allocate, String],
+		   @res.shift)
+    end
     assert_equal(["call", __FILE__, innerLine-1, :trace_func_test, TestKernel],
-                 @res[1])
+                 @res.shift)
     assert_equal(["line", __FILE__, innerLine, :trace_func_test, TestKernel],
-                 @res[2])
-    assert_equal("return", @res[3][0])
+                 @res.shift)
+    assert_equal("return", @res.shift[0])
   end
 
   class SMATest
@@ -2095,6 +2101,26 @@ class TestKernel < Rubicon::TestCase
     p = proc { |val| }
     trace_var("$_", p)
     assert_set_equal(["puts 99", p], untrace_var(:$_))
+  end
+
+  def test_gvar_alias
+    $foo = 3
+    eval "alias $bar $foo"
+    assert_equal(3, $bar)
+
+    if $rubyVersion >= "1.7"
+      $bar = 4
+      assert_equal(4, $foo)
+    end
+    
+  end
+
+  def test_svar_alias
+    eval "alias $foo $_"
+    $_ = 1
+    assert_equal(1, $foo)
+    $foo = 2
+    assert_equal(2, $_)
   end
 
 end

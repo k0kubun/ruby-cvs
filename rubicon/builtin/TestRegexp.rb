@@ -52,7 +52,6 @@ class TestRegexp < Rubicon::TestCase
         b = a.clone
 
         assert_equal(a, b)
-        assert_equal(a.id, b.id)
         assert_equal(a.frozen?, b.frozen?)
         assert_equal(a.tainted?, b.tainted?)
       end

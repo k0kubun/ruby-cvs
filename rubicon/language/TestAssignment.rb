@@ -16,15 +16,25 @@ class TestAssignment < Rubicon::TestCase
 
     a = *nil;      assert_nil(a)
     a = *1;        assert_equal(1, a)
-    a = *[];       assert_nil(a)
-    a = *[1];      assert_equal(1, a)
-    a = *[nil];    assert_nil(a)
-    a = *[[]];     assert_equal([], a)
-    a = *[*[]];    assert_nil(a)
-    a = *[*[1]];   assert_equal(1, a)
+    if $rubyVersion < "1.7"
+      a = *[];       assert_equal([], a)
+      a = *[1];      assert_equal([1], a)
+      a = *[nil];    assert_equal([nil], a)
+      a = *[[]];     assert_equal([[]], a)
+      a = *[*[]];    assert_equal([], a)
+      a = *[*[1]];   assert_equal([1], a)
+      *a = nil;      assert_equal([nil], a)
+    else
+      a = *[];       assert_nil(a)
+      a = *[1];      assert_equal(1, a)
+      a = *[nil];    assert_nil(a)
+      a = *[[]];     assert_equal([], a)
+      a = *[*[]];    assert_nil(a)
+      a = *[*[1]];   assert_equal(1, a)
+      *a = nil;      assert_equal([], a)
+    end
     a = *[*[1,2]]; assert_equal([1,2], a)
 
-    *a = nil;      assert_equal([], a)
     *a = 1;        assert_equal([1], a)
     *a = [];       assert_equal([], a)
     *a = [1];      assert_equal([1], a)
@@ -34,12 +44,18 @@ class TestAssignment < Rubicon::TestCase
     *a = [*[1]];   assert_equal([1], a)
     *a = [*[1,2]]; assert_equal([1,2], a)
 
-    *a = *nil;      assert_equal([], a)
+    if $rubyVersion < "1.7"
+      *a = *nil;      assert_equal([nil], a)
+      *a = *[nil];    assert_equal([nil], a)
+      *a = *[[]];     assert_equal([[]], a)
+    else
+      *a = *nil;      assert_equal([], a)
+      *a = *[nil];    assert_equal([], a)
+      *a = *[[]];     assert_equal([], a)
+    end
     *a = *1;        assert_equal([1], a)
     *a = *[];       assert_equal([], a)
     *a = *[1];      assert_equal([1], a)
-    *a = *[nil];    assert_equal([], a)
-    *a = *[[]];     assert_equal([], a)
     *a = *[*[]];    assert_equal([], a)
     *a = *[*[1]];   assert_equal([1], a)
     *a = *[*[1,2]]; assert_equal([1,2], a)
@@ -59,7 +75,13 @@ class TestAssignment < Rubicon::TestCase
     a,b,*c = *[];       assert_equal([nil, nil, []], [a,b,c])
     a,b,*c = *[1];      assert_equal([1, nil, []], [a,b,c])
     a,b,*c = *[nil];    assert_equal([nil, nil, []], [a,b,c])
-    a,b,*c = *[[]];     assert_equal([nil, nil, []], [a,b,c])
+
+    if $rubyVersion < "1.7"
+      a,b,*c = *[[]];     assert_equal([[], nil, []], [a,b,c])
+    else
+      a,b,*c = *[[]];     assert_equal([nil, nil, []], [a,b,c])
+    end
+
     a,b,*c = *[*[]];    assert_equal([nil, nil, []], [a,b,c])
     a,b,*c = *[*[1]];   assert_equal([1, nil, []], [a,b,c])
     a,b,*c = *[*[1,2]]; assert_equal([1, 2, []], [a,b,c])
@@ -103,7 +125,11 @@ class TestAssignment < Rubicon::TestCase
     assert_equal([4], a)
     
     *a = nil
-    assert_equal([], a)
+    if $rubyVersion < "1.7"
+      assert_equal([nil], a)
+    else
+      assert_equal([], a)
+    end
   end
 
   def testConditionalAssignment
