@@ -309,7 +309,8 @@ static VALUE request_server(VALUE self)
 REQUEST_STRING_ATTR_READER(request_protocol, protocol);
 REQUEST_STRING_ATTR_READER(request_hostname, hostname);
 REQUEST_STRING_ATTR_READER(request_unparsed_uri, unparsed_uri);
-REQUEST_STRING_ATTR_READER(request_uri, uri);
+REQUEST_STRING_ATTR_READER(request_get_uri, uri);
+REQUEST_STRING_ATTR_WRITER(request_set_uri, uri);
 REQUEST_STRING_ATTR_READER(request_get_filename, filename);
 REQUEST_STRING_ATTR_WRITER(request_set_filename, filename);
 REQUEST_STRING_ATTR_READER(request_path_info, path_info);
@@ -848,7 +849,8 @@ void rb_init_apache_request()
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
     rb_define_method(rb_cApacheRequest, "unparsed_uri",
 		     request_unparsed_uri, 0);
-    rb_define_method(rb_cApacheRequest, "uri", request_uri, 0);
+    rb_define_method(rb_cApacheRequest, "uri", request_get_uri, 0);
+    rb_define_method(rb_cApacheRequest, "uri=", request_set_uri, 1);
     rb_define_method(rb_cApacheRequest, "filename", request_get_filename, 0);
     rb_define_method(rb_cApacheRequest, "filename=", request_set_filename, 1);
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);

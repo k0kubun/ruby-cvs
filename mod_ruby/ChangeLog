@@ -1,3 +1,23 @@
+Sun Jun 10 01:23:53 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_translate_handler): new handler.
+
+	* mod_ruby.c (ruby_authen_handler): ditto.
+
+	* mod_ruby.c (ruby_authen_handler): ditto.
+
+	* mod_ruby.c (ruby_authz_handler): ditto.
+
+	* mod_ruby.c (ruby_access_handler): ditto.
+
+	* mod_ruby.c (ruby_type_handler): ditto.
+
+	* mod_ruby.c (ruby_fixup_handler): ditto.
+
+	* mod_ruby.c (ruby_log_handler): ditto.
+
+	* mod_ruby.c (ruby_header_parser_handler): ditto.
+
 Sat Jun  9 18:47:13 2001  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb.in: check for gcc.
@@ -798,6 +818,6 @@ Mon Dec 21 12:05:03 1998  Shugo Maeda <shugo@netlab.co.jp>
 	* version 0.0.1 released.
 
 Local variables:
-mode: ChangeLog
+mode: Change-Log
 tab-width: 8
 End:

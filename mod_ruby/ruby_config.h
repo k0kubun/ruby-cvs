@@ -38,6 +38,14 @@ const char *ruby_cmd_set_env(cmd_parms*, ruby_dir_config*, char*, char*);
 const char *ruby_cmd_timeout(cmd_parms*, void*, char*);
 const char *ruby_cmd_safe_level(cmd_parms*, ruby_dir_config*, char*);
 const char *ruby_cmd_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_trans_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_authen_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_authz_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_access_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_type_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_fixup_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_log_handler(cmd_parms*, ruby_dir_config*, char*);
+const char *ruby_cmd_header_parser_handler(cmd_parms*, ruby_dir_config*, char*);
 
 #endif /* !RUBY_CONFIG_H */
 

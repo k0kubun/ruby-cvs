@@ -41,7 +41,15 @@ typedef struct {
     char *kcode;
     table *env;
     int safe_level;
-    array_header *ruby_handlers;
+    char *ruby_handler;
+    char *ruby_trans_handler;
+    char *ruby_authen_handler;
+    char *ruby_authz_handler;
+    char *ruby_access_handler;
+    char *ruby_type_handler;
+    char *ruby_fixup_handler;
+    char *ruby_log_handler;
+    char *ruby_header_parser_handler;
 } ruby_dir_config;
 
 extern MODULE_VAR_EXPORT module ruby_module;

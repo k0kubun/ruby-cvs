@@ -60,7 +60,15 @@ void *ruby_create_dir_config (pool *p, char *dirname)
     conf->kcode = NULL;
     conf->env = ap_make_table(p, 5); 
     conf->safe_level = MOD_RUBY_DEFAULT_SAFE_LEVEL;
-    conf->ruby_handlers = ap_make_array(p, 1, sizeof(char*));
+    conf->ruby_handler = NULL;
+    conf->ruby_trans_handler = NULL;
+    conf->ruby_authen_handler = NULL;
+    conf->ruby_authz_handler = NULL;
+    conf->ruby_access_handler = NULL;
+    conf->ruby_type_handler = NULL;
+    conf->ruby_fixup_handler = NULL;
+    conf->ruby_log_handler = NULL;
+    conf->ruby_header_parser_handler = NULL;
     return conf;
 }
 
@@ -79,8 +87,25 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
     else {
 	new->safe_level = base->safe_level;
     }
-    new->ruby_handlers =
-	ap_append_arrays(p, add->ruby_handlers, base->ruby_handlers);
+    new->ruby_handler =
+	add->ruby_handler ? add->ruby_handler : base->ruby_handler;
+    new->ruby_trans_handler =
+	add->ruby_trans_handler ? add->ruby_trans_handler : base->ruby_trans_handler;
+    new->ruby_authen_handler =
+	add->ruby_authen_handler ? add->ruby_authen_handler : base->ruby_authen_handler;
+    new->ruby_authz_handler =
+	add->ruby_authz_handler ? add->ruby_authz_handler : base->ruby_authz_handler;
+    new->ruby_access_handler =
+	add->ruby_access_handler ? add->ruby_access_handler : base->ruby_access_handler;
+    new->ruby_type_handler =
+	add->ruby_type_handler ? add->ruby_type_handler : base->ruby_type_handler;
+    new->ruby_fixup_handler =
+	add->ruby_fixup_handler ? add->ruby_fixup_handler : base->ruby_fixup_handler;
+    new->ruby_log_handler =
+	add->ruby_log_handler ? add->ruby_log_handler : base->ruby_log_handler;
+    new->ruby_header_parser_handler =
+	add->ruby_header_parser_handler	? add->ruby_header_parser_handler :
+	base->ruby_header_parser_handler;
     return (void *) new;
 }
 
@@ -173,8 +198,56 @@ const char *ruby_cmd_safe_level(cmd_parms *cmd, ruby_dir_config *conf, char *arg
 
 const char *ruby_cmd_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
 {
-    *(char **) ap_push_array(conf->ruby_handlers) =
-	ap_pstrdup(cmd->pool, arg);
+    conf->ruby_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_trans_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_trans_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_authen_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_authen_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_authz_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_authz_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_access_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_access_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_type_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_type_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_fixup_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_fixup_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_log_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_log_handler = arg;
+    return NULL;
+}
+
+const char *ruby_cmd_header_parser_handler(cmd_parms *cmd,
+					   ruby_dir_config *conf, char *arg)
+{
+    conf->ruby_header_parser_handler = arg;
     return NULL;
 }
 
