@@ -1,22 +1,26 @@
 require '../rubicon'
 
-class Fred
-  $f1 = :Fred
-end
-
-module Test
-  Fred = 1
-  $f2 = :Fred
-end
-
-def Fred
-$f3 = :Fred
-end
 
 
 class TestSymbol < Rubicon::TestCase
 
+# v---------- test --------------v
+  class Fred
+    $f1 = :Fred
+    def Fred
+      $f3 = :Fred
+    end
+  end
+  
+  module Test
+    Fred = 1
+    $f2 = :Fred
+  end
+  
+# ^----------- test ------------^
+
   def test_00sanity
+    Fred.new.Fred
     assert_equals($f1.id,$f2.id)
     assert_equals($f2.id,$f3.id)
   end
