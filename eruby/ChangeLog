@@ -6,7 +6,7 @@ Tue May 30 11:29:45 2000  Katsuyuki Komatsu <komatsu@sarion.co.jp>
 
 	* Makefile.RB: use OBJEXT and EXEEXT.
 
-	* eruby.h: define S_ISDIR and W_OK.
+	* eruby.c: define S_ISDIR and W_OK.
 
 	* eruby_main.c: use EXTERN instead of extern.
 
