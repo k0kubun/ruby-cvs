@@ -40,7 +40,7 @@ class TestBasicExpressions < Rubicon::TestCase
   def testAlias2
     x = Alias3.new
     assert(!x.foo)
-    assert(x.bar)
+    assert_not_nil(x.bar)
     assert(!x.quux)
   end
 
@@ -52,19 +52,19 @@ class TestBasicExpressions < Rubicon::TestCase
 
   def testDefined?
     $x = 123
-    assert(defined?($x))
+    assert_not_nil(defined?($x))
     assert_equal('global-variable', defined?($x))
 
     foo=5
-    assert(defined?(foo))
+    assert_not_nil(defined?(foo))
 
-    assert(defined?(Array))
-    assert(defined?(Object.new))
+    assert_not_nil(defined?(Array))
+    assert_not_nil(defined?(Object.new))
     assert(!defined?(Object.print))	# private method
-    assert(defined?(1 == 2))		# operator expression
+    assert_not_nil(defined?(1 == 2))		# operator expression
 
-    assert(definedHelper)		# not iterator
-    assert(!definedHelper {})		# not iterator
+    assert_not_nil(definedHelper)		# not iterator
+    assert_not_nil(!definedHelper {})		# not iterator
   end
 
 end

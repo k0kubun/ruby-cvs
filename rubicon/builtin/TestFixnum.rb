@@ -217,7 +217,7 @@ class TestFixnum < Rubicon::TestCase
   def test_POW # '**'
     assert_equal(0, 0**1)
     assert_equal(1, 0**0)
-    assert((0**-1).infinite?)
+    assert_not_nil((0**-1).infinite?)
 
     assert_equal(1, 1**1)
     assert_equal(1, 1**0)

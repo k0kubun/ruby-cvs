@@ -26,7 +26,7 @@ class TestBlocksProcs < Rubicon::TestCase
         x = iii			# nested variables shared by procs
       }
       # scope of nested variables
-      assert(defined?(iii))
+      assert_not_nil(defined?(iii))
     }.call
     assert(!defined?(iii))		# out of scope
 

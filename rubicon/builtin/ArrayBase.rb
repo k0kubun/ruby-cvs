@@ -695,7 +695,7 @@ class ArrayBase < Rubicon::TestCase
 
     assert_equal(ary.length, ary2.length)
     assert_equal(ary.join(':'), ary2.join(':'))
-    assert(x =~ /def/)
+    assert_not_nil(x =~ /def/)
 
 
 

@@ -26,7 +26,7 @@ class TestLoopStuff < Rubicon::TestCase
         break if /vt100/ =~ line
       end
       assert(!tmp.eof?)
-      assert(/vt100/ =~ line)
+      assert_not_nil(/vt100/ =~ line)
     end
   end
 

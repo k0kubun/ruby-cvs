@@ -8,9 +8,9 @@ class TestRegularExpressions < Rubicon::TestCase
     assert("abc\n" !~ /^$/)
     assert("abc" !~ /^d*$/)
     assert(("abc" =~ /d*$/) == 3)
-    assert("" =~ /^$/)
-    assert("\n" =~ /^$/)
-    assert("a\n\n" =~ /^$/)
+    assert_equal(0, "" =~ /^$/)
+    assert_equal(0, "\n" =~ /^$/)
+    assert_equal(2, "a\n\n" =~ /^$/)
     assert("abcabc" =~ /.*a/ && $& == "abca")
     assert("abcabc" =~ /.*c/ && $& == "abcabc")
     assert("abcabc" =~ /.*?a/ && $& == "a")
@@ -29,8 +29,8 @@ class TestRegularExpressions < Rubicon::TestCase
     x.gsub!(/((.|\n)*?)B((.|\n)*?)D/) {$1+$3}
     assert_equal("AC\nAC\n", x)
 
-    assert("foobar" =~ /foo(?=(bar)|(baz))/)
-    assert("foobaz" =~ /foo(?=(bar)|(baz))/)
+    assert_equal(0, "foobar" =~ /foo(?=(bar)|(baz))/)
+    assert_equal(0, "foobaz" =~ /foo(?=(bar)|(baz))/)
   end
 
   def testReferences
@@ -72,7 +72,7 @@ class TestRegularExpressions < Rubicon::TestCase
         
 	case result
 	when 'y'
-          assert(reg, "Expected a match: #{lineno}: '#{line}'")
+          assert_not_nil(reg, "Expected a match: #{lineno}: '#{line}'")
           if repl != '-'
             eu = eval('"' + repl + '"')
             assert(expect == eu, "Expected '#{expect.inspect}, " +

@@ -164,13 +164,13 @@ class TestKernel < Rubicon::TestCase
     s = "hello"
     assert(!defined?(s.et1))
     s.extend(ExtendTest1)
-    assert(defined?(s.et1))
+    assert_not_nil(defined?(s.et1))
     assert(!defined?(s.et2))
     assert_equal("et1", s.et1)
     assert_equal("et3.1", s.et3)
 
     s.extend(ExtendTest2)
-    assert(defined?(s.et2))
+    assert_not_nil(defined?(s.et2))
     assert_equal("et1", s.et1)
     assert_equal("et2", s.et2)
     assert_equal("et3.2", s.et3)
@@ -563,7 +563,7 @@ class TestKernel < Rubicon::TestCase
     end
     assert(!defined? Module_Test)
     autoload(:Module_Test, "./_dummy.rb")
-    assert(defined? Module_Test::VAL)
+    assert_not_nil(defined? Module_Test::VAL)
     assert_equal(123, Module_Test::VAL)
     assert($".include?("./_dummy.rb"))#"
     File.delete("./_dummy.rb")
@@ -1073,7 +1073,7 @@ class TestKernel < Rubicon::TestCase
     end
     assert(!defined? Module_Load)
     load("./_dummy_load.rb")
-    assert(defined? Module_Load::VAL)
+    assert_not_nil(defined? Module_Load::VAL)
     assert_equal(234, Module_Load::VAL)
     assert(!$".include?("./_dummy_load.rb"))#"
 
@@ -1097,7 +1097,7 @@ class TestKernel < Rubicon::TestCase
     load("./_dummy_load.rb", true)
     assert(!defined? GLOBAL_VAL)
     load("./_dummy_load.rb", false)
-    assert(defined? GLOBAL_VAL)
+    assert_not_nil(defined? GLOBAL_VAL)
     assert_equal(789, GLOBAL_VAL)
     File.delete("./_dummy_load.rb")
   end
@@ -1557,15 +1557,15 @@ class TestKernel < Rubicon::TestCase
       
       trap "SIGINT", proc {raise "Interrupt"}
       
-      x = false
+      x = nil
       begin
         Process.kill "SIGINT", $$
         sleep 0.1
       rescue
         x = $!
       end
-      assert(x)
-      assert(/Interrupt/ =~ x)
+      assert_not_nil(x)
+      assert_not_nil(/Interrupt/ =~ x)
     end
     
   end
@@ -1727,8 +1727,8 @@ class TestKernel < Rubicon::TestCase
       EOM
     end
     assert(!defined? Module_Require)
-    assert(require("./_dummy_req.rb"))
-    assert(defined? Module_Require::VAL)
+    assert_not_nil(require("./_dummy_req.rb"))
+    assert_not_nil(defined? Module_Require::VAL)
     assert_equal(234, Module_Require::VAL)
     assert($".include?("./_dummy_req.rb"))#"
 

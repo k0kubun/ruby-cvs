@@ -27,7 +27,7 @@ class TestEval < Rubicon::TestCase
     i = 5
     assert(eval("i == 5"))
     assert_equal(5, eval("i"))
-    assert(eval("defined? i"))
+    assert_not_nil(eval("defined? i"))
   end
 
   def evalWithBindingHelper
@@ -93,8 +93,8 @@ class TestEval
 
     x = proc{binding}.call
     eval "for i6 in 1..1; j6=i6; end", x
-    assert(eval("defined? i6", x))
-    assert(eval("defined? j6", x))
+    assert_not_nil(eval("defined? i6", x))
+    assert_not_nil(eval("defined? j6", x))
   end
 
   def testProcNestedBinding

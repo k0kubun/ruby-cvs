@@ -193,7 +193,7 @@ class TestFloat < Rubicon::TestCase
   def test_POW # '**'
     assert_flequal(1e40, 10**40)
     assert_flequal(1e-40, 10**-40)
-    assert((10.0**10.0**10.0).infinite?)
+    assert_not_nil((10.0**10.0**10.0).infinite?)
     assert_flequal(0.0, 10.0**-(1000.0))
     assert_flequal(1.4142135623731, 2.0**0.5)
   end
