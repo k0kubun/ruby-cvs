@@ -30,7 +30,7 @@ class TestMethod < Rubicon::TestCase
 
   def test_to_proc
     p = @m1.to_proc
-    assert_instance_of(p, Proc)
+    assert_instance_of(Proc, p)
     assert_equal(15, p.call(3))
   end
 

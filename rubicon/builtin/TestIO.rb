@@ -94,8 +94,8 @@ class TestIO < Rubicon::TestCase
     p = IO.pipe
     assert_equal(2, p.size)
     r, w = *p
-    assert_instance_of(r, IO)
-    assert_instance_of(w, IO)
+    assert_instance_of(IO, r)
+    assert_instance_of(IO, w)
     
     w.puts "Hello World"
     assert_equal("Hello World\n", r.gets)
@@ -791,7 +791,7 @@ class TestIO < Rubicon::TestCase
   # Stat is pretty much tested elsewhere, so we're minimal here
   def test_stat
     io = IO.new($stdin.fileno)
-    assert_instance_of(io.stat, File::Stat)
+    assert_instance_of(File::Stat, io.stat)
     io.close
   end
 

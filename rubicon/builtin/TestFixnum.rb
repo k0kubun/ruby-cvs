@@ -120,10 +120,10 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(-8, (-1) << 3)
 
     a = 1 << (1.size*8 - 2)
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
 
     a = (-1) << (1.size*8 - 1)
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
   end
 
   def test_LT # '<'
@@ -145,7 +145,7 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(77, 100 - 20 - 3)
 
     a = MIN - 1
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
   end
 
   def test_MOD # '%'
@@ -160,18 +160,18 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(0, 0*MAX)
     a = 1 * MAX
     assert_equal(MAX, a)
-    assert_instance_of(a, Fixnum)
+    assert_instance_of(Fixnum, a)
     a = 1 * MIN
     assert_equal(MIN, a)
-    assert_instance_of(a, Fixnum)
+    assert_instance_of(Fixnum, a)
     
     a = -1 * MAX
     assert_equal(-MAX, a)
-    assert_instance_of(a, Fixnum)
+    assert_instance_of(Fixnum, a)
 
     a = -1 * MIN
     assert_equal(-MIN, a)
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
 
     assert_equal(9.5, 19 * 0.5)
   end
@@ -190,11 +190,11 @@ class TestFixnum < Rubicon::TestCase
 
     a = MIN + 1
     assert(a > MIN)
-    assert_instance_of(a, Fixnum)
+    assert_instance_of(Fixnum, a)
 
     a = MAX + 1
     assert(a > MAX)
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
   end
 
   def test_POW # '**'
@@ -244,11 +244,11 @@ class TestFixnum < Rubicon::TestCase
 
     a = MAX.abs
     assert_equal(a, MAX)
-    assert_instance_of(a, Fixnum)
+    assert_instance_of(Fixnum, a)
 
     a = MIN.abs
     assert_equal(a, MAX+1)
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
   end
 
   def test_downto
@@ -271,15 +271,15 @@ class TestFixnum < Rubicon::TestCase
 
   def test_id2name
     a = :Wombat
-    assert_instance_of(a, Symbol)
+    assert_instance_of(Symbol, a)
     ai = a.to_i
-    assert_instance_of(ai, Fixnum)
+    assert_instance_of(Fixnum, ai)
     assert_equals("Wombat", ai.id2name)
 
     a = :<<
-    assert_instance_of(a, Symbol)
+    assert_instance_of(Symbol, a)
     ai = a.to_i
-    assert_instance_of(ai, Fixnum)
+    assert_instance_of(Fixnum, ai)
     assert_equals("<<", ai.id2name)
   end
 
@@ -288,7 +288,7 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(0, (-1).next)
     assert(MIN.next > MIN)
     a = MAX.next
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
   end
 
   def test_remainder
@@ -337,7 +337,7 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(0, (-1).succ)
     assert(MIN.succ > MIN)
     a = MAX.succ
-    assert_instance_of(a, Bignum)
+    assert_instance_of(Bignum, a)
   end
 
   def test_times
@@ -352,7 +352,7 @@ class TestFixnum < Rubicon::TestCase
 
   def test_to_f
     f = MAX.to_f
-    assert_instance_of(f, Float)
+    assert_instance_of(Float, f)
     assert((f - MAX).abs < .5)
   end
 

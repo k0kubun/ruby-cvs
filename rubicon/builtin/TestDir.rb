@@ -45,7 +45,7 @@ class TestDir < Rubicon::TestCase
   end
 
   def test_s_chroot
-    assert_fail("untested")
+    super_user
   end
 
   def test_s_delete

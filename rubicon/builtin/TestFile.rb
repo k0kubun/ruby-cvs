@@ -309,7 +309,7 @@ class TestFile < Rubicon::TestCase
 
   # Stat is pretty much tested elsewhere, so we're minimal here
   def test_s_stat
-    assert_instance_of(File.stat("."), File::Stat)
+    assert_instance_of(File::Stat, File.stat("."))
   end
 
 

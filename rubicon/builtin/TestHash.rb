@@ -25,12 +25,12 @@ class TestHash < Rubicon::TestCase
 
   def test_s_new
     h = Hash.new
-    assert_instance_of(h, Hash)
+    assert_instance_of(Hash, h)
     assert_nil(h.default)
     assert_nil(h['spurious'])
 
     h = Hash.new('default')
-    assert_instance_of(h, Hash)
+    assert_instance_of(Hash, h)
     assert_equal('default', h.default)
     assert_equal('default', h['spurious'])
     
