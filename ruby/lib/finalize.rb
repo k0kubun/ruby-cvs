@@ -1,9 +1,9 @@
 #
-#   finalize.rb - 
-#   	$Release Version: $
+#   finalizer.rb - 
+#   	$Release Version: 0.2$
 #   	$Revision$
 #   	$Date$
-#   	by Keiju ISHITSUKA(SHL Japan Inc.)
+#   	by Keiju ISHITSUKA
 #
 # --
 #
@@ -51,7 +51,7 @@ module Finalizer
   # 依存関係 R_method(obj, dependant) の追加
   def add_dependency(obj, dependant, method = :finalize, *opt)
     ObjectSpace.call_finalizer(obj)
-    method = method.id unless method.kind_of?(Fixnum)
+    method = method.intern unless method.kind_of?(Integer)
     assoc = [dependant, method].concat(opt)
     if dep = @dependency[obj.id]
       dep.push assoc
@@ -63,8 +63,8 @@ module Finalizer
   
   # 依存関係 R_method(obj, dependant) の削除
   def delete_dependency(id, dependant, method = :finalize)
-    id = id.id unless id.kind_of?(Fixnum)
-    method = method.id unless method.kind_of?(Fixnum)
+    id = id.id unless id.kind_of?(Integer)
+    method = method.intern unless method.kind_of?(Integer)
     for assoc in @dependency[id]
       assoc.delete_if do
 	|d, m, *o|
@@ -77,8 +77,8 @@ module Finalizer
   
   # 依存関係 R_*(obj, dependant) の削除
   def delete_all_dependency(id, dependant)
-    id = id.id unless id.kind_of?(Fixnum)
-    method = method.id unless method.kind_of?(Fixnum)
+    id = id.id unless id.kind_of?(Integer)
+    method = method.intern unless method.kind_of?(Integer)
     for assoc in @dependency[id]
       assoc.delete_if do
 	|d, m, *o|
@@ -90,8 +90,8 @@ module Finalizer
   
   # 依存関係 R_method(*, dependant) の削除
   def delete_by_dependant(dependant, method = :finalize)
-    method = method.id unless method.kind_of?(Fixnum)
-    for id in @dependency.keys
+    method = method.intern unless method.kind_of?(Integer)
+    for id in Dependency.keys
       delete(id, dependant, method)
     end
   end
@@ -106,8 +106,8 @@ module Finalizer
   # 依存関連 R_method(obj, dependtant) で結ばれるdependantをfinalizeす
   # る.
   def finalize_dependency(id, dependant, method = :finalize)
-    id = id.id unless id.kind_of?(Fixnum)
-    method = method.id unless method.kind_of?(Fixnum)
+    id = id.id unless id.kind_of?(Integer)
+    method = method.intern unless method.kind_of?(Integer)
     for assocs in @dependency[id]
       assocs.delete_if do
 	|d, m, *o|
@@ -121,8 +121,8 @@ module Finalizer
   
   # 依存関連 R_*(obj, dependtant) で結ばれるdependantをfinalizeする.
   def finalize_all_dependency(id, dependant)
-    id = id.id unless id.kind_of?(Fixnum)
-    method = method.id unless method.kind_of?(Fixnum)
+    id = id.id unless id.kind_of?(Integer)
+    method = method.intern unless method.kind_of?(Integer)
     for assoc in @dependency[id]
       assoc.delete_if do
 	|d, m, *o|
@@ -134,7 +134,7 @@ module Finalizer
   
   # 依存関連 R_method(*, dependtant) で結ばれるdependantをfinalizeする.
   def finalize_by_dependant(dependant, method = :finalize)
-    method = method.id unless method.kind_of?(Fixnum)
+    method = method.intern unless method.kind_of?(Integer)
     for id in @dependency.keys
       finalize(id, dependant, method)
     end
