@@ -158,6 +158,7 @@ end
 
 mfile = open("Makefile", "w")
 begin
+  drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
   mfile.write <<EOMF
 # Generated automatically by Makefile.RB.
 
@@ -170,29 +171,35 @@ RANLIB = #{CONFIG["RANLIB"]}
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 RUBY = $(RUBY_INSTALL_NAME)
 
-prefix = #{prefix}
-bindir = #{prefixed("bindir")}
-libdir = #{prefixed("libdir")}
-includedir = #{prefixed("includedir")}
-mandir = #{prefixed("mandir")}
+DESTDIR = 
+prefix = $(DESTDIR)#{prefix}
+bindir = $(DESTDIR)#{prefixed("bindir")}
+libdir = $(DESTDIR)#{prefixed("libdir")}
+includedir = $(DESTDIR)#{prefixed("includedir")}
+archdir = $(DESTDIR)#{$archdir.sub(drive, '')}
+sitearchdir = $(DESTDIR)#{$sitearchdir.sub(drive, '')}
+mandir = $(DESTDIR)#{prefixed("mandir")}
 
 topdir = #{$topdir}
 hdrdir = #{$hdrdir}
 
 CFLAGS = #{CONFIG["CCDLFLAGS"]} #{$CFLAGS} -I. -I$(hdrdir)
 LDFLAGS = #{CONFIG["LDFLAGS"]}
-LIBS = #{CONFIG["LIBS"]}
+LIBS = $(LIBERUBYARG) $(LIBRUBYARG) #{CONFIG["LIBS"]}
 XLDFLAGS = #{$XLDFLAGS}
 DLDFLAGS = #{$DLDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
 INSTALL_PROGRAM = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
+INSTALL_DLLIB = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
 INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
+INSTALL_DIR = $(RUBY) -r ftools -e 'File::makedirs(*ARGV)'
 LIBRUBYARG = #{$LIBRUBYARG}
 
 RM = ruby -e "ARGV.each {|f|File.unlink(f) rescue Errno}"
 
-TARGET = eruby#{CONFIG["EXEEXT"]}
-MANPAGE = #{srcdir}/eruby.1
+ERUBY = eruby#{CONFIG["EXEEXT"]}
+DLLIB = eruby.#{CONFIG["DLEXT"]}
+MANPAGE = eruby.1
 
 MAJOR = #{$MAJOR}
 MINOR = #{$MINOR}
@@ -206,16 +213,22 @@ LIBERUBY = #{$LIBERUBY}
 LIBERUBYARG = #{$LIBERUBYARG}
 .SUFFIXES: .#{$OBJEXT} .c .rd
 
-ERUBY_OBJS = eruby.#{$OBJEXT}
+LIBERUBY_OBJS = eruby_lib.#{$OBJEXT}
 OBJS = eruby_logo.#{$OBJEXT} eruby_main.#{$OBJEXT}
+EXT_OBJS = eruby_ext.#{$OBJEXT}
 
 #{$VPATH}.c.#{$OBJEXT}:
 	$(CC) $(CFLAGS) -c $<
 
-all: $(LIBERUBY_A) $(TARGET) $(MANPAGE)
+all: $(LIBERUBY_A) $(ERUBY) $(DLLIB) $(MANPAGE)
 
 install: all
-	@-$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
+	@-$(INSTALL_DIR) $(bindir)
+	@-$(INSTALL_DIR) $(libdir)
+	@-$(INSTALL_DIR) $(includedir)
+	@-$(INSTALL_DIR) $(mandir)
+	@-$(INSTALL_DIR) $(archdir)
+	@-$(INSTALL_PROGRAM) $(ERUBY) $(bindir)/$(ERUBY)
 	@-if [ -f $(LIBERUBY_SO) ]; then \
 		$(INSTALL_DATA) $(LIBERUBY_SO) $(libdir)/$(LIBERUBY_SO); \
 		cd $(libdir); \
@@ -227,13 +240,15 @@ install: all
 	@-$(INSTALL_DATA) $(LIBERUBY_A) $(libdir)/$(LIBERUBY_A)
 	@-$(INSTALL_DATA) #{srcdir}/eruby.h $(includedir)/eruby.h
 	@-$(INSTALL_DATA) #{srcdir}/$(MANPAGE) $(mandir)/man1/$(MANPAGE)
+	@-$(INSTALL_DATA) $(DLLIB) $(archdir)
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(ERUBY)
+	$(RM) $(DLLIB)
 	$(RM) $(LIBERUBY_A)
 	$(RM) $(LIBERUBY_SO)
 	$(RM) $(LIBERUBY_ALIASES)
-	$(RM) $(ERUBY_OBJS)
+	$(RM) $(LIBERUBY_OBJS)
 	$(RM) $(OBJS)
 	$(RM) eruby.imp
 	$(RM) *~
@@ -241,17 +256,17 @@ clean:
 distclean: clean
 	$(RM) config.h Makefile
 
-$(LIBERUBY_A): $(ERUBY_OBJS)
-	$(AR) #{$AROPT} $(ERUBY_OBJS)
+$(LIBERUBY_A): $(LIBERUBY_OBJS)
+	$(AR) #{$AROPT} $(LIBERUBY_OBJS)
 	@-$(RANLIB) $@ 2> /dev/null || true
 
-$(LIBERUBY_SO): $(ERUBY_OBJS)
-	$(LDSHARED) $(DLDFLAGS) $(ERUBY_OBJS) -o $@
+$(LIBERUBY_SO): $(LIBERUBY_OBJS)
+	$(LDSHARED) $(DLDFLAGS) $(LIBERUBY_OBJS) -o $@
 	@-$(RUBY) -e 'ARGV.each{|link| File.delete link if File.exist? link; \
 		File.symlink "$(LIBERUBY_SO)", link}' $(LIBERUBY_ALIASES)
 
-$(TARGET): $(OBJS) $(LIBERUBY)
-	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@
+$(ERUBY): $(OBJS) $(LIBERUBY)
+	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBS) -o $@
 
 $(MANPAGE): #{$VPATH}eruby.rd
 
@@ -262,10 +277,32 @@ $(MANPAGE): #{$VPATH}eruby.rd
 
 eruby_logo.c: #{$VPATH}eruby_logo.png
 	$(srcdir)/bin2c $(srcdir)/eruby_logo.png
-eruby.#{$OBJEXT}: #{$VPATH}eruby.c #{$VPATH}eruby.h config.h
+eruby_lib.#{$OBJEXT}: #{$VPATH}eruby_lib.c #{$VPATH}eruby.h config.h
 eruby_logo.#{$OBJEXT}: #{$VPATH}eruby_logo.c #{$VPATH}eruby_logo.h
 eruby_main.#{$OBJEXT}: #{$VPATH}eruby_main.c #{$VPATH}eruby.h #{$VPATH}eruby_logo.h
+eruby_ext.#{$OBJEXT}: #{$VPATH}eruby_ext.c #{$VPATH}eruby.h
+
 EOMF
+  if CONFIG["DLEXT"] != $OBJEXT
+    mfile.print "$(DLLIB): $(EXT_OBJS) $(LIBERUBY)\n"
+    if /mswin32/ =~ RUBY_PLATFORM
+      if /nmake/i =~ $make
+	mfile.print "\tset LIB=$(LIBPATH:/=\\);$(LIB)\n"
+      else
+	mfile.print "\tenv LIB='$(subst /,\\\\,$(LIBPATH));$(LIB)' \\\n"
+      end
+    end
+    mfile.print "\t$(LDSHARED) $(DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBS)\n"
+  else
+    mfile.print "$(DLLIB): $(EXT_OBJS) $(LIBERUBY)\n"
+    case RUBY_PLATFORM
+    when "m68k-human"
+      mfile.printf "ar cru $(DLLIB) $(EXT_OBJS) $(LIBS)\n"
+    else
+      mfile.printf "ld $(DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBS)\n"
+    end
+  end
+
 ensure
   mfile.close
 end

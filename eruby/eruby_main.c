@@ -205,81 +205,25 @@ static void exception_print(int cgi)
     }
 }
 
-static int is_errline(int lineno, int errc, int *errv)
+static void print_generated_code(VALUE code, int cgi)
 {
-    int i;
-
-    if (errc == 0 || lineno < errv[0] || errv[errc - 1] < lineno)
-	return 0;
-    for (i = 0; i < errc; i++) {
-	if (lineno == errv[i])
-	    return 1;
-    }
-    return 0;
-}
-
-static void print_generated_code(VALUE script, int cgi)
-{
-    FILE *f;
-    char buff[BUFSIZ];
-    int len = 1;
-    int lineno = 1;
-    int print_lineno = 1;
-    int errc = 0;
-    int *errv = NULL;
-    int errline = 0;
-
-    if ((f = fopen(RSTRING(script)->ptr, "r")) == NULL)
-	return;
     if (cgi) {
 	printf("<tr><th id=\"code\">\n");
 	printf("GENERATED CODE\n");
 	printf("</th></tr>\n");
 	printf("<tr><td headers=\"code\">\n");
 	printf("<pre><code>\n");
-	if (!NIL_P(ruby_errinfo)) {
-	    VALUE errat = rb_funcall(ruby_errinfo, rb_intern("backtrace"), 0);
-	    int i, n;
-	    char fmt[BUFSIZ];
-
-	    if (!NIL_P(errat)) {
-		errv = ALLOCA_N(int, RARRAY(errat)->len);
-		snprintf(fmt, BUFSIZ, "%s:%%d", RSTRING(script)->ptr);
-		for (i = 0; i < RARRAY(errat)->len; i++) {
-		    if (sscanf(RSTRING(RARRAY(errat)->ptr[i])->ptr, fmt, &n) == 1) {
-			errv[errc++] = n;
-		    }
-		}
-	    }
-	}
     }
     else {
 	printf("--- generated code ---\n");
     }
 
-    while (fgets(buff, BUFSIZ, f) != NULL) {
-	if (print_lineno) {
-	    if (cgi && is_errline(lineno, errc, errv)) {
-		printf("<strong>");
-		errline = 1;
-	    }
-	    printf("%5d: ", lineno++);
-	}
-	len = strlen(buff);
-	print_lineno = buff[len - 1] == '\n';
-	if (cgi) {
-	    if (print_lineno && errline) buff[--len] = '\0';
-	    write_escaping_html(buff, len);
-	    if (print_lineno && errline) {
-		printf("</strong>\n");
-		errline = 0;
-	    }
-	}
-	else {
-	    fwrite(buff, 1, len, stdout);
-	}
+    if (cgi) {
+	write_escaping_html(RSTRING(code)->ptr, RSTRING(code)->len);
     }
-
+    else {
+	fwrite(RSTRING(code)->ptr, 1, RSTRING(code)->len, stdout);
+    }
     if (cgi) {
 	printf("</code></pre>\n");
 	printf("</td></tr>\n");
@@ -328,7 +272,7 @@ static void print_http_headers()
     return;
 }
 
-static void error_print(int state, int mode, VALUE script)
+static void error_print(int state, int mode, VALUE code)
 {
     char buff[BUFSIZ];
     int cgi = mode == MODE_CGI || mode == MODE_NPHCGI;
@@ -406,8 +350,8 @@ static void error_print(int state, int mode, VALUE script)
         printf("</td></tr>\n");
     }
 
-    if (!NIL_P(script))
-	print_generated_code(script, cgi);
+    if (!NIL_P(code))
+	print_generated_code(code, cgi);
 
     if (cgi) {
         printf("</table>\n");
@@ -524,22 +468,19 @@ static void proc_args(int argc, char **argv)
 
 static void run()
 {
-    VALUE script;
+    VALUE code;
     int state;
     char *out;
     int nout;
 
-    script = eruby_load(eruby_filename, 0, &state);
+    code = eruby_load(eruby_filename, 0, &state);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
-	error_print(state, eruby_mode, script);
-	if (!NIL_P(script))
-	    unlink(RSTRING(script)->ptr);
+	error_print(state, eruby_mode, code);
 	exit(0);
     }
     if (eruby_mode == MODE_FILTER && (RTEST(ruby_debug) || RTEST(ruby_verbose))) {
-	print_generated_code(script, 0);
+	print_generated_code(code, 0);
     }
-    unlink(RSTRING(script)->ptr);
     out = RSTRING(rb_defout)->ptr;
     nout = RSTRING(rb_defout)->len;
     if (!eruby_noheader &&

@@ -1,3 +1,13 @@
+Thu Apr 19 14:59:50 2001  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby_lib.c: renamed from eruby.c.
+
+	* eruby_lib.c (eruby_init): new class ERuby::Compiler.
+
+	* eruby_ext.c: new file for eruby extention library.
+
+	* examples/test.rb: example for eruby extention library.
+
 Fri Apr 13 11:35:54 2001  Nobuyoshi.Nakada <nobu.nakada@nifty.ne.jp>
 
 	* Makefile.RB: install under $(prefix).

@@ -7,7 +7,7 @@
 #ifndef ERUBY_H
 #define ERUBY_H
 
-#define ERUBY_VERSION "0.1.3"
+#define ERUBY_VERSION "0.2.0"
 
 #define ERUBY_MIME_TYPE "application/x-httpd-eruby"
 
@@ -34,8 +34,9 @@ extern VALUE eruby_default_charset;
 
 const char *eruby_version();
 int eruby_parse_options(int argc, char **argv);
-int eruby_compile(FILE *in, FILE *out);
-VALUE eruby_compile_file(char *filename);
+VALUE eruby_compiler_new();
+VALUE eruby_compiler_compile_file(VALUE self, VALUE file);
+VALUE eruby_compiler_compile_string(VALUE self, VALUE s);
 VALUE eruby_load(char *filename, int wrap, int *state);
 void eruby_init();
 
