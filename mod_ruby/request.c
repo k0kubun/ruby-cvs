@@ -986,20 +986,42 @@ static VALUE request_default_type(VALUE self)
     return type ? rb_str_new2(type) : Qnil;
 }
 
-static VALUE request_remote_host(VALUE self)
+static VALUE request_remote_host(int argc, VALUE *argv, VALUE self)
 {
     request_data *data;
     const char *host;
+    VALUE lookup_type;
+    int lookup_val = REMOTE_HOST;
+
+    if (argc == 1) {
+      rb_scan_args(argc, argv, "01", &lookup_type);
+      switch (NUM2INT(lookup_type)) {
+      case REMOTE_HOST:
+	lookup_val = REMOTE_HOST;
+	break;
+      case REMOTE_NAME:
+	lookup_val = REMOTE_NAME;
+	break;
+      case REMOTE_NOLOOKUP:
+	lookup_val = REMOTE_NOLOOKUP;
+	break;
+      case REMOTE_DOUBLE_REV:
+	lookup_val = REMOTE_DOUBLE_REV;
+	break;
+      default:
+	lookup_val = REMOTE_HOST;
+      }
+    }
 
     data = get_request_data(self);
 #ifdef APACHE2
     host = ap_get_remote_host(data->request->connection,
 			      data->request->per_dir_config,
-			      REMOTE_HOST, NULL);
+			      lookup_val, NULL);
 #else /* Apache 1.x */
     host = ap_get_remote_host(data->request->connection,
 			      data->request->per_dir_config,
-			      REMOTE_HOST);
+			      lookup_val);
 #endif
     return host ? rb_str_new2(host) : Qnil;
 }
@@ -1583,7 +1605,8 @@ void rb_init_apache_request()
 		     request_allow_overrides, 0);
     rb_define_method(rb_cApacheRequest, "default_type",
 		     request_default_type, 0);
-    rb_define_method(rb_cApacheRequest, "remote_host", request_remote_host, 0);
+    rb_define_method(rb_cApacheRequest, "remote_host",
+		     request_remote_host, -1);
     rb_define_method(rb_cApacheRequest, "remote_logname",
 		     request_remote_logname, 0);
     rb_define_method(rb_cApacheRequest, "construct_url",

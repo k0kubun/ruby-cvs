@@ -1,3 +1,9 @@
+Tue May  7 13:48:50 2002  Sean Chittenden <sean@chittenden.org>
+
+	* request.c (request_remote_host): takes an optional argument.
+
+	* apachelib.c: added some constants such as Apache::REMOTE_HOST.
+
 Tue Apr 30 14:44:00 2002  Sean Chittenden <sean@chittenden.org>
 
 	* mod_ruby.h: Moved several define's from mod_ruby.c.

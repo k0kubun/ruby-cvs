@@ -350,6 +350,15 @@ void rb_init_apache()
     rb_define_const(rb_mApache, "SATISFY_ANY", INT2NUM(SATISFY_ANY));
     rb_define_const(rb_mApache, "SATISFY_NOSPEC", INT2NUM(SATISFY_NOSPEC));
 
+    rb_define_const(rb_mApache, "REMOTE_HOST",
+		    INT2NUM(REMOTE_HOST));
+    rb_define_const(rb_mApache, "REMOTE_NAME",
+		    INT2NUM(REMOTE_NAME));
+    rb_define_const(rb_mApache, "REMOTE_NOLOOKUP",
+		    INT2NUM(REMOTE_NOLOOKUP));
+    rb_define_const(rb_mApache, "REMOTE_DOUBLE_REV",
+		    INT2NUM(REMOTE_DOUBLE_REV));
+
     rb_init_apache_array();
     rb_init_apache_table();
     rb_init_apache_connection();
