@@ -1,3 +1,11 @@
+Fri May 18 16:18:20 2001  Shugo Maeda <shugo@modruby.net>
+
+	* ruby/apache/eruby.rb: do not require "cgi/session".
+
+	* configure.rb: new file.
+
+	* Makefile.in: new file.
+
 Wed May  2 17:44:45 2001  Shugo Maeda <shugo@modruby.net>
 
 	* fixed copyright notice.

@@ -23,8 +23,6 @@ Apache::ERuby handles eRuby files.
 
 =end
 
-require "cgi/session"
-
 require "eruby"
 require "apache/ruby"
 

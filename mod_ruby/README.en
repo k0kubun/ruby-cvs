@@ -1,50 +1,50 @@
-[README for mod_ruby]
+=begin
 
-What's mod_ruby?
-================
+= README for mod_ruby
 
-  mod_ruby embeds the Ruby interpreter into the Apache web server,
-  allowing Ruby CGI scripts to be executed natively. These scripts will
-  start up much faster than without mod_ruby.
+== What's mod_ruby?
 
+mod_ruby embeds the Ruby interpreter into the Apache web server,
+allowing Ruby CGI scripts to be executed natively. These scripts will
+start up much faster than without mod_ruby.
 
-Required environment
-====================
+== Required environment
 
-  * Ruby version 1.6.x or later.
-    (Recommends version 1.6.4 or later.)
-  * Apache version 1.3.3 or later.
+* Ruby version 1.6.x or later.
+  (Recommends version 1.6.4 or later.)
+* Apache version 1.3.3 or later.
 
+== Installation
 
-Installation
-============
+(1) Type `./configure.rb' to create Makefile.
+    (Type `./configure.rb --help' to get a help message.)
 
-  1) Type `./Makefile.RB' to create Makefile.
+(2) Type `make' to compile mod_ruby.
 
-  2) Type `make' to compile mod_ruby.
+(3) Type `make install' to copy mod_ruby.so to `apachelibexec'.
 
-  3) Type `make install' to copy mod_ruby.so to `apachelibexec'.
+(4) Edit `httpd.conf' to make Apache load mod_ruby.
 
-  4) Edit `httpd.conf' to make Apache load mod_ruby.
+      LoadModule ruby_module `apachelibexec'/mod_ruby.so
 
-       LoadModule ruby_module `apachelibexec'/mod_ruby.{so|o}
+(5) Edit `srm.conf' to set `ruby-script' handler.
 
-  5) Edit `srm.conf' to set `ruby-script' handler.
+      AddHandler ruby-script .rb
 
-       AddHandler ruby-script .rb
+    or
 
-     or
+      Alias /ruby/ /usr/lib/cgi-bin/
+      <Location /ruby/>
+      SetHandler ruby-script
+      Options ExecCGI
+      </Location>
 
-       Alias /ruby/ /usr/lib/cgi-bin/
-       <Location /ruby/>
-       SetHandler ruby-script
-       Options ExecCGI
-       </Location>
+(6) Restart Apache.
 
-  6) Restart Apache.
-
+=end
 
 Local variables:
-mode: Auto-Fill
+mode: indented-text
+mode: auto-fill
 fill-column: 70
 End:
