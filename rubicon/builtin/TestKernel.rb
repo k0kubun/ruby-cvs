@@ -1229,15 +1229,17 @@ class TestKernel < Rubicon::TestCase
       ensure
         File.delete(filen)
       end
-      
-      open(filen, "w", 0444) {}
-      begin
-        assert(File.exists?(filen))
-        Cygwin.known_problem do
-          assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
+
+      Version.greater_or_equal("1.7") do
+        open(filen, "w", 0444) {}
+        begin
+          assert(File.exists?(filen))
+          Cygwin.known_problem do
+            assert_equal(0444 & ~File.umask, File.stat(filen).mode & 0777)
+          end
+        ensure
+          File.delete(filen)
         end
-      ensure
-        File.delete(filen)
       end
 
     ensure

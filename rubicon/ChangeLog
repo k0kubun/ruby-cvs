@@ -1,3 +1,19 @@
+2002-01-29  Nobuyoshi Nakada  <nobu.nakada@nifty.ne.jp>
+
+	* builtin/TestFile.rb (TestFile::test_s_expand_path): avoid
+	  warnings in 1.7.
+
+	* builtin/TestKernel.rb (TestKernel::test_s_open1): 1.7 feature.
+
+	* language/TestBlocksProcs.rb (TestBlocksProcs::testYield): ditto.
+
+	* language/TestFloats.rb (TestFloats::test_number_to_string):
+	  strict number check.
+
+	* language/TestFloats.rb (TestFloats::test_malformed): ditto.
+
+	* language/TestFloats.rb (TestFloats::test_string_to_number): ditto.
+
 2002-01-23  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* builtin/TestModule.rb (TestModule::test_CMP): Module#<=> between

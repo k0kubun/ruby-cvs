@@ -137,7 +137,8 @@ class TestFile < Rubicon::TestCase
 	line = ''
 	line = users.pop while users.nitems > 0 and (line.length == 0 || /^\+:/ =~ line)
 	if line.length > 0 
-          name, home  = line.split(':').indices(0, -2)
+	  line = line.split(':')
+	  name, home = line[0], line[-2]
 	  assert_equal(home, File.expand_path("~#{name}"))
 	  assert_equal(home, File.expand_path("~#{name}", "/tmp/gumby"))
 	  assert_equal(File.join(home, 'a'),

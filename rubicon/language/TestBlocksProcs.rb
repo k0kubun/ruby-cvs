@@ -44,10 +44,14 @@ class TestBlocksProcs < Rubicon::TestCase
     def o.f; yield [nil]; end;     o.f {|a| assert_equal([nil], a)}
     def o.f; yield [[]]; end;      o.f {|a| assert_equal([[]], a)}
     def o.f; yield [*[]]; end;     o.f {|a| assert_equal([], a)}
-    def o.f; yield [*[1]]; end;    o.f {|a| assert_equal([1], a)}
+    Version.greater_or_equal("1.7") do
+      def o.f; yield [*[1]]; end;    o.f {|a| assert_equal([1], a)}
+    end
     def o.f; yield [*[1,2]]; end;  o.f {|a| assert_equal([1,2], a)}
     
-    def o.f; yield *nil; end;      o.f {|a| assert_nil(a)}
+    Version.greater_or_equal("1.7") do
+      def o.f; yield *nil; end;      o.f {|a| assert_nil(a)}
+    end
     def o.f; yield *1; end;        o.f {|a| assert_equal(1, a)}
     def o.f; yield *[]; end;       o.f {|a| assert_nil(a)}
     def o.f; yield *[1]; end;      o.f {|a| assert_equal(1, a)}
