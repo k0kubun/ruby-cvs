@@ -1,3 +1,10 @@
+#
+# Simple wrapper for RubyUnit, primarily designed to capture
+# statsistics and report them at the end.
+#
+
+VERSION = "VV0.1"
+
 module Rubicon
 
   require 'runit/testcase'
@@ -57,22 +64,6 @@ module Rubicon
         $stderr.puts "\nSkipping: #{from} - #{info}"
       end
     end
-
-    #
-    # Handle broken exception handling
-    #
-#     def assert_exception(ex, &code)
-#       begin
-#         super
-#       rescue ex
-#         if $!.instance_of? ex
-#           $stderr.puts "\nThis RubyUnit does not trap #{ex}. This error can\n" +
-#           "safely be ignored"
-#         else
-#           raise
-#         end
-#       end
-#     end
 
     #
     # Check a float for approximate equality
@@ -229,6 +220,7 @@ module Rubicon
       puts LINE
       title = "Test Results".center(LINE_LENGTH)
       title[0, @name.length] = @name
+      title[-VERSION.length, VERSION.length] = VERSION
       puts title
       puts LINE
       puts "            Name   OK?   Tests  Asserts      Failures   Errors"

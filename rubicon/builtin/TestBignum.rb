@@ -88,7 +88,7 @@ class TestBignum < Rubicon::TestCase
   def test_OR # '|'
     a = 0xffff0000ffff0000ffff0000
     b = 0xf0f0f0f0c3c3c3c3a5a5a5a5
-    c = 0xffffffffffffc3c3ffffa5a5
+    c = 0xfffff0f0ffffc3c3ffffa5a5
 
     assert_equal(c, a | b)
     assert_equal(c, b | a)

@@ -23,15 +23,24 @@ default:	test
 test:		$(UTILSTUFF)
 		cd builtin && ruby AllBuiltinTests.rb
 
-tarball:	clean
-		tar 	--directory=..		\
-			--create		\
-			--file=rubicon.tgz 	\
-			--compress 		\
-			--exclude='CVS' 	\
-			--exclude='*/.*'	\
-		   rubicon
+# Release must have VERSION variable set
+#
+#    make VERSION=0.1 release
+#
+
+release:	clean
+		ruby -i -pe 'sub!(/V\d+(\.\d+)+/, "V$(VERSION)") if /VERSION =/' rubicon.rb
+		cvs commit
+		cvs rtag $(VERSION) rubicon
+		tar 	--directory=..			\
+			--create			\
+			--file=rubicon-$(VERSION).tgz 	\
+			--compress 			\
+			--exclude='CVS' 		\
+			--exclude='*/.*'		\
+			rubicon
 
 clean:
 		rm -f $(UTILSTUFF)
+		rm -f rubicon.tgz
 		find . -name \*~ -print | xargs rm -f
