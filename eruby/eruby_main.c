@@ -462,27 +462,63 @@ static void proc_args(int argc, char **argv)
 
     if (eruby_mode == MODE_CGI || eruby_mode == MODE_NPHCGI) {
 	char *path;
-	char *script_filename;
+	/*char *script_filename;*/
 	char *path_translated;
+	char *query_string;
+	int qs_has_equal;
 
 	if ((path = getenv("PATH_INFO")) != NULL &&
 	    strcmp(path, "/logo.png") == 0) {
 	    give_img_logo(eruby_mode);
 	    exit(0);
 	}
-	
-	if ((script_filename = getenv("SCRIPT_FILENAME")) == NULL
-	    || strstr(script_filename, argv[0]) != NULL)
-	    eruby_filename = NULL;
-	if ((path_translated = getenv("PATH_TRANSLATED")) != NULL) {
+
+	/*
+	  if ((script_filename = getenv("SCRIPT_FILENAME")) == NULL)
+	script_filename = "";
+	*/
+	if ((path_translated = getenv("PATH_TRANSLATED")) == NULL)
+	    path_translated = "";
+	if ((query_string = getenv("QUERY_STRING")) == NULL)
+	    query_string = "";
+	qs_has_equal = (strchr(query_string, '=') != NULL);
+
+	fprintf(stderr, "query_string: %s\n", query_string);
+	if (eruby_optind < argc)
+	    fprintf(stderr, "argv[eruby_optind]: %s\n", argv[eruby_optind]);
+
+	if (path_translated[0] &&
+	    ((eruby_optind == argc &&
+	      (!query_string[0] || qs_has_equal)) ||
+	     (eruby_optind == argc - 1 &&
+	      !qs_has_equal && strcmp(argv[eruby_optind], query_string) == 0))) {
 	    eruby_filename = path_translated;
 	}
-	if (eruby_filename == NULL)
-	    eruby_filename = "";
+	else if ((eruby_optind == argc - 1 &&
+		  (!query_string[0] || qs_has_equal)) ||
+		 (eruby_optind == argc - 2 &&
+		  !qs_has_equal &&
+		  strcmp(argv[eruby_optind + 1], query_string) == 0)) {
+	    eruby_filename = argv[eruby_optind];
+	}
+	else {
+	    fprintf(stderr, "%s: missing required file to process\n", argv[0]);
+	    exit(1);
+	}
+		
+
+	/*
+	if (strstr(script_filename, argv[0]) != NULL)
+	    eruby_filename = NULL;
+	*/
     }
     else {
-	if (eruby_filename == NULL)
+	if (eruby_optind == argc) {
 	    eruby_filename = "-";
+	}
+	else {
+	    eruby_filename = argv[eruby_optind];
+	}
     }
 }
 

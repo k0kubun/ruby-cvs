@@ -50,6 +50,8 @@ int eruby_noheader = 0;
 VALUE eruby_charset;
 VALUE eruby_default_charset;
 
+int eruby_optind = 1;
+
 #define ERUBY_BEGIN_DELIMITER "<%"
 #define ERUBY_END_DELIMITER "%>"
 #define ERUBY_EXPR_CHAR '='
@@ -114,14 +116,13 @@ static int set_mode(char *mode)
 int eruby_parse_options(int argc, char **argv)
 {
     unsigned char *s;
-    int i;
 
-    for (i = 1; i < argc; i++) {
-	if (argv[i][0] != '-' || argv[i][1] == '\0') {
-	    eruby_filename = argv[i];
+    for (eruby_optind = 1; eruby_optind < argc; eruby_optind++) {
+	if (argv[eruby_optind][0] != '-' || argv[eruby_optind][1] == '\0') {
+	    eruby_filename = argv[eruby_optind];
 	    break;
 	}
-	s = argv[i];
+	s = argv[eruby_optind];
       again:
 	while (isspace(*s))
 	    s++;
@@ -145,12 +146,12 @@ int eruby_parse_options(int argc, char **argv)
 	    s++;
 	    if (isspace(*s)) s++;
 	    if (*s == '\0') {
-		i++;
-		if (i == argc) {
+		eruby_optind++;
+		if (eruby_optind == argc) {
 		    fprintf(stderr, "%s: no arg given for -C\n", argv[0]);
 		    return 2;
 		}
-		eruby_charset = rb_str_new2(argv[i]);
+		eruby_charset = rb_str_new2(argv[eruby_optind]);
 		break;
 	    }
 	    else {

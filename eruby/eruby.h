@@ -7,8 +7,8 @@
 #ifndef ERUBY_H
 #define ERUBY_H
 
-#define ERUBY_VERSION "0.9.4"
-#define ERUBY_VERSION_CODE 94
+#define ERUBY_VERSION "0.9.5"
+#define ERUBY_VERSION_CODE 95
 
 #define ERUBY_MIME_TYPE "application/x-httpd-eruby"
 
@@ -32,6 +32,8 @@ extern int eruby_noheader;
 extern VALUE eruby_charset;
 extern VALUE eruby_default_charset;
 #define ERUBY_CHARSET RSTRING(eruby_charset)->ptr
+
+extern int eruby_optind;
 
 const char *eruby_version();
 int eruby_parse_options(int argc, char **argv);
