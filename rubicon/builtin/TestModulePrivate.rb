@@ -2,9 +2,15 @@ $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 
 #
-# This is the tets of all the private methods of Module that can really
+# This is the test of all the private methods of Module that can really
 # only be tested indirectly
 #
+
+if $rubyVersion < "1.7"
+  ExpectedException = NameError
+else
+  ExpectedException = NoMethodError
+end
 
 
 class TestModulePrivate < Rubicon::TestCase
@@ -257,7 +263,7 @@ class TestModulePrivate < Rubicon::TestCase
     C14.class_eval "remove_method :c14"
     assert_equal("c14a", c14.c14)
     C14A.class_eval "remove_method :c14"
-    assert_exception(NameError) { eval "c14.c14" }
+    assert_exception(ExpectedException) { eval "c14.c14" }
   end
 
   # --------------------------------------------------------
@@ -279,7 +285,7 @@ class TestModulePrivate < Rubicon::TestCase
     C15.class_eval "remove_method :c15"
     assert_equal("c15a", c15.c15)
     C15.class_eval "undef_method :c15"
-    assert_exception(NameError) { eval "c15.c15" }
+    assert_exception(ExpectedException) { eval "c15.c15" }
   end
 
 end

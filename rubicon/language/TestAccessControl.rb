@@ -7,6 +7,12 @@ require 'rubicon'
 # the compiler is honoring it.
 #
 
+if $rubyVersion < "1.7"
+  ExpectedException = NameError
+else
+  ExpectedException = NoMethodError
+end
+
 
 class TestAccessControl < Rubicon::TestCase
 
@@ -91,8 +97,8 @@ class TestAccessControl < Rubicon::TestCase
 
     # access via subclass
     c2 = C2.new
-    assert_exception(NameError) { c2.c1private }
-    assert_exception(NameError) { c2.c1protected }
+    assert_exception(ExpectedException) { c2.c1private }
+    assert_exception(ExpectedException) { c2.c1protected }
     assert_equal(3, c2.c1public)
     assert_equal(1, c2.c2private)
     assert_equal(2, c2.c2protected)
@@ -100,7 +106,7 @@ class TestAccessControl < Rubicon::TestCase
 
     # access via subclass with explicit 'self'
     c3 = C3.new
-    assert_exception(NameError) { c3.c3private }
+    assert_exception(ExpectedException) { c3.c3private }
     assert_equal(2, c3.c3protected)
     assert_equal(3, c3.c3public)
   end
@@ -109,8 +115,8 @@ class TestAccessControl < Rubicon::TestCase
 
   def test_included_module
     c4 = C4.new
-    assert_exception(NameError) { c4.m1private }
-    assert_exception(NameError) { c4.m1protected }
+    assert_exception(ExpectedException) { c4.m1private }
+    assert_exception(ExpectedException) { c4.m1protected }
     assert_equal(3, c4.m1public)
   end
 
@@ -121,9 +127,9 @@ class TestAccessControl < Rubicon::TestCase
     assert_equal(2, M2.m2protected)
     assert_equal(3, M2.m2public)
     c5 = C5.new
-    assert_exception(NameError) { c5.m2private }
-    assert_exception(NameError) { c5.m2protected }
-    assert_exception(NameError) { c5.m2public }
+    assert_exception(ExpectedException) { c5.m2private }
+    assert_exception(ExpectedException) { c5.m2protected }
+    assert_exception(ExpectedException) { c5.m2public }
   end
 end
 

@@ -38,6 +38,12 @@ class TestBignum < Rubicon::TestCase
     assert_equal(x, -815915283247897734345611269596115894272000000000)
     assert_equal(2-(2**32), -(2**32-2))
     assert_equal(2**32 - 5, (2**32-3)-2)
+
+    a = 677330545177305025495135714080
+    b = 14269972710765292560
+    assert_equal(0, a % b)
+    assert_equal(0, -a % b)
+
   end
 
   def test_UMINUS

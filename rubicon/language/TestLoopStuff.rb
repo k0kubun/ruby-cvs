@@ -22,31 +22,43 @@ class TestLoopStuff < Rubicon::TestCase
 
   def testBreak
     File.open(FILE) do |tmp|
-      while tmp.gets()
-        break if /vt100/
+      while line = tmp.gets()
+        break if /vt100/ =~ line
       end
-      assert(!tmp.eof? && /vt100/)
+      assert(!tmp.eof?)
+      assert(/vt100/ =~ line)
     end
   end
 
 
-  def testBreakWithInterval
-    File.open("while_tmp") do |tmp|
-      while tmp.gets()
-        break unless 1..2
-        assert(!(/vt100/ || /Amiga/ || /paper/))
+  if $rubyVersion < "1.7"
+    def testBreakWithInterval
+      File.open("while_tmp") do |tmp|
+        while tmp.gets()
+          break unless 1..2
+          assert(!(/vt100/ || /Amiga/ || /paper/))
+        end
+      end
+    end
+  else
+    def testBreakWithInterval
+      File.open("while_tmp") do |tmp|
+        while tmp.gets()
+          break if 3
+          assert(!(/vt100/ || /Amiga/ || /paper/))
+        end
       end
     end
   end
 
   def testNext
     File.open(FILE) do |tmp|
-      while tmp.gets()
-        next if /vt100/
-        assert(!/vt100/)
+      while line = tmp.gets()
+        next if /vt100/ =~ line
+        assert(/vt100/ !~ line)
       end
       assert(tmp.eof?)
-      assert(!/vt100/)
+      assert(/vt100/ !~ line)
     end
   end
 
@@ -59,8 +71,8 @@ class TestLoopStuff < Rubicon::TestCase
           gsub!('VT100', 'Vt100')
           redo;
         end
-        assert(!/vt100/)
-        assert(!/VT100/)
+        assert(/vt100/ !~ $_)
+        assert(/VT100/ !~ $_)
       end
       assert(tmp.eof?)
     end

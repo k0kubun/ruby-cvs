@@ -34,6 +34,71 @@ class TestBlocksProcs < Rubicon::TestCase
     my_proc2.call
     assert_equal(5, x)
   end
+
+  def testYield
+    o = "dummy object"
+    def o.f; yield nil; end;       o.f {|a| assert_nil(a)}
+    def o.f; yield 1; end;         o.f {|a| assert_equal(1, a)}
+    def o.f; yield []; end;        o.f {|a| assert_equal([], a)}
+    def o.f; yield [1]; end;       o.f {|a| assert_equal([1], a)}
+    def o.f; yield [nil]; end;     o.f {|a| assert_equal([nil], a)}
+    def o.f; yield [[]]; end;      o.f {|a| assert_equal([[]], a)}
+    def o.f; yield [*[]]; end;     o.f {|a| assert_equal([], a)}
+    def o.f; yield [*[1]]; end;    o.f {|a| assert_equal([1], a)}
+    def o.f; yield [*[1,2]]; end;  o.f {|a| assert_equal([1,2], a)}
+    
+    def o.f; yield *nil; end;      o.f {|a| assert_nil(a)}
+    def o.f; yield *1; end;        o.f {|a| assert_equal(1, a)}
+    def o.f; yield *[]; end;       o.f {|a| assert_nil(a)}
+    def o.f; yield *[1]; end;      o.f {|a| assert_equal(1, a)}
+    def o.f; yield *[nil]; end;    o.f {|a| assert_nil(a)}
+    def o.f; yield *[[]]; end;     o.f {|a| assert_equal([], a)}
+    def o.f; yield *[*[]]; end;    o.f {|a| assert_nil(a)}
+    def o.f; yield *[*[1]]; end;   o.f {|a| assert_equal(1, a)}
+    def o.f; yield *[*[1,2]]; end; o.f {|a| assert([1,2], a)}
+    
+    def o.f; yield nil; end;       o.f {|*a| assert_equal([], a)}
+    def o.f; yield 1; end;         o.f {|*a| assert_equal([1], a)}
+    def o.f; yield []; end;        o.f {|*a| assert_equal([], a)}
+    def o.f; yield [1]; end;       o.f {|*a| assert_equal([1], a)}
+    def o.f; yield [nil]; end;     o.f {|*a| assert_equal([nil], a)}
+    def o.f; yield [[]]; end;      o.f {|*a| assert_equal([[]], a)}
+    def o.f; yield [*[]]; end;     o.f {|*a| assert_equal([], a)}
+    def o.f; yield [*[1]]; end;    o.f {|*a| assert_equal([1], a)}
+    def o.f; yield [*[1,2]]; end;  o.f {|*a| assert([1,2], a)}
+    
+    def o.f; yield *nil; end;      o.f {|*a| assert_equal([], a)}
+    def o.f; yield *1; end;        o.f {|*a| assert_equal([1], a)}
+    def o.f; yield *[]; end;       o.f {|*a| assert_equal([], a)}
+    def o.f; yield *[1]; end;      o.f {|*a| assert_equal([1], a)}
+    def o.f; yield *[nil]; end;    o.f {|*a| assert_equal([], a)}
+    def o.f; yield *[[]]; end;     o.f {|*a| assert_equal([], a)}
+    def o.f; yield *[*[]]; end;    o.f {|*a| assert_equal([], a)}
+    def o.f; yield *[*[1]]; end;   o.f {|*a| assert_equal([1], a)}
+    def o.f; yield *[*[1,2]]; end; o.f {|*a| assert([1,2], a)}
+    
+    def o.f; yield nil; end;       o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield 1; end;         o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+    def o.f; yield []; end;        o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield [1]; end;       o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+    def o.f; yield [nil]; end;     o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield [[]]; end;      o.f {|a,b,*c| assert([a,b,c] == [[], nil, []])}
+    def o.f; yield [*[]]; end;     o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield [*[1]]; end;    o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+    def o.f; yield [*[1,2]]; end;  o.f {|a,b,*c| assert([a,b,c] == [1, 2, []])}
+    
+    def o.f; yield *nil; end;      o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield *1; end;        o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+    def o.f; yield *[]; end;       o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield *[1]; end;      o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+    def o.f; yield *[nil]; end;    o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield *[[]]; end;     o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield *[*[]]; end;    o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
+    def o.f; yield *[*[1]]; end;   o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+    def o.f; yield *[*[1,2]]; end; o.f {|a,b,*c| assert([a,b,c] == [1, 2, []])}
+
+  end
+
 end
 
 # Run these tests if invoked directly

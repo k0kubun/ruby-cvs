@@ -3,6 +3,13 @@ require 'rubicon'
 
 $m0 = Module.nesting
 
+if $rubyVersion < "1.7"
+  ExpectedException = NameError
+else
+  ExpectedException = NoMethodError
+end
+
+
 class TestModule < Rubicon::TestCase
 
   # Support stuff
@@ -210,8 +217,8 @@ class TestModule < Rubicon::TestCase
   end
 
   def test_private_class_method
-    assert_exception(NameError) { AClass.cm1 }
-    assert_exception(NameError) { AClass.cm3 }
+    assert_exception(ExpectedException) { AClass.cm1 }
+    assert_exception(ExpectedException) { AClass.cm3 }
     assert_equal("cm1cm2cm3", AClass.cm2)
   end
 
@@ -234,7 +241,7 @@ class TestModule < Rubicon::TestCase
   def test_public_class_method
     assert_equal("cm1",       MyClass.cm1)
     assert_equal("cm1cm2cm3", MyClass.cm2)
-    assert_exception(NameError) { eval "MyClass.cm3" }
+    assert_exception(ExpectedException) { eval "MyClass.cm3" }
   end
 
   def test_public_instance_methods

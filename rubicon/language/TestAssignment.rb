@@ -3,6 +3,68 @@ require 'rubicon'
 
 class TestAssignment < Rubicon::TestCase
 
+  def testBasicAssignment
+    a = nil;      assert_nil(a)
+    a = 1;        assert_equal(1, a)
+    a = [];       assert_equal([], a)
+    a = [1];      assert_equal([1], a)
+    a = [nil];    assert_equal([nil], a)
+    a = [[]];     assert_equal([[]], a)
+    a = [*[]];    assert_equal([], a)
+    a = [*[1]];   assert_equal([1], a)
+    a = [*[1,2]]; assert_equal([1,2], a)
+
+    a = *nil;      assert_nil(a)
+    a = *1;        assert_equal(1, a)
+    a = *[];       assert_nil(a)
+    a = *[1];      assert_equal(1, a)
+    a = *[nil];    assert_nil(a)
+    a = *[[]];     assert_equal([], a)
+    a = *[*[]];    assert_nil(a)
+    a = *[*[1]];   assert_equal(1, a)
+    a = *[*[1,2]]; assert_equal([1,2], a)
+
+    *a = nil;      assert_equal([], a)
+    *a = 1;        assert_equal([1], a)
+    *a = [];       assert_equal([], a)
+    *a = [1];      assert_equal([1], a)
+    *a = [nil];    assert_equal([nil], a)
+    *a = [[]];     assert_equal([[]], a)
+    *a = [*[]];    assert_equal([], a)
+    *a = [*[1]];   assert_equal([1], a)
+    *a = [*[1,2]]; assert_equal([1,2], a)
+
+    *a = *nil;      assert_equal([], a)
+    *a = *1;        assert_equal([1], a)
+    *a = *[];       assert_equal([], a)
+    *a = *[1];      assert_equal([1], a)
+    *a = *[nil];    assert_equal([], a)
+    *a = *[[]];     assert_equal([], a)
+    *a = *[*[]];    assert_equal([], a)
+    *a = *[*[1]];   assert_equal([1], a)
+    *a = *[*[1,2]]; assert_equal([1,2], a)
+
+    a,b,*c = nil;       assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = 1;         assert_equal([1, nil, []], [a,b,c])
+    a,b,*c = [];        assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = [1];       assert_equal([1, nil, []], [a,b,c])
+    a,b,*c = [nil];     assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = [[]];      assert_equal([[], nil, []], [a,b,c])
+    a,b,*c = [*[]];     assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = [*[1]];    assert_equal([1, nil, []], [a,b,c])
+    a,b,*c = [*[1,2]];  assert_equal([1, 2, []], [a,b,c])
+    
+    a,b,*c = *nil;      assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = *1;        assert_equal([1, nil, []], [a,b,c])
+    a,b,*c = *[];       assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = *[1];      assert_equal([1, nil, []], [a,b,c])
+    a,b,*c = *[nil];    assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = *[[]];     assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = *[*[]];    assert_equal([nil, nil, []], [a,b,c])
+    a,b,*c = *[*[1]];   assert_equal([1, nil, []], [a,b,c])
+    a,b,*c = *[*[1,2]]; assert_equal([1, 2, []], [a,b,c])
+  end
+
   def testExpansionWithNoConversion
     *x = (1..7).to_a
     assert_equal(7, x.size)
@@ -41,7 +103,7 @@ class TestAssignment < Rubicon::TestCase
     assert_equal([4], a)
     
     *a = nil
-    assert_equal([nil], a)
+    assert_equal([], a)
   end
 
   def testConditionalAssignment

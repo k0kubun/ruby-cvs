@@ -89,7 +89,11 @@ class TestKernel < Rubicon::TestCase
     assert_equal("test2", bar.test2)
     assert_equal("test",  bar.test)
     assert_equal("test",  foo.test)
-    assert_exception(NameError) { foo.test2 }
+    if $rubyVersion < "1.7"
+      assert_exception(NameError) { foo.test2 }
+    else
+      assert_exception(NoMethodError) { foo.test2 }
+    end
   end
 
   class DisplayTest
