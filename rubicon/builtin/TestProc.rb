@@ -23,11 +23,12 @@ class TestProc < Rubicon::TestCase
       [Proc.new { |x,y,*z| }, -3],
     ]
 
-    if $rubyVersion <= "1.6.1"
+    Version.less_or_equal("1.6.1") do
       tests << 
         [Proc.new { ||       },  -1] <<
         [Proc.new { |x|      },  -2]
-    else
+    end
+    Version.greater_than("1.6.1") do
       tests <<
         [Proc.new { ||       },  0] <<
         [Proc.new { |x|      }, -1]

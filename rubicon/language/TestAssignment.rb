@@ -16,7 +16,7 @@ class TestAssignment < Rubicon::TestCase
 
     a = *nil;      assert_nil(a)
     a = *1;        assert_equal(1, a)
-    if $rubyVersion < "1.7"
+    Version.less_than("1.7") do
       a = *[];       assert_equal([], a)
       a = *[1];      assert_equal([1], a)
       a = *[nil];    assert_equal([nil], a)
@@ -24,7 +24,8 @@ class TestAssignment < Rubicon::TestCase
       a = *[*[]];    assert_equal([], a)
       a = *[*[1]];   assert_equal([1], a)
       *a = nil;      assert_equal([nil], a)
-    else
+    end
+    Version.greater_or_equal("1.7") do
       a = *[];       assert_nil(a)
       a = *[1];      assert_equal(1, a)
       a = *[nil];    assert_nil(a)
@@ -44,11 +45,12 @@ class TestAssignment < Rubicon::TestCase
     *a = [*[1]];   assert_equal([1], a)
     *a = [*[1,2]]; assert_equal([1,2], a)
 
-    if $rubyVersion < "1.7"
+    Version.less_than("1.7") do
       *a = *nil;      assert_equal([nil], a)
       *a = *[nil];    assert_equal([nil], a)
       *a = *[[]];     assert_equal([[]], a)
-    else
+    end
+    Version.greater_or_equal("1.7") do
       *a = *nil;      assert_equal([], a)
       *a = *[nil];    assert_equal([], a)
       *a = *[[]];     assert_equal([], a)
@@ -76,9 +78,10 @@ class TestAssignment < Rubicon::TestCase
     a,b,*c = *[1];      assert_equal([1, nil, []], [a,b,c])
     a,b,*c = *[nil];    assert_equal([nil, nil, []], [a,b,c])
 
-    if $rubyVersion < "1.7"
+    Version.less_than("1.7") do
       a,b,*c = *[[]];     assert_equal([[], nil, []], [a,b,c])
-    else
+    end
+    Version.greater_or_equal("1.7") do
       a,b,*c = *[[]];     assert_equal([nil, nil, []], [a,b,c])
     end
 
@@ -125,9 +128,10 @@ class TestAssignment < Rubicon::TestCase
     assert_equal([4], a)
     
     *a = nil
-    if $rubyVersion < "1.7"
+    Version.less_than("1.7") do
       assert_equal([nil], a)
-    else
+    end
+    Version.greater_or_equal("1.7") do
       assert_equal([], a)
     end
   end

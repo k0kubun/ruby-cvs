@@ -1,3 +1,17 @@
+2002-01-04  Chad Fowler  <chadfowler@chadfowler.com>
+
+	* rubicon.rb: Change VersionNumber class to Version and implemented 
+        some class methods to replace use of $rubyVersion global.  
+        (The #less_than stuff can probably still use some refactoring).
+
+	* builtin/HashBase.rb,builtin/ArrayBase.rb: Added test for #select.  
+        Removed duplication in test_indices and test_indexes, using same 
+        code for test_select.  Not testing deprecated test_ind*es methods 
+        in >=1.7.2 
+  
+        * builtin/*, language/*: All references to $rubyVersion replaced with
+        Version class methods.
+	
 2001-12-27  Dave Thomas  <Dave@Thomases.com>
 
 	* language/TestStrings.rb: Tests for string literals from Matt Armstrong

@@ -39,7 +39,7 @@ class TestFile < Rubicon::TestCase
     assert_equal("b",   File.basename(File.join(*%w( g f d s a b))))
     assert_equal("",    File.basename("/"))
    
-    if $rubyVersion >= "1.7.2" 
+    Version.greater_or_equal("1.7.2") do
       unless File::ALT_SEPARATOR.nil?
         assert_equal("base", File.basename("dir" + File::ALT_SEPARATOR + "base")) 
       end
@@ -89,7 +89,7 @@ class TestFile < Rubicon::TestCase
     assert_equal("g/f/d/s/a", File.dirname(File.join(*%w( g f d s a b))))
     assert_equal("/",         File.dirname("/"))
 
-    if $rubyVersion >= "1.7.2" 
+    Version.greater_or_equal("1.7.2") do
       unless File::ALT_SEPARATOR.nil? 
         assert_equal("dir", File.dirname("dir" + File::ALT_SEPARATOR + "base")) 
       end
@@ -137,7 +137,7 @@ class TestFile < Rubicon::TestCase
 	line = ''
 	line = users.pop while users.nitems > 0 and (line.length == 0 || /^\+:/ =~ line)
 	if line.length > 0 
-	  name, home  = line.split(':').indices(0, -2)
+          name, home  = line.split(':').indices(0, -2)
 	  assert_equal(home, File.expand_path("~#{name}"))
 	  assert_equal(home, File.expand_path("~#{name}", "/tmp/gumby"))
 	  assert_equal(File.join(home, 'a'),

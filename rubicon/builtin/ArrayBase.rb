@@ -566,18 +566,27 @@ class ArrayBase < Rubicon::TestCase
     assert_nil(a.index([1,2]))
   end
 
-  def test_indexes
-    a = @cls[*('a'..'j').to_a]
-    assert_equal(@cls['a', 'c', 'e'], a.indexes(0, 2, 4))
-    assert_equal(@cls['j', 'h', 'f'], a.indexes(-1, -3, -5))
-    assert_equal(@cls['h', nil, 'a'], a.indexes(-3, 99, 0))
+  Version.less_than("1.7.2") do
+    def test_indexes
+      generic_index_test(:indexes)
+    end
+  
+    def test_indices
+      generic_index_test(:indices)
+    end
+  end
+  
+  Version.greater_or_equal("1.7.2") do
+    def test_select
+      generic_index_test(:select)
+    end
   end
 
-  def test_indices
+  def generic_index_test(symbol)
     a = @cls[*('a'..'j').to_a]
-    assert_equal(@cls['a', 'c', 'e'], a.indices(0, 2, 4))
-    assert_equal(@cls['j', 'h', 'f'], a.indices(-1, -3, -5))
-    assert_equal(@cls['h', nil, 'a'], a.indices(-3, 99, 0))
+    assert_equal(@cls['a', 'c', 'e'], a.send(symbol,0, 2, 4))
+    assert_equal(@cls['j', 'h', 'f'], a.send(symbol,-1, -3, -5))
+    assert_equal(@cls['h', nil, 'a'], a.send(symbol,-3, 99, 0))
   end
 
   def test_join
@@ -739,9 +748,10 @@ class ArrayBase < Rubicon::TestCase
   def test_push
     a = @cls[1, 2, 3]
     assert_equal(@cls[1, 2, 3, 4, 5], a.push(4, 5))
-    if $rubyVersion >= "1.6.2"
+    Version.greater_or_equal("1.6.2") do
       assert_exception(ArgumentError, "a.push()") { a.push() }
-    else
+    end
+    Version.less_than("1.6.2") do
       assert_equal(@cls[1, 2, 3, 4, 5], a.push())
     end
     assert_equal(@cls[1, 2, 3, 4, 5, nil], a.push(nil))
@@ -926,10 +936,11 @@ class ArrayBase < Rubicon::TestCase
     a.fill(1)
     assert_equal(@cls[1, 1, 1, 1], a.sort!)
 
-    if $rubyVersion < "1.7"
+    Version.less_than("1.7") do
       assert_nil(@cls[1].sort!)
       assert_nil(@cls[].sort!)
-    else
+    end
+    Version.greater_or_equal("1.7") do
       assert_equal(@cls[1], @cls[1].sort!)
       assert_equal(@cls[], @cls[].sort!)
     end

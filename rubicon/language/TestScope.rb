@@ -63,7 +63,7 @@ class TestScope < Rubicon::TestCase
     end
   end
 
-  if $rubyVersion >= "1.7.2"
+  Version.greater_or_equal("1.7.2") do
 
     def test_threadscope_uscore_sub
       t = Thread.start do

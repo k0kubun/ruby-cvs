@@ -88,9 +88,10 @@ class TestKernel < Rubicon::TestCase
     assert_equal("test2", bar.test2)
     assert_equal("test",  bar.test)
     assert_equal("test",  foo.test)
-    if $rubyVersion < "1.7"
+    Version.less_than("1.7") do
       assert_exception(NameError) { foo.test2 }
-    else
+    end
+    Version.greater_or_equal("1.7") do
       assert_exception(NoMethodError) { foo.test2 }
     end
   end
@@ -2115,7 +2116,7 @@ class TestKernel < Rubicon::TestCase
     eval "alias $bar $foo"
     assert_equal(3, $bar)
 
-    if $rubyVersion >= "1.7"
+    Version.greater_or_equal("1.7") do
       $bar = 4
       assert_equal(4, $foo)
     end

@@ -141,12 +141,12 @@ end
 #
 # Use in the code with stuff like:
 #
-#    if $rubyVersion <= "1.6.2" 
-#       asert(...)
+#    Version.greater_than("1.6.2) do
+#       assert(...)
 #    end
 #
 
-class VersionNumber
+class Version
   include Comparable
   
   def initialize(version)
@@ -156,12 +156,37 @@ class VersionNumber
   def <=>(other)
     @version <=> other
   end
+
+  # Specify a range of versions, and run a test block if the current version
+  # falls within that range.  
+  def Version.in(range)
+    if(range.include?(VERSION)) then
+      yield
+    end
+  end
+
+  def Version.greater_than(version)
+    if(VERSION > version) then
+      yield
+    end
+  end
+
+  def Version.greater_or_equal(version)
+    if(VERSION >= version) then
+      yield
+    end
+  end
+
+  def Version.less_than(version)
+    if(VERSION < version) then
+      yield
+    end
+  end
+
+  def Version.less_or_equal(version)
+    if(VERSION <= version) then
+      yield
+    end
+  end
+ 
 end
-
-$rubyVersion = VersionNumber.new(VERSION)
-
-
-
-
-
-

@@ -2,7 +2,9 @@ require 'rubicon'
 
 # use of $= is deprecated after 1.7.1
 def pre_1_7_1
-  yield if $rubyVersion < "1.7.1"
+  Version.less_than("1.7.1") do
+    yield
+  end
 end
 
 

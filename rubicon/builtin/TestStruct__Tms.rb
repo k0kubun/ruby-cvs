@@ -1,7 +1,12 @@
 $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 
-TimesClass = $rubyVersion >= "1.7" ? Process : Time
+Version.less_than("1.7") do
+  TimesClass = Time
+end
+Version.greater_or_equal("1.7") do
+  TimesClass = Process
+end
 
 class TestStruct__Tms < Rubicon::TestCase
 

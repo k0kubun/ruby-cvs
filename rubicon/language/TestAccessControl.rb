@@ -6,12 +6,14 @@ require 'rubicon'
 # buildins/TestModule. In this file we'll just ensure that
 # the compiler is honoring it.
 #
-
-if $rubyVersion < "1.7"
-  ExpectedException = NameError
-else
-  ExpectedException = NoMethodError
-end unless defined? ExpectedException
+unless defined? ExpectedException
+  Version.less_than("1.7") do
+    ExpectedException = NameError
+  end
+  Version.greater_or_equal("1.7") do
+    ExpectedException = NoMethodError
+  end 
+end
 
 
 class TestAccessControl < Rubicon::TestCase

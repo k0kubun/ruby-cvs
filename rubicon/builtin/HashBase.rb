@@ -312,12 +312,20 @@ class HashBase < Rubicon::TestCase
     assert_equal(nil,   @cls[].index('gumby'))
   end
 
-  def test_indexes
-    generic_index_tester(:indexes)
+  Version.less_than("1.7.2") do
+    def test_indexes
+      generic_index_tester(:indexes)
+    end
+  
+    def test_indices
+      generic_index_tester(:indices)
+    end
   end
 
-  def test_indices
-    generic_index_tester(:indices)
+  Version.greater_or_equal("1.7.2") do
+    def test_select
+      generic_index_tester(:select)
+    end
   end
 
   def generic_index_tester(symbol)
