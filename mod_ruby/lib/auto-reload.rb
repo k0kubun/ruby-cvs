@@ -64,7 +64,7 @@ module AutoReload
       do_load = false
       deps.each do |f,|
         begin
-          if LIBRARY_MTIMES[f] == File.mtime(f)
+          if LIBRARY_MTIMES[f] != File.mtime(f)
             do_load = true
             break
           end
