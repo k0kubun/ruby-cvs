@@ -3,7 +3,7 @@
 # statsistics and report them at the end.
 #
 
-VERSION = "VV0.1"
+VERSION = "VV0.1.1"
 
 module Rubicon
 
