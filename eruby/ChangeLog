@@ -1,3 +1,13 @@
+Wed Aug 30 17:47:54 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby_main.c (main): split main() to init(), proc_args(), run().
+
+	* eruby_main.c (proc_args):  don't use command-line args as
+	eruby_filename if SCRIPT_FILENAME includes argv[0]. (Is this
+	secure enough? I'm not sure.)
+
+	* eruby.c (eruby_parse_options): bug fix.
+
 Mon Aug 28 17:29:17 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* eruby.c (eruby_compile_file): use O_EXCL for security reason.
