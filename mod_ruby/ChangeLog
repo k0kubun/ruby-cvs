@@ -1,3 +1,8 @@
+Fri Jun  8 17:00:32 2001  Shugo Maeda <shugo@modruby.net>
+
+	* examples/httpd.conf: changed the example of Apache's LIBEXECDIR
+	to /usr/local/apache/libexec.
+
 Wed Jun  6 18:04:14 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.8.3 released.
