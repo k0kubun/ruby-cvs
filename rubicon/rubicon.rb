@@ -25,6 +25,23 @@ module Rubicon
       end
     end
 
+    # 
+    # Report we're skipping a test
+    #
+    def skipping(info, from=nil)
+      unless from
+        caller[0] =~ /`(.*)'/
+        from = $1
+      end
+      $stderr.puts "Skipping: #{from} - #{info}"
+    end
+
+    #
+    # Skip a test if not super user
+    #
+    def super_user
+      skipping("not super user")
+    end
 
     #
     # Issue a system and abort on error
