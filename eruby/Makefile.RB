@@ -52,6 +52,10 @@ $MAJOR, $MINOR, $TEENY =
 
 $CFLAGS = CFLAGS
 
+$RM = "rm -f"
+$AR = "ar"
+$AROPT = "rcu $@"
+
 begin
   $LIBRUBYARG = Config.expand(CONFIG["LIBRUBYARG"])
 rescue
@@ -130,6 +134,15 @@ EOIF
   end
 end
 
+if PLATFORM =~ /-mswin32/
+  $AR = "lib"
+  $AROPT = "/out:$@"
+  $LIBERUBY_A = "liberuby.lib"
+  $LIBERUBY = "$(LIBERUBY_A)"
+  $LIBRUBYARG.gsub!(/ruby\.mswin32\.lib/, "libruby.lib")
+  $RM = "del"
+end
+
 mfile = open("Makefile", "w")
 begin
   mfile.write <<EOMF
@@ -195,20 +208,20 @@ install: all
 	@-$(INSTALL_DATA) $(MANPAGE) $(mandir)/man1/$(MANPAGE)
 
 clean:
-	rm -f $(TARGET)
-	rm -f $(LIBERUBY_A)
-	rm -f $(LIBERUBY_SO)
-	rm -f $(LIBERUBY_ALIASES)
-	rm -f $(ERUBY_OBJS)
-	rm -f $(OBJS)
-	rm -f eruby.imp
-	rm -f *~
+	#{$RM} $(TARGET)
+	#{$RM} $(LIBERUBY_A)
+	#{$RM} $(LIBERUBY_SO)
+	#{$RM} $(LIBERUBY_ALIASES)
+	#{$RM} $(ERUBY_OBJS)
+	#{$RM} $(OBJS)
+	#{$RM} eruby.imp
+	#{$RM} *~
 
 distclean: clean
-	rm -f config.h Makefile
+	#{$RM} config.h Makefile
 
 $(LIBERUBY_A): $(ERUBY_OBJS)
-	ar rcu $@ $(ERUBY_OBJS)
+	#{$AR} #{$AROPT} $(ERUBY_OBJS)
 	@-ranlib $@ 2> /dev/null || true
 
 $(LIBERUBY_SO): $(ERUBY_OBJS)

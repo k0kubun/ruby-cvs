@@ -41,6 +41,10 @@ enum embedded_program_type {
 
 #define EOP (-2)
 
+#if defined(_MSC_VER)
+#define SIGQUIT 3
+#endif
+
 static char *readline(FILE *f)
 {
     char buff[BUFSIZ];

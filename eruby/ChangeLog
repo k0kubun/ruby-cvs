@@ -1,3 +1,9 @@
+Thu Sep 14 17:15:36 2000  Akira Muraki <a-muraki@ddc.hitachi.co.jp>
+
+	* Makefile.RB: hack for mswin32.
+
+	* eruby.c: define SIGQUIT for VC++.
+
 Wed Sep 13 16:38:03 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* version 0.1.1 released.
