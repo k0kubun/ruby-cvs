@@ -161,16 +161,19 @@ MODULE_VAR_EXPORT module ruby_module =
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
 #define STR_CAT_LITERAL(str, s) rb_str_cat(str, s, sizeof(s) - 1)
 
-struct pcall_arg {
+typedef struct pcall_arg {
     VALUE recv;
     ID mid;
     int argc;
     VALUE *argv;
-};
+} pcall_arg_t;
 
-static VALUE protect_funcall0(struct pcall_arg *arg)
+static VALUE protect_funcall0(VALUE arg)
 {
-    return rb_funcall2(arg->recv, arg->mid, arg->argc, arg->argv);
+    return rb_funcall2(((pcall_arg_t *) arg)->recv,
+		       ((pcall_arg_t *) arg)->mid,
+		       ((pcall_arg_t *) arg)->argc,
+		       ((pcall_arg_t *) arg)->argv);
 }
 
 static VALUE protect_funcall(VALUE recv, ID mid, int *state, int argc, ...)
@@ -209,7 +212,7 @@ int ruby_require(char *filename)
 {
     int state;
 
-    rb_protect(rb_require, (VALUE) filename, &state);
+    rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
     return state;
 }
 
@@ -439,7 +442,8 @@ static void get_exception_info(VALUE str)
 	elen = 0;
     }
     else {
-	einfo = str2cstr(estr, &elen);
+	einfo = RSTRING(estr)->ptr;
+	elen = RSTRING(estr)->len;
     }
     if (eclass == rb_eRuntimeError && elen == 0) {
 	STR_CAT_LITERAL(str, ": unhandled exception\n");

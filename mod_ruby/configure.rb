@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# Generated automatically using autoconf.rb version 0.1
+# Generated automatically using autoconf.rb version 0.2
 
 require "mkmf"
 
@@ -270,8 +270,6 @@ end
 $srcdir = File.dirname($0)
 $VPATH = ""
 
-$RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
-$RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
 $arch = CONFIG["arch"]
 $ruby_version = Config::CONFIG["ruby_version"] ||
   CONFIG["MAJOR"] + "." + CONFIG["MINOR"]
@@ -291,14 +289,18 @@ $LDSHARED = CONFIG["LDSHARED"]
 $EXEEXT = CONFIG["EXEEXT"]
 $DLEXT = CONFIG["DLEXT"]
 
+$RUBY_INSTALL_NAME = CONFIG["RUBY_INSTALL_NAME"]
+$RUBY_SHARED = (CONFIG["ENABLE_SHARED"] == "yes")
+p $RUBY_SHARED
+p CONFIG["ENABLE_SHARED"]
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
-if $LIBRUBYARG =~ /\.a$/
-  $RUBY_SHARED = false
-  $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
-else
-  $RUBY_SHARED = true
+if $RUBY_SHARED
   $LIBRUBYARG.gsub!(/-L\./, "-L$(libdir)")
+else
+  $LIBRUBYARG = "$(hdrdir)/" + $LIBRUBYARG
 end
+$LIBRUBY_A = CONFIG["LIBRUBY_A"]
+$RUBY_SO_NAME = CONFIG["RUBY_SO_NAME"]
 
 case PLATFORM
 when /-aix/
@@ -321,8 +323,6 @@ AC_SUBST("topdir")
 AC_SUBST("hdrdir")
 AC_SUBST("VPATH")
 
-AC_SUBST("RUBY_INSTALL_NAME")
-AC_SUBST("RUBY_SO_NAME")
 AC_SUBST("arch")
 AC_SUBST("ruby_version")
 AC_SUBST("prefix")
@@ -354,7 +354,10 @@ AC_SUBST("OBJEXT")
 AC_SUBST("EXEEXT")
 AC_SUBST("DLEXT")
 
+AC_SUBST("RUBY_INSTALL_NAME")
 AC_SUBST("LIBRUBYARG")
+AC_SUBST("LIBRUBY_A")
+AC_SUBST("RUBY_SO_NAME")
 
 AC_PROG_INSTALL()
 
@@ -450,9 +453,6 @@ AC_ENABLE("eruby") { |enableval|
   end
 }
 AC_MSG_RESULT($ENABLE_ERUBY)
-if $ENABLE_ERUBY
-  AC_MSG_WARN("--enable-eruby is obsolete; use Apache::ERubyRun instead")
-end
 
 AC_WITH("eruby-includes") { |withval|
   if $ENABLE_ERUBY
