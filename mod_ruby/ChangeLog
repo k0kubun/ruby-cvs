@@ -1,19 +1,25 @@
+Fri Feb 15 15:01:40 2002  Shugo Maeda <shugo@modruby.net>
+
+	* request.c (request_get_allowed): new method.
+
+	* request.c (request_set_allowed): ditto.
+
 Tue Feb 12 13:00:01 2002  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.7 released.
 
 Tue Feb 12 12:59:21 2002  Shugo Maeda <shugo@modruby.net>
 
-	* lib/aapche/ruby-run.rb (handler): return DECLINED for OPTIONS
+	* lib/apache/ruby-run.rb (handler): return DECLINED for OPTIONS
 	requests.
 
-	* lib/aapche/eruby-run.rb (handler): ditto.
+	* lib/apache/eruby-run.rb (handler): ditto.
 
-	* lib/aapche/erb-run.rb (handler): ditto.
+	* lib/apache/erb-run.rb (handler): ditto.
 
-	* lib/aapche/ruby-debug.rb (handler): ditto.
+	* lib/apache/ruby-debug.rb (handler): ditto.
 
-	* lib/aapche/rd2html.rb (handler): ditto.
+	* lib/apache/rd2html.rb (handler): ditto.
 
 Wed Jan 30 17:41:47 2002  Shugo Maeda <shugo@modruby.net>
 
