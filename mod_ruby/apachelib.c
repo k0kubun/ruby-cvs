@@ -628,11 +628,7 @@ static VALUE request_content_length(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     s = ap_table_get(data->request->headers_in, "Content-Length");
-#if defined(RUBY_VERSION_CODE) && RUBY_VERSION_CODE >= 150
     return s ? rb_cstr2inum(s, 10) : Qnil;
-#else
-    return s ? rb_str2inum(s, 10) : Qnil;
-#endif
 }
 
 static VALUE request_get_content_type(VALUE self)

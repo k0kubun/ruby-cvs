@@ -1,3 +1,7 @@
+Wed Dec  6 14:35:37 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* mod_ruby.c (ruby_startup): get correct RUBY_VERSION.
+
 Thu Nov 23 18:22:30 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* ruby_config.c (ruby_cmd_safe_level): new directive.

@@ -233,15 +233,8 @@ static void ruby_startup(server_rec *s, pool *p)
     ruby_server_config *conf =
 	(ruby_server_config *) ap_get_module_config(s->module_config,
 						    &ruby_module);
-    static char ruby_version[BUFSIZ];
     char **list;
     int i;
-
-#if MODULE_MAGIC_NUMBER >= 19980507
-    ap_add_version_component(MOD_RUBY_STRING_VERSION);
-    snprintf(ruby_version, BUFSIZ, "Ruby/%s(%s)", RUBY_VERSION, RUBY_RELEASE_DATE);
-    ap_add_version_component(ruby_version);
-#endif
 
 #ifdef MULTITHREAD
     mod_ruby_mutex = ap_create_mutex("mod_ruby_mutex");
@@ -255,18 +248,29 @@ static void ruby_startup(server_rec *s, pool *p)
     eruby_init();
 #endif
 
+#if MODULE_MAGIC_NUMBER >= 19980507
+    {
+	static char buf[BUFSIZ];
+	VALUE v, d;
+
+	ap_add_version_component(MOD_RUBY_STRING_VERSION);
+	v = rb_const_get(rb_cObject, rb_intern("RUBY_VERSION"));
+	d = rb_const_get(rb_cObject, rb_intern("RUBY_RELEASE_DATE"));
+	snprintf(buf, BUFSIZ, "Ruby/%s(%s)", STR2CSTR(v), STR2CSTR(d));
+	ap_add_version_component(buf);
+#ifdef USE_ERUBY
+	snprintf(buf, BUFSIZ, "eRuby/%s", eruby_version());
+	ap_add_version_component(buf);
+#endif
+    }
+#endif
+
     rb_define_global_const("MOD_RUBY",
 			   STRING_LITERAL(MOD_RUBY_STRING_VERSION));
 
     origenviron = environ;
 
-#if RUBY_VERSION_CODE >= 160
     ruby_init_loadpath();
-#else
-#if RUBY_VERSION_CODE >= 145
-    rb_ary_push(rb_load_path, rb_str_new2("."));
-#endif
-#endif
     orig_load_path = rb_load_path;
     rb_global_variable(&orig_load_path);
 
@@ -487,16 +491,6 @@ static void ruby_error_print(request_rec *r, int state)
     ap_rputs("<body>\n", r);
     ap_rputs("<pre>\n", r);
 
-#if 0
-    {
-	int pid;
-	pid = getpid();
-	ap_rprintf(r, "pid: %d\n", pid);
-	ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
-		     "pid: %d\n", pid);
-    }
-#endif
-
     errmsg = STRING_LITERAL("");
     switch (state) {
     case TAG_RETURN:
@@ -566,9 +560,7 @@ static VALUE load_ruby_script(request_rec *r)
 
     rb_set_safe_level(sconf->safe);
     rb_load_protect(rb_str_new2(r->filename), 1, &state);
-#if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
     rb_exec_end_proc();
-#endif
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
 	ruby_error_print(r, state);
@@ -594,9 +586,7 @@ static VALUE load_eruby_script(request_rec *r)
     eruby_charset = eruby_default_charset;
     script = eruby_load(r->filename, 1, &state);
     if (!NIL_P(script)) unlink(STR2CSTR(script));
-#if defined(RUBY_RELEASE_CODE) && RUBY_RELEASE_CODE >= 19990601
     rb_exec_end_proc();
-#endif
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
 	ruby_error_print(r, state);
