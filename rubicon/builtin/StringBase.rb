@@ -23,6 +23,12 @@ class StringBase < Rubicon::TestCase
     rescue
       @aref_re_silent = false
     end
+    begin 
+      S("Foo").slice!(4)
+      @aref_slicebang_silent = true
+    rescue
+      @aref_slicebang_silent = false
+    end
     super
   end
 
@@ -128,8 +134,9 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("BarBar"), s)
 
     pre_1_7_1 do
+      s = S("FooBar")
       s[S("Foo")] = S("xyz")
-      assert_equal(S("BarBar"), s)
+      assert_equal(S("xyzBar"), s)
 
       $= = true
       s = S("FooBar")
@@ -825,9 +832,18 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("FooBa"), a)
 
     a = S("FooBar")
-    assert_exception(IndexError) { a.slice!(6) }
+    if @aref_slicebang_silent
+      assert_nil( a.slice!(6) )
+    else
+      assert_exception(IndexError) { a.slice!(6) }
+    end 
     assert_equal(S("FooBar"), a)
-    assert_exception(IndexError) { a.slice!(-7) }
+
+    if @aref_slicebang_silent
+      assert_nil( a.slice!(-7) ) 
+    else 
+      assert_exception(IndexError) { a.slice!(-7) }
+    end
     assert_equal(S("FooBar"), a)
 
     a = S("FooBar")
@@ -839,9 +855,17 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("Foo"), a)
 
     a=S("FooBar")
+    if @aref_slicebang_silent
+    assert_nil(a.slice!(7,2))      # Maybe should be six?
+    else
     assert_exception(IndexError) {a.slice!(7,2)}     # Maybe should be six?
+    end
     assert_equal(S("FooBar"), a)
+    if @aref_slicebang_silent
+    assert_nil(a.slice!(-7,10))
+    else
     assert_exception(IndexError) {a.slice!(-7,10)}
+    end
     assert_equal(S("FooBar"), a)
 
     a=S("FooBar")
@@ -853,9 +877,17 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("Foo"), a)
 
     a=S("FooBar")
+    if @aref_slicebang_silent
+    assert_nil (a.slice!(6..2))
+    else
     assert_exception(RangeError) {a.slice!(6..2)}
+    end
     assert_equal(S("FooBar"), a)
+    if @aref_slicebang_silent
+    assert_nil(a.slice!(-10..-7))
+    else
     assert_exception(RangeError) {a.slice!(-10..-7)}
+    end
     assert_equal(S("FooBar"), a)
 
     a=S("FooBar")
@@ -867,13 +899,13 @@ class StringBase < Rubicon::TestCase
     assert_equal(S("Foo"), a)
 
     a=S("FooBar")
-    if @aref_re_silent
+    if @aref_slicebang_silent
       assert_nil(a.slice!(/xyzzy/))
     else
       assert_exception(IndexError) {a.slice!(/xyzzy/)}
     end
     assert_equal(S("FooBar"), a)
-    if @aref_re_silent
+    if @aref_slicebang_silent
       assert_nil(a.slice!(/plugh/))
     else
       assert_exception(IndexError) {a.slice!(/plugh/)}
