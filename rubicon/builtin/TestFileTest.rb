@@ -41,6 +41,8 @@ class TestFileTest < FileInfoTest
     Dir.mkdir(filek, 01644)
     File.chmod(01644, filek)
 
+    filel = filep = filer = fileu = nil
+
     Windows.dont do
       filel = "_test/_filel"
       File.symlink(@file1, filel)
@@ -48,8 +50,10 @@ class TestFileTest < FileInfoTest
       filep = "_test/_filep"
       system "mkfifo #{filep}"
       assert_equal(0, $?)
+
       filer = "_test/_filer"
       File.open(filer, File::CREAT, 0222) { }
+
       fileu = "_test/_fileu"
       File.open(fileu, File::CREAT, 04644) { }
     end
@@ -62,7 +66,7 @@ class TestFileTest < FileInfoTest
     File.open(filez, File::CREAT|File::WRONLY, 0644) { |f| f.puts "hi" }
     filez_size = $os <= Windows ? 4 : 3
 
-    sock = nil
+    filesock = sock = nil
     MsWin32.dont do
       filesock = "_test/_filesock"
       sock = UNIXServer.open(filesock)
