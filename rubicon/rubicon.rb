@@ -42,15 +42,20 @@ class FreeBSD < BSD;     end
 
 class Windows < OS;      end
 class Cygwin  < Windows; end
-class MsWin32 < Windows; end
+
+class WindowsNative < Windows; end
+class MsWin32 < WindowsNative; end
+class MinGW   < WindowsNative; end
 
 $os = case RUBY_PLATFORM
       when /linux/   then  Linux
       when /bsd/     then BSD
       when /cygwin/  then Cygwin
       when /mswin32/ then MsWin32
+      when /mingw32/ then MinGW
       else OS
       end
+
 
 #
 # Find the name of the interpreter.
@@ -86,7 +91,8 @@ raise "Cannot find 'util' directory" unless defined?(UTIL)
 CHECKSTAT = File.join(UTIL, "checkstat")
 TEST_TOUCH = File.join(UTIL, "test_touch")
 
-MsWin32.only do
+
+WindowsNative.or_variant do
   CHECKSTAT << ".exe"
   TEST_TOUCH << ".exe"
 end
