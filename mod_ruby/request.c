@@ -39,6 +39,7 @@
 #include "mod_ruby.h"
 #include "apachelib.h"
 
+static VALUE rb_eApachePrematureChunkEndError;
 VALUE rb_cApacheRequest;
 
 typedef struct request_data {
@@ -637,8 +638,19 @@ static VALUE read_client_block(request_rec *r, int len)
 	if (len < 0)
 	    len = r->remaining;
 	buf = (char *) ap_palloc(r->pool, len);
-        nrd = ap_get_client_block(r, buf, len);
-	result = rb_tainted_str_new(buf, len);
+	result = rb_tainted_str_new("", 0);
+	while (len > 0) {
+	    nrd = ap_get_client_block(r, buf, len);
+	    if (nrd == 0) {
+		break;
+	    }
+	    if (nrd == -1) {
+		r->read_length += old_read_length;
+		rb_raise(rb_eApachePrematureChunkEndError, "premature chunk end");
+	    }
+	    rb_str_cat(result, buf, nrd);
+	    len -= nrd;
+	}
     }
     else {
 	result = Qnil;
@@ -963,6 +975,10 @@ static VALUE request_log_reason(VALUE self, VALUE msg, VALUE file)
 
 void rb_init_apache_request()
 {
+    rb_eApachePrematureChunkEndError =
+	rb_define_class_under(rb_mApache, "PrematureChunkEndError",
+			      rb_eStandardError);
+
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
     rb_include_module(rb_cApacheRequest, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheRequest), "new");
