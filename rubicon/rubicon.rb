@@ -100,7 +100,7 @@ MsWin32.or_variant { $interpreter.tr! '/', '\\' }
 # one of its test subdirectories (such as language). We therefore
 # need to hunt around for the util directory
 
-run_dir = File.dirname($0)
+run_dir = File.dirname(__FILE__)
 
 for relative_path in [ ".", ".." ]
   util = File.join(run_dir, relative_path, "util")
