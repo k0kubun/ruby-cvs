@@ -448,7 +448,7 @@ void ruby_add_path(const char *path)
 }
 
 #if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
-static void mod_ruby_dso_unload(void *data)
+static void ruby_cleanup(void *data)
 {
     EXTERN VALUE ruby_dln_librefs;
     int i;
@@ -524,7 +524,7 @@ static void ruby_startup(server_rec *s, pool *p)
 
 #if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
     if (ruby_module.dynamic_load_handle) 
-	ap_register_cleanup(p, NULL, mod_ruby_dso_unload, ap_null_cleanup);
+	ap_register_cleanup(p, NULL, ruby_cleanup, ap_null_cleanup);
 #endif
 }
 

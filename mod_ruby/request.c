@@ -357,9 +357,15 @@ static VALUE request_set_content_type(VALUE self, VALUE str)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    str = rb_funcall(str, rb_intern("downcase"), 0);
-    data->request->content_type =
-	ap_pstrdup(data->request->pool, STR2CSTR(str));
+    if (NIL_P(str)) {
+	data->request->content_type = NULL;
+    }
+    else {
+	Check_Type(str, T_STRING);
+	str = rb_funcall(str, rb_intern("downcase"), 0);
+	data->request->content_type =
+	    ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+    }
     return str;
 }
 
@@ -368,12 +374,18 @@ static VALUE request_set_content_encoding(VALUE self, VALUE str)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    str = rb_funcall(str, rb_intern("downcase"), 0);
-    data->request->content_encoding =
-	ap_pstrdup(data->request->pool, STR2CSTR(str));
+    if (NIL_P(str)) {
+	data->request->content_encoding = NULL;
+    }
+    else {
+	Check_Type(str, T_STRING);
+	str = rb_funcall(str, rb_intern("downcase"), 0);
+	data->request->content_encoding =
+	    ap_pstrdup(data->request->pool, RSTRING(str)->ptr);
+    }
     return str;
 }
-
+ 
 static VALUE request_get_content_languages(VALUE self)
 {
     request_data *data;
@@ -403,18 +415,23 @@ static VALUE request_set_content_languages(VALUE self, VALUE ary)
     request_data *data;
     int i;
 
-    Check_Type(ary, T_ARRAY);
-    for (i = 0; i < RARRAY(ary)->len; i++) {
-	Check_Type(RARRAY(ary)->ptr[i], T_STRING);
-    }
     Data_Get_Struct(self, request_data, data);
-    data->request->content_languages =
-	ap_make_array(data->request->pool, RARRAY(ary)->len, sizeof(char *));
-    for (i = 0; i < RARRAY(ary)->len; i++) {
-	VALUE str = RARRAY(ary)->ptr[i];
-	str = rb_funcall(str, rb_intern("downcase"), 0);
-        *(char **) ap_push_array(data->request->content_languages) =
-	    ap_pstrdup(data->request->pool, STR2CSTR(str));
+    if (NIL_P(ary)) {
+	data->request->content_languages = NULL;
+    }
+    else {
+	Check_Type(ary, T_ARRAY);
+	for (i = 0; i < RARRAY(ary)->len; i++) {
+	    Check_Type(RARRAY(ary)->ptr[i], T_STRING);
+	}
+	data->request->content_languages =
+	    ap_make_array(data->request->pool, RARRAY(ary)->len, sizeof(char *));
+	for (i = 0; i < RARRAY(ary)->len; i++) {
+	    VALUE str = RARRAY(ary)->ptr[i];
+	    str = rb_funcall(str, rb_intern("downcase"), 0);
+	    *(char **) ap_push_array(data->request->content_languages) =
+		ap_pstrdup(data->request->pool, STR2CSTR(str));
+	}
     }
     return ary;
 }

@@ -1,3 +1,11 @@
+Mon Jul  2 12:42:54 2001  Shugo Maeda <shugo@modruby.net>
+
+	* request.c (request_set_content_type): accept nil.
+
+	* request.c (request_set_content_encoding): ditto.
+
+	* request.c (request_set_content_languages): ditto.
+
 Fri Jun 29 16:05:06 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (per_request_init): set rb_stdin, rb_stdout,
