@@ -405,6 +405,9 @@ if $APXS
   $CFLAGS += " " + `#{$APXS} -q CFLAGS`
   $APACHE_INCLUDES = "-I" + `#{$APXS} -q INCLUDEDIR`
   $APACHE_LIBEXECDIR = `#{$APXS} -q LIBEXECDIR`
+  if $? != 0
+    AC_MSG_ERROR("failed to exec #{$APXS}")
+  end
   $TARGET = "mod_ruby.so"
   $INSTALL_TARGET = "install-shared"
 end

@@ -1,3 +1,7 @@
+Fri Jun  1 18:08:21 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb.in: exit if fail to exec apxs.
+
 Tue May 29 13:36:20 2001  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb.in: removed -mwin32 hack.
