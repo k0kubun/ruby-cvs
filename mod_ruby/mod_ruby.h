@@ -26,10 +26,11 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.2.3"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.3.0"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
+    array_header *load_path;
     array_header *required_files;
     table *env;
     int timeout;
@@ -39,11 +40,13 @@ typedef struct {
 typedef struct {
     char *kcode;
     table *env;
+    array_header *handler_objects;
 } ruby_dir_config;
 
 extern MODULE_VAR_EXPORT module ruby_module;
 int ruby_running();
 int ruby_require(char*);
+void ruby_add_path(const char *path);
 
 #endif /* !MOD_RUBY_H */
 

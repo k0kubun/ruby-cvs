@@ -44,6 +44,7 @@ void *ruby_create_server_config(pool *p, server_rec *s)
     ruby_server_config *conf =
 	(ruby_server_config *) ap_pcalloc(p, sizeof(ruby_server_config));
 
+    conf->load_path = ap_make_array(p, 1, sizeof(char*));
     conf->required_files = ap_make_array(p, 1, sizeof(char*));
     conf->env = ap_make_table(p, 1);
     conf->timeout = MR_DEFAULT_TIMEOUT;
@@ -58,6 +59,7 @@ void *ruby_create_dir_config (pool *p, char *dirname)
 
     conf->kcode = NULL;
     conf->env = ap_make_table(p, 5); 
+    conf->handler_objects = ap_make_array(p, 1, sizeof(char*));
     return conf;
 }
 
@@ -70,12 +72,31 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
 
     new->kcode = add->kcode ? add->kcode : base->kcode;
     new->env = ap_overlay_tables(p, add->env, base->env);
+    new->handler_objects = ap_append_arrays(p,
+					    add->handler_objects,
+					    base->handler_objects);
     return (void *) new;
 }
 
 const char *ruby_cmd_kanji_code(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
 {
     conf->kcode = ap_pstrdup(cmd->pool, arg);
+    return NULL;
+}
+
+const char *ruby_cmd_add_path(cmd_parms *cmd, void *dummy, char *arg)
+{
+    ruby_server_config *conf =
+	(ruby_server_config *) ap_get_module_config(cmd->server->module_config,
+						    &ruby_module);
+
+    if (ruby_running()) {
+	ruby_add_path(arg);
+    }
+    else {
+	*(char **) ap_push_array(conf->load_path) =
+	    ap_pstrdup(cmd->pool, arg);
+    }
     return NULL;
 }
 
@@ -145,6 +166,13 @@ const char *ruby_cmd_safe_level(cmd_parms *cmd, void *dummy, char *arg)
 						    &ruby_module);
 
     conf->safe = atoi(arg);
+    return NULL;
+}
+
+const char *ruby_cmd_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
+{
+    *(char **) ap_push_array(conf->handler_objects) =
+	ap_pstrdup(cmd->pool, arg);
     return NULL;
 }
 

@@ -63,7 +63,9 @@ extern VALUE rb_defout;
 extern VALUE rb_stdin;
 
 extern VALUE rb_load_path;
-static VALUE orig_load_path;
+static VALUE default_load_path;
+
+static const char *default_kcode;
 
 #ifdef MULTITHREAD
 static mutex *mod_ruby_mutex = NULL;
@@ -75,6 +77,8 @@ static const command_rec ruby_cmds[] =
 {
     {"RubyKanjiCode", ruby_cmd_kanji_code, NULL, OR_ALL, TAKE1,
      "set $KCODE"},
+    {"RubyAddPath", ruby_cmd_add_path, NULL, RSRC_CONF, ITERATE,
+     "add path to $:"},
     {"RubyRequire", ruby_cmd_require, NULL, OR_ALL, ITERATE,
      "ruby script name, pulled in via require"},
     {"RubyPassEnv", ruby_cmd_pass_env, NULL, RSRC_CONF, ITERATE,
@@ -85,6 +89,8 @@ static const command_rec ruby_cmds[] =
      "time to wait execution of ruby script"},
     {"RubySafeLevel", ruby_cmd_safe_level, NULL, RSRC_CONF, TAKE1,
      "set default $SAFE"},
+    {"RubyHandler", ruby_cmd_handler, NULL, OR_ALL, TAKE1,
+     "set ruby handler object"},
     {NULL}
 };
 
@@ -92,6 +98,7 @@ static int ruby_handler(request_rec*);
 #ifdef USE_ERUBY
 static int eruby_handler(request_rec*);
 #endif
+static int ruby_object_handler(request_rec*);
 
 static const handler_rec ruby_handlers[] =
 {
@@ -99,6 +106,7 @@ static const handler_rec ruby_handlers[] =
 #ifdef USE_ERUBY
     {ERUBY_MIME_TYPE, eruby_handler},
 #endif
+    {"ruby-object", ruby_object_handler},
     {NULL}
 };
 
@@ -200,6 +208,11 @@ int ruby_require(char *filename)
     return state;
 }
 
+void ruby_add_path(const char *path)
+{
+    rb_ary_push(default_load_path, rb_str_new2(path));
+}
+
 static VALUE f_p(int argc, VALUE *argv, VALUE self)
 {
     int i;
@@ -271,8 +284,15 @@ static void ruby_startup(server_rec *s, pool *p)
     origenviron = environ;
 
     ruby_init_loadpath();
-    orig_load_path = rb_load_path;
-    rb_global_variable(&orig_load_path);
+    default_load_path = rb_load_path;
+    rb_global_variable(&default_load_path);
+    list = (char **) conf->load_path->elts;
+    n = conf->load_path->nelts;
+    for (i = 0; i < n; i++) {
+	ruby_add_path(list[i]);
+    }
+
+    default_kcode = rb_get_kcode();
 
     list = (char **) conf->required_files->elts;
     n = conf->required_files->nelts;
@@ -535,6 +555,25 @@ static void ruby_error_print(request_rec *r, int state)
     ap_rputs("</html>\n", r);
 }
 
+static int get_client_block(request_rec *r, VALUE *str)
+{
+    int retval;
+    char buff[BUFSIZ];
+    int len;
+
+    if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
+	return retval;
+    *str = rb_tainted_str_new("", 0);
+    ap_hard_timeout("get_client_block", r);
+    if (ap_should_client_block(r)) {
+	while ((len = ap_get_client_block(r, buff, BUFSIZ)) > 0) {
+	    rb_str_cat(*str, buff, len);
+	}
+    }
+    ap_kill_timeout(r);
+    return 0;
+}
+
 static VALUE kill_threads(VALUE arg)
 {
     extern VALUE rb_thread_list();
@@ -611,10 +650,10 @@ static VALUE load_eruby_script(request_rec *r)
 }
 #endif
 
-struct timeout_arg {
+typedef struct timeout_arg {
     VALUE thread;
     int timeout;
-};
+} timeout_arg_t;
 
 static VALUE do_timeout(struct timeout_arg *arg)
 {
@@ -634,6 +673,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 	(ruby_server_config *) ap_get_module_config(r->server->module_config,
 						    &ruby_module);
     ruby_dir_config *dconf = NULL;
+    VALUE input;
     VALUE load_thread, timeout_thread;
     struct timeout_arg arg;
     int retval;
@@ -647,7 +687,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     if (S_ISDIR(r->finfo.st_mode))
 	return FORBIDDEN;
 
-    if(r->per_dir_config) {
+    if (r->per_dir_config) {
 	dconf = (ruby_dir_config *) ap_get_module_config(r->per_dir_config,
 							 &ruby_module);
 	if (dconf->kcode) {
@@ -656,18 +696,18 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 	}
     }
 
-    if ((retval = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)))
+    if ((retval = get_client_block(r, &input)))
 	return retval;
 
     ap_chdir_file(r->filename);
     setup_env(r, dconf);
     rb_load_path = rb_ary_new();
-    for (i = 0; i < RARRAY(orig_load_path)->len; i++) {
-	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(orig_load_path)->ptr[i]));
+    for (i = 0; i < RARRAY(default_load_path)->len; i++) {
+	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
     }
     exit_status = -1;
 
-    rb_defout = ruby_create_request(r);
+    rb_defout = ruby_create_request(r, input);
     rb_gv_set("$stdin", rb_defout);
     rb_gv_set("$stdout", rb_defout);
     ruby_errinfo = Qnil;
@@ -708,6 +748,123 @@ static int eruby_handler(request_rec *r)
     return ruby_handler0(load_eruby_script, r);
 }
 #endif
+
+typedef struct run_safely_arg {
+    request_rec *req;
+    VALUE (*func)(request_rec*, void*);
+    void *arg;
+} run_safely_arg_t;
+
+static VALUE run_safely_0(run_safely_arg_t *arg)
+{
+    ruby_server_config *sconf =
+	(ruby_server_config *) ap_get_module_config(arg->req->server->module_config,
+						    &ruby_module);
+    struct timeout_arg targ;
+    VALUE timeout_thread;
+    VALUE result;
+
+    rb_set_safe_level(sconf->safe);
+    targ.thread = rb_thread_current();
+    targ.timeout = sconf->timeout;
+    timeout_thread = rb_thread_create(do_timeout, (void *) &targ);
+    result = (*arg->func)(arg->req, arg->arg);
+    protect_funcall(timeout_thread, rb_intern("kill"), NULL, 0);
+    return result;
+}
+
+static int run_safely(request_rec *r, VALUE (*func)(), void *arg, VALUE *retval)
+{
+    VALUE thread, ret;
+    run_safely_arg_t rsarg;
+    int state;
+
+    rsarg.req = r;
+    rsarg.func = func;
+    rsarg.arg = arg;
+    thread = rb_thread_create(run_safely_0, &rsarg);
+    ret = protect_funcall(thread, rb_intern("value"), &state, 0);
+    if (retval)
+	*retval = ret;
+    return state;
+}
+
+static void initialize_ruby_env(request_rec *r)
+{
+    int i;
+
+    rb_load_path = rb_ary_new();
+    for (i = 0; i < RARRAY(default_load_path)->len; i++) {
+	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
+    }
+    ruby_errinfo = Qnil;
+    ruby_debug = Qfalse;
+    ruby_verbose = Qfalse;
+    if (r->per_dir_config) {
+	ruby_dir_config *dconf =
+	    (ruby_dir_config *) ap_get_module_config(r->per_dir_config,
+						     &ruby_module);
+	if (dconf->kcode)
+	    rb_set_kcode(dconf->kcode);
+    }
+}
+
+static void finalize_ruby_env()
+{
+    rb_set_kcode(default_kcode);
+}
+
+static VALUE ruby_object_handler_0(request_rec *r, void *arg)
+{
+    ruby_dir_config *dconf = NULL;
+    int retval;
+    VALUE ret;
+    ID id_handler = rb_intern("handler");
+    char **list;
+    int n, i;
+
+    if (r->per_dir_config == NULL)
+	return INT2NUM(DECLINED);
+    initialize_ruby_env(r);
+    dconf = (ruby_dir_config *) ap_get_module_config(r->per_dir_config,
+						     &ruby_module);
+    list = (char **) dconf->handler_objects->elts;
+    n = dconf->handler_objects->nelts;
+    retval = DECLINED;
+    for (i = 0; i < n; i++) {
+	ret = rb_funcall(rb_eval_string(list[i]), id_handler, 1, rb_defout);
+	retval = NUM2INT(ret);
+	if (retval != DECLINED)
+	    break;
+    }
+    finalize_ruby_env();
+    return INT2NUM(retval);
+}
+
+static int ruby_object_handler(request_rec *r)
+{
+    int state;
+    VALUE input, retval;
+
+    (void) ap_acquire_mutex(mod_ruby_mutex);
+    if ((retval = get_client_block(r, &input)))
+	return retval;
+    rb_defout = ruby_create_request(r, input);
+    rb_gv_set("$stdin", rb_defout);
+    rb_gv_set("$stdout", rb_defout);
+
+    ap_soft_timeout("load ruby script", r);
+    state = run_safely(r, ruby_object_handler_0, NULL, &retval);
+    ap_kill_timeout(r);
+    (void) ap_release_mutex(mod_ruby_mutex);
+    if (state) {
+	return SERVER_ERROR;
+    }
+    else {
+	rb_request_flush(rb_defout);
+	return NUM2INT(retval);
+    }
+}
 
 /*
  * Local variables:

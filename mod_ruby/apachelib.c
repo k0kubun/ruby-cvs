@@ -320,31 +320,21 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->headers_out);
 }
 
-VALUE ruby_create_request(request_rec *r)
+VALUE ruby_create_request(request_rec *r, VALUE input)
 {
     request_data *data;
     VALUE result;
-    char buff[BUFSIZ];
-    int len;
     
     r->content_type = "text/html";
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
 			      request_mark, free, data);
     data->request = r;
-    data->inbuf = rb_tainted_str_new("", 0);
+    data->inbuf = input;
     data->outbuf = rb_tainted_str_new("", 0);
     data->headers_in = ruby_create_table(rb_cApacheInTable, r->headers_in);
     data->headers_out = ruby_create_table(rb_cApacheTable, r->headers_out);
     data->send_http_header = 0;
     data->pos = 0;
-
-    ap_hard_timeout("get_client_block", r);
-    if (ap_should_client_block(r)) {
-	while ((len = ap_get_client_block(r, buff, BUFSIZ)) > 0) {
-	    rb_str_cat(data->inbuf, buff, len);
-	}
-    }
-    ap_kill_timeout(r);
 
     return result;
 }
@@ -1231,6 +1221,10 @@ void ruby_init_apachelib()
     rb_eApacheTimeoutError =
 	rb_define_class_under(rb_mApache, "TimeoutError", rb_eException);
 
+    rb_define_const(rb_mApache, "DECLINED", INT2NUM(DECLINED));
+    rb_define_const(rb_mApache, "DONE", INT2NUM(DONE));
+    rb_define_const(rb_mApache, "OK", INT2NUM(OK));
+
     /* HTTP status codes */
     rb_define_const(rb_mApache, "HTTP_CONTINUE",
 		    INT2NUM(HTTP_CONTINUE));
@@ -1332,6 +1326,43 @@ void ruby_init_apachelib()
 #endif
     rb_define_const(rb_mApache, "HTTP_NOT_EXTENDED",
 		    INT2NUM(HTTP_NOT_EXTENDED));
+
+    rb_define_const(rb_mApache, "DOCUMENT_FOLLOWS",
+		    INT2NUM(DOCUMENT_FOLLOWS));
+    rb_define_const(rb_mApache, "PARTIAL_CONTENT",
+		    INT2NUM(PARTIAL_CONTENT));
+    rb_define_const(rb_mApache, "MULTIPLE_CHOICES",
+		    INT2NUM(MULTIPLE_CHOICES));
+    rb_define_const(rb_mApache, "MOVED",
+		    INT2NUM(MOVED));
+    rb_define_const(rb_mApache, "REDIRECT",
+		    INT2NUM(REDIRECT));
+    rb_define_const(rb_mApache, "USE_LOCAL_COPY",
+		    INT2NUM(USE_LOCAL_COPY));
+    rb_define_const(rb_mApache, "BAD_REQUEST",
+		    INT2NUM(BAD_REQUEST));
+    rb_define_const(rb_mApache, "AUTH_REQUIRED",
+		    INT2NUM(AUTH_REQUIRED));
+    rb_define_const(rb_mApache, "FORBIDDEN",
+		    INT2NUM(FORBIDDEN));
+    rb_define_const(rb_mApache, "NOT_FOUND",
+		    INT2NUM(NOT_FOUND));
+    rb_define_const(rb_mApache, "METHOD_NOT_ALLOWED",
+		    INT2NUM(METHOD_NOT_ALLOWED));
+    rb_define_const(rb_mApache, "NOT_ACCEPTABLE",
+		    INT2NUM(NOT_ACCEPTABLE));
+    rb_define_const(rb_mApache, "LENGTH_REQUIRED",
+		    INT2NUM(LENGTH_REQUIRED));
+    rb_define_const(rb_mApache, "PRECONDITION_FAILED",
+		    INT2NUM(PRECONDITION_FAILED));
+    rb_define_const(rb_mApache, "SERVER_ERROR",
+		    INT2NUM(SERVER_ERROR));
+    rb_define_const(rb_mApache, "NOT_IMPLEMENTED",
+		    INT2NUM(NOT_IMPLEMENTED));
+    rb_define_const(rb_mApache, "BAD_GATEWAY",
+		    INT2NUM(BAD_GATEWAY));
+    rb_define_const(rb_mApache, "VARIANT_ALSO_VARIES",
+		    INT2NUM(VARIANT_ALSO_VARIES));
 }
 
 /*

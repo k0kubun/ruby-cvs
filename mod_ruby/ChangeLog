@@ -1,3 +1,13 @@
+Tue Apr 10 16:52:47 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_object_handler): new handler.
+
+	* ruby_config.c (ruby_cmd_add_path): new directive.
+
+	* apachelib.c (ruby_create_request): new argument input.
+
+	* apachelib.c (ruby_init_apachelib): new constants such as Apache::OK.
+
 Mon Apr  9 12:54:18 2001  Shugo Maeda <shugo@modruby.net>
 
 	* apachelib.c (ruby_create_request): remove cast.
