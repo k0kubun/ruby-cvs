@@ -23,6 +23,7 @@
  * 02111-1307, USA
  */
 
+#include <stdarg.h>
 #ifdef WIN32
 #include <windows.h>
 #endif
@@ -145,23 +146,55 @@ MODULE_VAR_EXPORT module ruby_module =
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
 #define STR_CAT_LITERAL(str, s) rb_str_cat(str, s, sizeof(s) - 1)
 
+struct pcall_arg {
+    VALUE recv;
+    ID mid;
+    int argc;
+    VALUE *argv;
+};
+
+static VALUE protect_funcall0(struct pcall_arg *arg)
+{
+    return rb_funcall2(arg->recv, arg->mid, arg->argc, arg->argv);
+}
+
+static VALUE protect_funcall(VALUE recv, ID mid, int *state, int argc, ...)
+{
+    va_list ap;
+    VALUE *argv;
+    struct pcall_arg arg;
+
+    if (argc > 0) {
+	int i;
+
+	argv = ALLOCA_N(VALUE, argc);
+
+	va_start(ap, argc);
+	for (i = 0; i < argc; i++) {
+	    argv[i] = va_arg(ap, VALUE);
+	}
+	va_end(ap);
+    }
+    else {
+	argv = 0;
+    }
+    arg.recv = recv;
+    arg.mid = mid;
+    arg.argc = argc;
+    arg.argv = argv;
+    return rb_protect(protect_funcall0, (VALUE) &arg, state);
+}
+
 int ruby_running()
 {
     return ruby_is_running;
 }
 
-static VALUE ruby_require0(VALUE fname)
-{
-    rb_f_require(Qnil, fname);
-    return Qnil;
-}
-
 int ruby_require(char *filename)
 {
-    VALUE fname = rb_str_new2(filename);
     int state;
 
-    rb_protect(ruby_require0, fname, &state);
+    rb_protect(rb_require, (VALUE) filename, &state);
     return state;
 }
 
@@ -407,7 +440,7 @@ static void get_exception_info(VALUE str)
 		STR_CAT_LITERAL(str, ")\n");
 	    }
 	    if (tail) {
-		rb_str_cat(str, tail, RSTRING(einfo)->len - len - 1);
+		rb_str_cat(str, tail, elen - len - 1);
 		STR_CAT_LITERAL(str, "\n");
 	    }
 	}
@@ -497,29 +530,18 @@ static void ruby_error_print(request_rec *r, int state)
     ap_rputs("</html>\n", r);
 }
 
-static VALUE thread_kill(VALUE thread)
-{
-    rb_funcall(thread, rb_intern("exit"), 0);
-    return Qnil;
-}
-
-static VALUE thread_join(VALUE thread)
-{
-    return rb_funcall(thread, rb_intern("join"), 0);
-}
-
 static VALUE kill_threads(VALUE arg)
 {
     extern VALUE rb_thread_list();
     VALUE threads = rb_thread_list();
-    VALUE current = rb_thread_current();
+    VALUE main_thread = rb_thread_main();
     VALUE th;
     int i;
 
     for (i = 0; i < RARRAY(threads)->len; i++) {
 	th = RARRAY(threads)->ptr[i];
-	if (th != current)
-	    rb_protect(thread_kill, th, NULL);
+	if (th != main_thread)
+	    protect_funcall(th, rb_intern("kill"), NULL, 0);
     }
     return Qnil;
 }
@@ -648,7 +670,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     arg.thread = load_thread;
     arg.timeout = sconf->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
-    rb_protect(thread_join, load_thread, NULL);
+    protect_funcall(load_thread, rb_intern("join"), NULL, 0);
     rb_protect(kill_threads, Qnil, NULL);
     ap_kill_timeout(r);
 

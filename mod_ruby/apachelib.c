@@ -573,6 +573,27 @@ static VALUE request_request_time(VALUE self)
     return rb_time_new(data->request->request_time, 0);
 }
 
+static VALUE request_status_line(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    if (data->request->status_line)
+	return rb_str_new2(data->request->status_line);
+    else
+	return Qnil;
+}
+
+static VALUE request_set_status_line(VALUE self, VALUE str)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    data->request->status_line =
+	ap_pstrdup(data->request->pool, STR2CSTR(str));
+    return str;
+}
+
 static VALUE request_request_method(VALUE self)
 {
     request_data *data;
@@ -1083,6 +1104,11 @@ static VALUE request_eof(VALUE self)
     return data->pos >= RSTRING(data->inbuf)->len ? Qtrue : Qfalse;
 }
 
+static VALUE request_binmode(VALUE self)
+{
+    return Qnil;
+}
+
 void ruby_init_apachelib()
 {
     rb_mApache = rb_define_module("Apache");
@@ -1135,6 +1161,8 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "filename", request_filename, 0);
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);
     rb_define_method(rb_cApacheRequest, "request_time", request_request_time, 0);
+    rb_define_method(rb_cApacheRequest, "status_line", request_status_line, 0);
+    rb_define_method(rb_cApacheRequest, "status_line=", request_set_status_line, 1);
     rb_define_method(rb_cApacheRequest, "request_method", request_request_method, 0);
     rb_define_method(rb_cApacheRequest, "header_only?", request_header_only, 0);
     rb_define_method(rb_cApacheRequest, "args", request_args, 0);
@@ -1176,6 +1204,7 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "pos=", request_set_pos, 1);
     rb_define_method(rb_cApacheRequest, "eof", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "eof?", request_eof, 0);
+    rb_define_method(rb_cApacheRequest, "binmode", request_binmode, 0);
 
     rb_eApacheTimeoutError =
 	rb_define_class_under(rb_mApache, "TimeoutError", rb_eException);
