@@ -177,8 +177,16 @@ class TestThread < Rubicon::TestCase
     b = Thread.new { loop { c2 += 1 }}
     a.priority = -2
     b.priority = -1
-    sleep 1 
+    sleep 1
+    Thread.critical = true
     assert (c2 > c1)
+    c1 = 0
+    c2 = 0
+    a.priority = -1
+    b.priority = -2
+    Thread.critical = false
+    sleep 1 
+    assert (c1 > c2)
     a.kill
     b.kill
   end
