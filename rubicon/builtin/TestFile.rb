@@ -8,12 +8,10 @@ class TestFile < Rubicon::TestCase
 
     @file = "_test/_touched"
 
-    #sys("touch -a -t 122512341999 #@file")
-    sys_touch("a", "1225", "1234", "1999", @file)
+    sys("../util/test_touch -a -t 122512341999 #@file")
     @aTime = Time.local(1999, 12, 25, 12, 34, 00)
 
-    #sys("touch -m -t 010112341997 #@file")
-    sys_touch("m", "0101", "1234", "1997", @file)
+    sys("../util/test_touch -m -t 010112341997 #@file")
     @mTime = Time.local(1997,  1,  1, 12, 34, 00)
   end
 
@@ -77,6 +75,7 @@ class TestFile < Rubicon::TestCase
     base = `pwd`.chomp
     assert_equal(base,                 File.expand_path(''))
     assert_equal(File.join(base, 'a'), File.expand_path('a'))
+    assert_equal(File.join(base, 'a'), File.expand_path('a', nil)) # V0.1.1
     b1 = File.join(base.split(File::SEPARATOR)[0..-2])
     assert_equal(b1, File.expand_path('..'))
 

@@ -14,7 +14,7 @@
 
 VPATH = util
 
-UTILSTUFF =	util/checkstat
+UTILSTUFF =	util/checkstat util/test_touch
 
 
 default:	test
