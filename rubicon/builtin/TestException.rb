@@ -3,36 +3,50 @@ require '../rubicon'
 
 class TestException < Rubicon::TestCase
 
+  MSG = "duck"
+
+  def test_s_exception
+    e = Exception.exception
+    assert_equal(Exception, e.type)
+
+    e = Exception.exception(MSG)
+    assert_equal(MSG, e.message)
+  end
+
   def test_backtrace
-    assert_fail("untested")
+    assert_nil(Exception.exception.backtrace)
+    begin
+      line=__LINE__; file=__FILE__; raise MSG
+    rescue RuntimeError => detail
+      assert_equal(RuntimeError, detail.type)
+      assert_equal(MSG, detail.message)
+      expected = "#{file}:#{line}:in `test_backtrace'"
+      assert_equal(expected, detail.backtrace[0])
+    end
   end
 
   def test_exception
-    assert_fail("untested")
-  end
+    e = IOError.new
+    assert_equal(IOError, e.type)
+    assert_equal(IOError, e.exception.type)
+    assert_equal(e,       e.exception)
 
-  def test_inspect
-    assert_fail("untested")
+    e = IOError.new
+    e1 = e.exception(MSG)
+    assert_equal(IOError, e1.type)
+    assert_equal(MSG,     e1.message)
   end
 
   def test_message
-    assert_fail("untested")
+    e = IOError.new(MSG)
+    assert_equal(MSG, e.message)
   end
 
   def test_set_backtrace
-    assert_fail("untested")
-  end
-
-  def test_to_s
-    assert_fail("untested")
-  end
-
-  def test_to_str
-    assert_fail("untested")
-  end
-
-  def test_s_exception
-    assert_fail("untested")
+    e = IOError.new
+    a = %w( here there everywhere )
+    assert_equal(a, e.set_backtrace(a))
+    assert_equal(a, e.backtrace)
   end
 
 end
