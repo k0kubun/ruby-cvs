@@ -3,169 +3,766 @@ require '../rubicon'
 
 class TestIO < Rubicon::TestCase
 
+  F_SETFL = 4
+
+  def setup
+    setupTestDir
+    @file  = "_test/_10lines"
+    @file1 = "_test/_99lines"
+
+    File.open(@file, "w") { |f|
+      10.times { |i| f.printf "%02d: This is a line\n", i }
+    }
+
+    File.open(@file1, "w") { |f|
+      99.times { |i| f.printf "Line %02d\n", i }
+    }
+  end
+
+  def teardown
+    File.delete(@file) if File.exist?(@file)
+    teardownTestDir
+  end
+  
+  # ---------------------------------------------------------------
 
   def test_s_foreach
-    assert_fail("untested")
+    assert_exception(Errno::ENOENT) { File.foreach("gumby") {} }
+    assert_exception(LocalJumpError) { File.foreach(@file) }
+    
+    count = 0
+    IO.foreach(@file) do |line|
+      num = line[0..1].to_i
+      assert_equal(count, num)
+      count += 1
+    end
+    assert_equal(10, count)
+
+    count = 0
+    IO.foreach(@file, nil) do |file|
+      file.split(/\n/).each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+    end
+    assert_equal(10, count)
+
+    count = 0
+    IO.foreach(@file, ' ') do |thing|
+      count += 1
+    end
+    assert_equal(41, count)
   end
 
   def test_s_new
-    assert_fail("untested")
+    f = File.open(@file)
+    io = IO.new(f.fileno, "r")
+    count = 0
+    io.each { count += 1 }
+    assert_equal(10, count)
+
+    f = File.open(@file)
+    io = IO.new(f.fileno, "r")
+    f.close
+    assert_exception(IOError) { io.gets }
+
+    f = File.open(@file, "r")
+    f.sysread(3*19)
+    io = IO.new(f.fileno, "r")
+    assert_equal(3*19, io.tell)
+
+    count = 0
+    io.each { count += 1 }
+    assert_equal(7, count)
+    f.close
   end
 
   def test_s_pipe
-    assert_fail("untested")
+    p = IO.pipe
+    assert_equal(2, p.size)
+    r, w = *p
+    assert_instance_of(r, IO)
+    assert_instance_of(w, IO)
+    
+    w.puts "Hello World"
+    assert_equal("Hello World\n", r.gets)
+    r.close
+    w.close
   end
 
   def test_s_popen
-    assert_fail("untested")
+    # READ
+    p = IO.popen("cat #@file")
+    count = 0
+    p.each do |line|
+      num = line[0..1].to_i
+      assert_equal(count, num)
+      count += 1
+    end
+    assert_equal(10, count)
+    p.close
+
+    # READ with block
+    res = IO.popen("cat #@file") do |p|
+      count = 0
+      p.each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(10, count)
+    end
+    assert_nil(res)
+
+    # WRITE
+    p = IO.popen("cat >#@file", "w")
+    5.times { |i| p.printf "Line %d\n", i }
+    p.close
+
+    count = 0
+    IO.foreach(@file) do |line|
+      num = line.chomp[-1,1].to_i
+      assert_equal(count, num)
+      count += 1
+    end
+    assert_equal(5, count)
+    
+    # Spawn an interpreter
+    parent = $$
+    p = IO.popen("-")
+    
+    if p
+      assert_equal(parent, $$)
+      assert_equal("Hello\n", p.gets)
+    else
+      assert_equal(parent, Process.ppid)
+      puts "Hello"
+      exit
+    end
+    p.close
+
+  end
+
+  def test_s_popen_spawn
+
+    # Spawn an interpreter - WRITE
+    parent = $$
+    pipe = IO.popen("-", "w")
+
+    if pipe
+      assert_equal(parent, $$)
+      pipe.puts "12"
+      Process.wait
+      assert_equal(12, $?>>8)
+    else
+      buff = $stdin.gets
+      exit buff.to_i
+    end
+
+    # Spawn an interpreter - READWRITE
+    parent = $$
+    p = IO.popen("-", "w+")
+    
+    if p
+      assert_equal(parent, $$)
+      p.puts "Hello\n"
+      assert_equal("Goodbye\n", p.gets)
+    else
+      puts "Goodbye" if $stdin.gets == "Hello\n"
+      exit
+    end
   end
 
   def test_s_readlines
-    assert_fail("untested")
+    assert_exception(Errno::ENOENT) { IO.readlines('gumby') }
+
+    lines = IO.readlines(@file)
+    assert_equal(10, lines.size)
+
+    lines = IO.readlines(@file, nil)
+    assert_equal(1, lines.size)
+    assert_equal(19*10, lines[0].size)
   end
 
   def test_s_select
-    assert_fail("untested")
+    assert_nil(select(nil, nil, nil, 0))
+    assert_exception(ArgumentError) { select(nil, nil, nil, -1) }
+
+    $stdin = File.open(@file)
+    res = select([$stdin], [$stdout, $stderr], [$stdin,$stdout,$stderr], 1)
+    assert_equal([[$stdin], [$stdout, $stderr], []], res)
+
+    read, write = *IO.pipe
+    read.fcntl(F_SETFL, File::NONBLOCK)
+
+    assert_nil(select([read], nil,  [read], .1))
+    write.puts "Hello"
+    assert_equal([[read],[],[]], select([read], nil,  [read], .1))
+    read.gets
+    assert_nil(select([read], nil,  [read], .1))
+    write.close
+    assert_equal([[read],[],[]], select([read], nil,  [read], .1))
+    assert_nil(read.gets)
+  end
+
+  class Dummy
+    def to_s
+      "dummy"
+    end
   end
 
   def test_LSHIFT # '<<'
-    assert_fail("untested")
+    File.open(@file, "w") do |file|
+      io = IO.new(file.fileno, "w")
+      io << 1 << "\n" << Dummy.new << "\n" << "cat\n"
+      io.close
+    end
+    expected = [ "1\n", "dummy\n", "cat\n"]
+    IO.foreach(@file) do |line|
+      assert_equal(expected.shift, line)
+    end
+    assert_equal([], expected)
   end
 
   def test_binmode
-    assert_fail("untested")
+    skipping("not supported")
   end
 
   def test_clone
-    assert_fail("untested")
+    # check file position shared
+    File.open(@file, "r") do |file|
+      io = []
+      io[0] = IO.new(file.fileno, "r")
+      io[1] = io[0].clone
+      count = 0
+      io[count & 1].each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(10, count)
+    end
   end
 
   def test_close
-    assert_fail("untested")
+    read, write = *IO.pipe
+    read.close
+    assert_exception(IOError) { read.gets }
   end
 
   def test_close_read
-    assert_fail("untested")
+    pipe = IO.popen("/bin/sh", "r+")
+    pipe.puts "echo Hello"
+    assert_equal("Hello\n", pipe.gets)
+    pipe.close_read
+    assert_exception(IOError) { pipe.gets }
   end
 
   def test_close_write
-    assert_fail("untested")
+    pipe = IO.popen("/bin/cat", "r+")
+    pipe.puts "Hello"
+    assert_equal("Hello\n", pipe.gets)
+    pipe.close_write
+    assert_exception(IOError) { pipe.puts "Hello" }
   end
 
   def test_closed?
-    assert_fail("untested")
+    f = File.open(@file)
+    assert(!f.closed?)
+    f.close
+    assert(f.closed?)
+
+    pipe = IO.popen("/bin/cat", "r+")
+    assert(!pipe.closed?)
+    pipe.close_read
+    assert(!pipe.closed?)
+    pipe.close_write
+    assert(pipe.closed?)
   end
 
   def test_each
-    assert_fail("untested")
+    count = 0
+    File.open(@file) do |file|
+      file.each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(10, count)
+    end
+
+    count = 0
+    File.open(@file) do |file|
+      file.each(nil) do |contents|
+        contents.split(/\n/).each do |line|
+          num = line[0..1].to_i
+          assert_equal(count, num)
+          count += 1
+        end
+      end
+    end
+    assert_equal(10, count)
+
+    count = 0
+    File.open(@file) do |file|
+      file.each(' ') do |thing|
+        count += 1
+      end
+    end
+    assert_equal(41, count)
   end
 
   def test_each_byte
-    assert_fail("untested")
+    count = 0
+    data = 
+      "00: This is a line\n" +
+      "01: This is a line\n" +
+      "02: This is a line\n" +
+      "03: This is a line\n" +
+      "04: This is a line\n" +
+      "05: This is a line\n" +
+      "06: This is a line\n" +
+      "07: This is a line\n" +
+      "08: This is a line\n" +
+      "09: This is a line\n" 
+
+    File.open(@file) do |file|
+      file.each_byte do |b|
+        assert_equal(data[count], b)
+        count += 1
+      end
+    end
+    assert_equal(19*10, count)
   end
 
   def test_each_line
-    assert_fail("untested")
+    count = 0
+    File.open(@file) do |file|
+      file.each_line do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(10, count)
+    end
+
+    count = 0
+    File.open(@file) do |file|
+      file.each_line(nil) do |contents|
+        contents.split(/\n/).each do |line|
+          num = line[0..1].to_i
+          assert_equal(count, num)
+          count += 1
+        end
+      end
+    end
+    assert_equal(10, count)
+
+    count = 0
+    File.open(@file) do |file|
+      file.each_line(' ') do |thing|
+        count += 1
+      end
+    end
+    assert_equal(41, count)
   end
 
   def test_eof
-    assert_fail("untested")
-  end
-
-  def test_eof?
-    assert_fail("untested")
+    File.open(@file) do |file|
+      10.times do
+        assert(!file.eof)
+        assert(!file.eof?)
+        file.gets
+      end
+      assert(file.eof)
+      assert(file.eof?)
+    end
   end
 
   def test_fcntl
-    assert_fail("untested")
+    skipping("platform dependent")
   end
 
   def test_fileno
-    assert_fail("untested")
+    assert_equal(0, $stdin.fileno)
+    assert_equal(1, $stdout.fileno)
+    assert_equal(2, $stderr.fileno)
+    assert(File.open(@file).fileno > 2)
   end
 
   def test_flush
-    assert_fail("untested")
+    read, write = IO.pipe
+    write.sync = false
+    write.print "hello"
+    assert_nil(select([read], nil,  [read], .1))
+    write.flush
+    assert_equal([[read],[],[]], select([read], nil,  [read], .1))
   end
 
   def test_getc
-    assert_fail("untested")
+    count = 0
+    data = 
+      "00: This is a line\n" +
+      "01: This is a line\n" +
+      "02: This is a line\n" +
+      "03: This is a line\n" +
+      "04: This is a line\n" +
+      "05: This is a line\n" +
+      "06: This is a line\n" +
+      "07: This is a line\n" +
+      "08: This is a line\n" +
+      "09: This is a line\n" 
+    
+    File.open(@file) do |file|
+      while (ch = file.getc)
+        assert_equal(data[count], ch)
+        count += 1
+      end
+      assert_equal(nil, file.getc)
+    end
+    assert_equal(19*10, count)
   end
 
   def test_gets
-    assert_fail("untested")
+    count = 0
+    File.open(@file) do |file|
+      while (line = file.gets)
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(nil, file.gets)
+      assert_equal(10, count)
+    end
+
+    count = 0
+    File.open(@file) do |file|
+      while (contents = file.gets(nil))
+        contents.split(/\n/).each do |line|
+          num = line[0..1].to_i
+          assert_equal(count, num)
+          count += 1
+        end
+      end
+    end
+    assert_equal(10, count)
+
+    count = 0
+    File.open(@file) do |file|
+      while (thing = file.gets(' '))
+        count += 1
+      end
+    end
+    assert_equal(41, count)
   end
 
   def test_ioctl
-    assert_fail("untested")
+    skipping()
   end
 
   def test_isatty
-    assert_fail("untested")
+    assert(!File.new(@file).isatty)
+    assert(!File.new("/dev/tty").isatty)
   end
 
   def test_lineno
-    assert_fail("untested")
+    count = 1
+    File.open(@file) do |file|
+      while (line = file.gets)
+        assert_equal(count, file.lineno)
+        count += 1
+      end
+      assert_equal(11, count)
+    end
+
+    count = 1
+    File.open(@file) do |file|
+      while (line = file.gets('i'))
+        assert_equal(count, file.lineno)
+        count += 1
+      end
+      assert_equal(32, count)
+    end
   end
 
   def test_lineno=
-    assert_fail("untested")
+    File.open(@file) do |f|
+      assert_equal(0, f.lineno)
+      assert_equal(123, f.lineno = 123)
+      assert_equal(123, f.lineno)
+      f.gets
+      assert_equal(124, f.lineno)
+      f.lineno = -1
+      f.gets
+      assert_equal(0, f.lineno)
+    end
   end
 
   def test_pid
-    assert_fail("untested")
+    assert_nil($stdin.pid)
+    pipe = IO.popen("-")
+    if pipe
+      pid = pipe.gets
+      assert_equal(pid.to_i, pipe.pid)
+      pipe.close
+    else
+      puts $$
+      exit
+    end
   end
 
   def test_pos
-    assert_fail("untested")
+    pos = 0
+    File.open(@file) do |file|
+      assert_equal(0, file.pos)
+      while (line = file.gets)
+        pos += line.length
+        assert_equal(pos, file.pos)
+      end
+    end
   end
 
   def test_pos=
-    assert_fail("untested")
+    nums = [ 5, 8, 0, 1, 0 ]
+    
+    File.open(@file) do |file|
+      file.pos = 999
+      assert_nil(file.gets)
+      assert_exception(Errno::EINVAL) { file.pos = -1 }
+      for pos in nums
+        assert_equal(0, file.pos = 19*pos)
+        line = file.gets
+        assert_equal(pos, line[0..1].to_i)
+      end
+    end
   end
 
   def test_print
-    assert_fail("untested")
+    File.open(@file, "w") do |file|
+      file.print "hello"
+      file.print 1,2
+      $_ = "wombat\n"
+      file.print
+      $\ = ":"
+      $, = ","
+      file.print 3, 4
+      file.print 5, 6
+      $\ = nil
+      file.print "\n"
+    end
+
+    File.open(@file) do |file|
+      content = file.gets(nil)
+      assert_equal("hello12wombat\n3,4:5,6:\n", content)
+    end
   end
 
   def test_printf
-    assert_fail("untested")
+    # tested under Kernel.sprintf
   end
 
   def test_putc
-    assert_fail("untested")
+    File.open(@file, "w") do |file|
+      file.putc "A"
+      0.upto(255) { |ch| file.putc ch }
+    end
+
+    File.open(@file) do |file|
+      assert_equal(?A, file.getc)
+      0.upto(255) { |ch| assert_equal(ch, file.getc) }
+    end
   end
 
   def test_puts
-    assert_fail("untested")
+    File.open(@file, "w") do |file|
+      file.puts "line 1", "line 2"
+      file.puts [ Dummy.new, 4 ]
+    end
+
+    File.open(@file) do |file|
+      assert_equal("line 1\n",  file.gets)
+      assert_equal("line 2\n",  file.gets)
+      assert_equal("dummy\n",  file.gets)
+      assert_equal("4\n",  file.gets)
+    end
   end
 
   def test_read
-    assert_fail("untested")
+    File.open(@file) do |file|
+      content = file.read
+      assert_equal(19*10, content.length)
+      count = 0
+      content.split(/\n/).each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+    end
+
+    File.open(@file) do |file|
+      assert_equal("00: This is ", file.read(12))
+      assert_equal("a line\n01: T", file.read(12))
+    end
   end
 
   def test_readchar
-    assert_fail("untested")
+    count = 0
+    data = 
+      "00: This is a line\n" +
+      "01: This is a line\n" +
+      "02: This is a line\n" +
+      "03: This is a line\n" +
+      "04: This is a line\n" +
+      "05: This is a line\n" +
+      "06: This is a line\n" +
+      "07: This is a line\n" +
+      "08: This is a line\n" +
+      "09: This is a line\n" 
+    
+    File.open(@file) do |file|
+      190.times do |count|
+        ch = file.readchar
+        assert_equal(data[count], ch)
+        count += 1
+      end
+      assert_exception(EOFError) { file.readchar }
+    end
   end
 
   def test_readline
-    assert_fail("untested")
+    count = 0
+    File.open(@file) do |file|
+      10.times do |count|
+        line = file.readline
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_exception(EOFError) { file.readline }
+    end
+
+    count = 0
+    File.open(@file) do |file|
+      contents = file.readline(nil)
+      contents.split(/\n/).each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_exception(EOFError) { file.readline }
+    end
+    assert_equal(10, count)
+
+    count = 0
+    File.open(@file) do |file|
+      41.times do |count|
+        thing = file.readline(' ')
+        count += 1
+      end
+      assert_exception(EOFError) { file.readline }
+    end
   end
 
   def test_readlines
-    assert_fail("untested")
+    File.open(@file) do |file|
+      lines = file.readlines
+      assert_equal(10, lines.size)
+    end
+
+    File.open(@file) do |file|
+      lines = file.readlines(nil)
+      assert_equal(1, lines.size)
+      assert_equal(19*10, lines[0].size)
+    end
   end
 
-  def test_reopen
-    assert_fail("untested")
+  def test_reopen1
+    f1 = File.new(@file)
+    assert_equal("00: This is a line\n", f1.gets)
+    assert_equal("01: This is a line\n", f1.gets)
+
+    f2 = File.new(@file1)
+    assert_equal("Line 00\n", f2.gets)
+    assert_equal("Line 01\n", f2.gets)
+
+    f2.reopen(@file)
+    assert_equal("00: This is a line\n", f2.gets)
+    assert_equal("01: This is a line\n", f2.gets)
+
+    f1.close
+    f2.close
+  end
+
+  def test_reopen2
+    f1 = File.new(@file)
+    assert_equal("00: This is a line\n", f1.sysread(19))
+    assert_equal("01: This is a line\n", f1.sysread(19))
+
+    f2 = File.new(@file1)
+    assert_equal("Line 00\n", f2.sysread(8))
+    assert_equal("Line 01\n", f2.sysread(8))
+
+    f2.reopen(f1)
+    assert_equal("02: This is a line\n", f2.sysread(19))
+    assert_equal("03: This is a line\n", f2.sysread(19))
+
+    f1.close
+    f2.close
   end
 
   def test_rewind
-    assert_fail("untested")
+    f1 = File.new(@file)
+    assert_equal("00: This is a line\n", f1.gets)
+    assert_equal("01: This is a line\n", f1.gets)
+    f1.rewind
+    assert_equal("00: This is a line\n", f1.gets)
+
+    f1.readlines
+    assert_nil(f1.gets)
+    f1.rewind
+    assert_equal("00: This is a line\n", f1.gets)
+
+    f1.close
   end
 
   def test_seek
-    assert_fail("untested")
+    nums = [ 5, 8, 0, 1, 0 ]
+    
+    File.open(@file) do |file|
+      file.seek(999, IO::SEEK_SET)
+      assert_nil(file.gets)
+      assert_exception(Errno::EINVAL) { file.seek(-1) }
+      for pos in nums
+        assert_equal(0, file.seek(19*pos))
+        line = file.gets
+        assert_equal(pos, line[0..1].to_i)
+      end
+    end
+
+    nums = [5, -2, 4, -7, 0 ]
+    File.open(@file) do |file|
+      file.seek(999, IO::SEEK_CUR)
+      assert_nil(file.gets)
+      count = -1
+      file.seek(0)
+      for pos in nums
+        assert_equal(0, file.seek(19*pos, IO::SEEK_CUR))
+        line = file.gets
+        count = count + pos + 1
+        assert_equal(count, line[0..1].to_i)
+      end
+    end
+
+    File.open(@file) do |file|
+      file.seek(999, IO::SEEK_SET)
+      assert_nil(file.gets)
+      for pos in nums
+        assert_equal(0, file.seek(19*pos))
+        line = file.gets
+        assert_equal(pos, line[0..1].to_i)
+      end
+    end
   end
 
   def test_stat
