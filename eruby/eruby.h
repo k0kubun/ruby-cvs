@@ -7,8 +7,8 @@
 #ifndef ERUBY_H
 #define ERUBY_H
 
-#define ERUBY_VERSION "0.9.3"
-#define ERUBY_VERSION_CODE 93
+#define ERUBY_VERSION "0.9.4"
+#define ERUBY_VERSION_CODE 94
 
 #define ERUBY_MIME_TYPE "application/x-httpd-eruby"
 
