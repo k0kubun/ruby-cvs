@@ -186,7 +186,7 @@ hdrdir = #{$hdrdir}
 
 CFLAGS = #{CONFIG["CCDLFLAGS"]} #{$CFLAGS} -I. -I$(hdrdir)
 LDFLAGS = #{CONFIG["LDFLAGS"]}
-LIBS = $(LIBERUBYARG) $(LIBRUBYARG) #{CONFIG["LIBS"]}
+LIBS = $(LIBRUBYARG) #{CONFIG["LIBS"]}
 XLDFLAGS = #{$XLDFLAGS}
 DLDFLAGS = #{$DLDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
@@ -264,12 +264,12 @@ $(LIBERUBY_A): $(LIBERUBY_OBJS)
 	@-$(RANLIB) $@ 2> /dev/null || true
 
 $(LIBERUBY_SO): $(LIBERUBY_OBJS)
-	$(LDSHARED) $(DLDFLAGS) $(LIBERUBY_OBJS) -o $@
+	$(LDSHARED) $(DLDFLAGS) $(LIBERUBY_OBJS) $(LIBS) -o $@
 	@-$(RUBY) -e 'ARGV.each{|link| File.delete link if File.exist? link; \
 		File.symlink "$(LIBERUBY_SO)", link}' $(LIBERUBY_ALIASES)
 
 $(ERUBY): $(OBJS) $(LIBERUBY)
-	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBS) -o $@
+	$(LD) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBS) -o $@
 
 $(MANPAGE): #{$VPATH}eruby.rd
 
@@ -295,14 +295,14 @@ EOMF
 	mfile.print "\tenv LIB='$(subst /,\\\\,$(LIBPATH));$(LIB)' \\\n"
       end
     end
-    mfile.print "\t$(LDSHARED) $(DLDFLAGS) -o $(DLLIB) $(EXT_OBJS) $(LIBS)\n"
+    mfile.print "\t$(LDSHARED) #{CONFIG['DLDFLAGS']} -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)\n"
   else
     mfile.print "$(DLLIB): $(EXT_OBJS) $(LIBERUBY)\n"
     case RUBY_PLATFORM
     when "m68k-human"
       mfile.printf "ar cru $(DLLIB) $(EXT_OBJS) $(LIBS)\n"
     else
-      mfile.printf "ld $(DLDFLAGS) -r -o $(DLLIB) $(EXT_OBJS) $(LIBS)\n"
+      mfile.printf "ld #{CONFIG['DLDFLAGS']} -r -o $(DLLIB) $(EXT_OBJS) $(LIBERUBYARG) $(LIBS)\n"
     end
   end
 

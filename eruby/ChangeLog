@@ -1,3 +1,10 @@
+Thu Apr 26 15:28:39 2001  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.RB (DLLIB): use CONFIG['DLDFLAGS'] instead of
+	$DLDFLAGS.
+
+	* Makefile.RB (LIBERUBY_SO): added LIBS.
+
 Sun Apr 22 21:52:34 2001  Shugo Maeda <shugo@modruby.net>
 
 	* Makefile.RB (clean): remove eruby_ext.o.
