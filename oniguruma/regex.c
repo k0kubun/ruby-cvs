@@ -47,6 +47,7 @@
 #include "rubysig.h"      /* for DEFER_INTS, ENABLE_INTS */
 #define THREAD_ATOMIC_START     DEFER_INTS
 #define THREAD_ATOMIC_END       ENABLE_INTS
+#define USE_WARNING_STRANGE_NESTED_REPEAT_OPERATOR
 #else
 #define THREAD_ATOMIC_START
 #define THREAD_ATOMIC_END
@@ -183,6 +184,12 @@ regex_error_code_to_str(int code)
     p = "too short multibyte code string"; break;
   case REGERR_TOO_BIG_BACKREF_NUMBER:
     p = "too big backref-number"; break;
+  case REGERR_TOO_BIG_WIDE_CHAR_VALUE:
+    p = "too big wide-char value"; break;
+  case REGERR_TOO_LONG_WIDE_CHAR_VALUE:
+    p = "too long wide-char value"; break;
+  case REGERR_INVALID_WIDE_CHAR_VALUE:
+    p = "invalid wide-char value"; break;
 
   default:
     p = "undefined error code"; break;
@@ -737,7 +744,9 @@ typedef struct _Node {
 
 #ifdef REG_RUBY_M17N
 
-#define MB2WC_AVAILABLE(enc)          1
+#define MB2WC_AVAILABLE(enc)     1
+#define WC2MB_FIRST(enc, wc)          m17n_firstbyte((enc),(wc))
+
 #define mbmaxlen(enc)                 m17n_mbmaxlen(enc)
 #define mblen(enc,c)                  m17n_mbclen(enc,c)
 #define mbmaxlen_dist(enc) \
@@ -778,6 +787,22 @@ typedef struct _Node {
 
 #define mb2wc(p,e,enc)        m17n_codepoint((enc),(p),(e))
 
+static int
+wc2mb_buf(WCInt wc, UChar **bufs, UChar **bufe, RegCharEncoding enc)
+{
+  int c, len;
+
+  c = m17n_firstbyte(enc, wc);
+  len = mblen(enc, c);
+  if (len > (*bufe - *bufs)) {
+    *bufs = xmalloc(len);
+    CHECK_NULL_RETURN_VAL(*bufs, REGERR_MEMORY);    
+  }
+  m17n_mbcput(enc, wc, *bufs);
+  *bufe = *bufs + len;
+  return 0;
+}
+
 #else  /* REG_RUBY_M17N */
 
 const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE] = {
@@ -798,24 +823,6 @@ const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-  },
-  { /* utf8 */
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-    4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 1, 1
   },
   { /* euc-jp */
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -852,6 +859,24 @@ const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE] = {
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
+  },
+  { /* utf8 */
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+    4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 1, 1
   }
 };
 
@@ -885,13 +910,15 @@ mb_max_length(RegCharEncoding code)
 }
 
 #define MB2WC_AVAILABLE(code)       1
+#define WC2MB_FIRST(code, wc)       wc2mb_first(code, wc)
 
 #define mbmaxlen_dist(code)         mbmaxlen(code)
 #define mbmaxlen(code)              mb_max_length(code)
 #define mblen(code,c)               (code)[(c)]
 
 #define IS_SINGLEBYTE_CODE(code)    ((code) == REGCODE_ASCII)
-#define IS_INDEPENDENT_TRAIL(code)  ((code) <= REGCODE_UTF8)
+#define IS_INDEPENDENT_TRAIL(code) \
+        ((code) == REGCODE_ASCII || (code) == REGCODE_UTF8)
 
 #define IS_CODE_ASCII(code,c)        IS_ASCII(c)
 #define IS_CODE_GRAPH(code,c)        IS_GRAPH(c)
@@ -950,13 +977,121 @@ mb2wc(UChar* p, UChar* end, RegCharEncoding code)
       PFETCH(c);
       n <<= 8;  n += c;
     }
-
-    len = mbmaxlen(code) - i;
-    while (len-- > 0) {
-      n <<= 8; 
-    }
   }
   return n;
+}
+
+static int
+wc2mb_first(RegCharEncoding code, WCInt wc)
+{
+  if (code == REGCODE_ASCII) {
+    return (wc & 0xff);
+  }
+  else if (code == REGCODE_UTF8) {
+    if ((wc & 0xffffff80) == 0)
+      return wc;
+    else {
+      if ((wc & 0xfffff800) == 0)
+	return ((wc>>6)& 0x1f) | 0xc0;
+      else if ((wc & 0xffff0000) == 0)
+	return ((wc>>12) & 0x0f) | 0xe0;
+      else if ((wc & 0xffe00000) == 0)
+	return ((wc>>18) & 0x07) | 0xf0;
+      else if ((wc & 0xfc000000) == 0)
+	return ((wc>>24) & 0x03) | 0xf8;
+      else if ((wc & 0x80000000) == 0)
+	return ((wc>>30) & 0x01) | 0xfc;
+      else {
+	return REGERR_TOO_BIG_WIDE_CHAR_VALUE;
+      }
+    }
+  }
+  else {
+    int first;
+
+    if ((wc & 0xff0000) != 0) {
+      first = (wc >> 16) & 0xff;
+      if (mblen(code, first) != 3)
+	return REGERR_INVALID_WIDE_CHAR_VALUE;
+    }
+    else if ((wc & 0xff00) != 0) {
+      first = (wc >> 8) & 0xff;
+      if (mblen(code, first) != 2)
+	return REGERR_INVALID_WIDE_CHAR_VALUE;
+    }
+    else {
+      if (mblen(code, wc) != 1)
+	return REGERR_INVALID_WIDE_CHAR_VALUE;
+      return wc;
+    }
+    return first;
+  }
+}
+
+static int
+wc2mb(WCInt wc, UChar buf[], RegCharEncoding code)
+{
+#define UTF8_TRAILS(wc, shift)   ((((wc) >> (shift)) & 0x3f) | 0x80)
+#define UTF8_TRAIL0(wc)          (((wc) & 0x3f) | 0x80)
+
+  UChar *p = buf;
+
+  if (code == REGCODE_UTF8) {
+    if ((wc & 0xffffff80) == 0)
+      *p++ = wc;
+    else {
+      if ((wc & 0xfffff800) == 0) {
+	*p++ = ((wc>>6)& 0x1f) | 0xc0;
+      }
+      else if ((wc & 0xffff0000) == 0) {
+	*p++ = ((wc>>12) & 0x0f) | 0xe0;
+	*p++ = UTF8_TRAILS(wc, 6);
+      }
+      else if ((wc & 0xffe00000) == 0) {
+	*p++ = ((wc>>18) & 0x07) | 0xf0;
+	*p++ = UTF8_TRAILS(wc, 12);
+	*p++ = UTF8_TRAILS(wc,  6);
+      }
+      else if ((wc & 0xfc000000) == 0) {
+	*p++ = ((wc>>24) & 0x03) | 0xf8;
+	*p++ = UTF8_TRAILS(wc, 18);
+	*p++ = UTF8_TRAILS(wc, 12);
+	*p++ = UTF8_TRAILS(wc,  6);
+      }
+      else if ((wc & 0x80000000) == 0) {
+	*p++ = ((wc>>30) & 0x01) | 0xfc;
+	*p++ = UTF8_TRAILS(wc, 24);
+	*p++ = UTF8_TRAILS(wc, 18);
+	*p++ = UTF8_TRAILS(wc, 12);
+	*p++ = UTF8_TRAILS(wc,  6);
+      }
+      else {
+	return REGERR_TOO_BIG_WIDE_CHAR_VALUE;
+      }
+      *p++ = UTF8_TRAIL0(wc);
+    }
+  }
+  else {
+    if ((wc & 0xff0000) != 0) *p++ = ((wc >> 16) & 0xff);
+    if ((wc &   0xff00) != 0) *p++ = ((wc >>  8) & 0xff);
+    *p++ = (wc & 0xff);
+
+    if (mblen(code, buf[0]) != (p - buf))
+      return REGERR_INVALID_WIDE_CHAR_VALUE;
+  }
+
+  return p - buf;
+}
+
+static int
+wc2mb_buf(WCInt wc, UChar **bufs, UChar **bufe, RegCharEncoding code)
+{
+  int r;
+  r = wc2mb(wc, *bufs, code);
+  if (r < 0) return r;
+
+  *bufe = (*bufs) + r;
+  return 0;
 }
 
 #define eucjp_islead(c)    ((UChar )((c) - 0xa1) > 0xfe - 0xa1)
@@ -966,103 +1101,18 @@ mb2wc(UChar* p, UChar* end, RegCharEncoding code)
 
 #endif /* not REG_RUBY_M17N */
 
-
 static UChar*
-get_left_adjust_char_head(RegCharEncoding code, UChar* start, UChar* s)
-{
-  UChar *p;
-  int len;
-
-  if (s <= start) return s;
-  p = s;
-
-#ifdef REG_RUBY_M17N
-  while (!m17n_islead(code, *p) && p > start) p--;
-  while (p + (len = mblen(code, *p)) < s) {
-    p += len;
-  }
-  if (p + len == s) return s;
-  return p;
-#else
-
-  if (code == REGCODE_ASCII) {
-    return p;
-  }
-  else if (code ==  REGCODE_EUCJP) {
-    while (!eucjp_islead(*p) && p > start) p--;
-    len = mblen(code, *p);
-    if (p + len > s) return p;
-    p += len;
-    return p + ((s - p) & ~1);
-  }
-  else if (code == REGCODE_SJIS) {
-    if (sjis_ismbtrail(*p)) {
-      while (p > start) {
-	if (! sjis_ismbfirst(*--p)) {
-	  p++;
-	  break;
-	}
-      } 
-    }
-    len = mblen(code, *p);
-    if (p + len > s) return p;
-    p += len;
-    return p + ((s - p) & ~1);
-  }
-  else { /* REGCODE_UTF8 */
-    while (!utf8_islead(*p) && p > start) p--;
-    return p;
-  }
-#endif  /* REG_RUBY_M17N */
-}
-
+get_left_adjust_char_head(RegCharEncoding code, UChar* start, UChar* s);
 static UChar*
-get_right_adjust_char_head(RegCharEncoding code, UChar* start, UChar* s)
-{
-  UChar* p = get_left_adjust_char_head(code, start, s);
-
-  if (p < s) {
-    p += mblen(code, *p);
-  }
-  return p;
-}
-
+get_right_adjust_char_head(RegCharEncoding code, UChar* start, UChar* s);
 static UChar*
 get_right_adjust_char_head_with_prev(RegCharEncoding code,
-				     UChar* start, UChar* s, UChar** prev)
-{
-  UChar* p = get_left_adjust_char_head(code, start, s);
-
-  if (p < s) {
-    if (prev) *prev = p;
-    p += mblen(code, *p);
-  }
-  else {
-    if (prev) *prev = (UChar* )NULL; /* Sorry */
-  }
-  return p;
-}
-
+				     UChar* start, UChar* s, UChar** prev);
 static UChar*
-get_prev_char_head(RegCharEncoding code, UChar* start, UChar* s)
-{
-  if (s <= start)
-    return (UChar* )NULL;
-
-  return get_left_adjust_char_head(code, start, s - 1);
-}
-
+get_prev_char_head(RegCharEncoding code, UChar* start, UChar* s);
 static UChar*
-step_backward_char(RegCharEncoding code, UChar* start, UChar* s, int n)
-{
-  while (IS_NOT_NULL(s) && n-- > 0) {
-    if (s <= start)
-      return (UChar* )NULL;
+step_backward_char(RegCharEncoding code, UChar* start, UChar* s, int n);
 
-    s = get_left_adjust_char_head(code, start, s - 1);
-  }
-  return s;
-}
 
 /* used as function pointer value */
 static int
@@ -1481,6 +1531,8 @@ typedef struct {
   int   regnum;
   Node* last_node;
   int   paren_nest;
+  UChar *pattern;
+  UChar *pattern_end;
 } ScanEnv;
 
 #define NOT_TERM         ((UChar )0)
@@ -1563,41 +1615,17 @@ scan_unsigned_octal_number(UChar** src, UChar* end, int maxlen)
   return num;
 }
 
-/* data format:
-   [n][from-1][to-1][from-2][to-2] ... [from-n][to-n]
-   (all data size is WCInt)
- */
+
 #define GET_WCINT(wc,p)   (wc) = *((WCInt* )(p))
 #define BBUF_WRITE_WCINT(bbuf,pos,wc) \
     BBUF_WRITE(bbuf, pos, &(wc), SIZE_WCINT)
-
-static int
-is_in_wc_range(UChar* p, WCInt wc)
-{
-  WCInt n, *data;
-  int low, high, x;
-
-  GET_WCINT(n, p);
-  data = (WCInt* )p;
-  data++;
-
-  for (low = 0, high = n; low < high; ) {
-    x = (low + high) >> 1;
-    if (wc > data[x * 2 + 1])
-      low = x + 1;
-    else
-      high = x;
-  }
-
-  return ((low < n && wc >= data[low * 2]) ? 1 : 0);
-}
 
 /* data format:
    [multi-byte-head-BitSet][n][from-1][to-1][from-2][to-2] ... [from-n][to-n]
    (all data size is WCInt)
  */
 static int
-add_wc_range(BBuf** pbuf, WCInt from, WCInt to, UChar cfrom, UChar cto)
+add_wc_range_to_buf(BBuf** pbuf, WCInt from, WCInt to, UChar cfrom, UChar cto)
 {
 #define INIT_MULTI_BYTE_RANGE_SIZE  (SIZE_WCINT * 5)
 
@@ -1694,7 +1722,6 @@ static int
 add_multi_byte_range(BBuf** pbuf, RegCharEncoding code,
 		     UChar* from, UChar* from_end, UChar* to, UChar* to_end)
 {
-  int mb_maxlen;
   WCInt wc_from, wc_to;
 
   if (! MB2WC_AVAILABLE(code))
@@ -1706,7 +1733,22 @@ add_multi_byte_range(BBuf** pbuf, RegCharEncoding code,
   if (wc_from > wc_to)
     return REGERR_RIGHT_SMALLER_THAN_LEFT_IN_CLASS_RANGE;
 
-  return add_wc_range(pbuf, wc_from, wc_to, from[0], to[0]);
+  return add_wc_range_to_buf(pbuf, wc_from, wc_to, from[0], to[0]);
+}
+
+static int
+add_wc_range(BBuf** pbuf, RegCharEncoding code, WCInt from, WCInt to)
+{
+  int cfrom, cto;
+
+  if (from > to)
+    return REGERR_RIGHT_SMALLER_THAN_LEFT_IN_CLASS_RANGE;
+
+  cfrom = WC2MB_FIRST(code, from);
+  if (cfrom < 0) return cfrom;
+  cto = WC2MB_FIRST(code, to);
+  if (cto < 0) return cto;
+  return add_wc_range_to_buf(pbuf, from, to, (UChar )cfrom, (UChar )cto);
 }
 
 static int
@@ -1888,11 +1930,17 @@ scan_meta_control_backslash(UChar** src, UChar* end)
 static int
 scan_backslash(UChar** src, UChar* end, ScanEnv* env, Node** node)
 {
+#define SCB_MAXBUF  10
+
   int c, num;
-  UChar* prev;
+  WCInt wc;
+  UChar *bufs, *bufe, buf[SCB_MAXBUF];
+  UChar *prev;
   UChar* p = *src;
 
   if (PEND) return REGERR_END_PATTERN_AT_BACKSLASH;
+
+  bufs = buf;
 
   PFETCH(c);
   switch (c) {
@@ -1974,13 +2022,42 @@ scan_backslash(UChar** src, UChar* end, ScanEnv* env, Node** node)
     break;
 
   case 'x':
-    prev = p;
-    num = scan_unsigned_hexadecimal_number(&p, end, 2);
-    if (num < 0) return REGERR_TOO_BIG_NUMBER;
-    if (p == prev) {  /* can't read nothing. */
-      num = 0; /* but, it's not error */
+    if (!PEND && *p == '{') {
+      PINC;
+      prev = p;
+      num = scan_unsigned_hexadecimal_number(&p, end, 8);
+      if (num < 0) return REGERR_TOO_BIG_WIDE_CHAR_VALUE;
+      if (!PEND && IS_XDIGIT(*p) && p - prev >= 8)
+	return REGERR_TOO_LONG_WIDE_CHAR_VALUE;
+
+      if (p == prev || PEND || *p != '}') {
+	/* can't read nothing or invalid format */
+	bufs[0] = 'x'; bufs[1] = '{';
+	bufe = bufs + 2;
+	p = prev;
+      }
+      else {
+	PINC;
+	wc = (WCInt )num;
+	bufe = bufs + SCB_MAXBUF;
+	num = wc2mb_buf(wc, &bufs, &bufe, env->code);
+	if (num < 0) return num;
+	if ((bufe - bufs) == 1) {
+	  num = bufs[0];
+	  goto string_raw;
+	}
+      }
+      goto string_concat;
     }
-    goto string_raw;
+    else {
+      prev = p;
+      num = scan_unsigned_hexadecimal_number(&p, end, 2);
+      if (num < 0) return REGERR_TOO_BIG_NUMBER;
+      if (p == prev) {  /* can't read nothing. */
+	num = 0; /* but, it's not error */
+      }
+      goto string_raw;
+    }
     break;
 
   case '1': case '2': case '3': case '4':
@@ -2027,6 +2104,19 @@ scan_backslash(UChar** src, UChar* end, ScanEnv* env, Node** node)
   *src = p;
   return 0;
 
+ string_concat:
+  if (env->last_node && NTYPE(env->last_node) == N_STRING) {
+    node_str_cat(env->last_node, bufs, bufe);
+    *src = p;
+    if (bufs != buf) xfree(bufs);
+    return 1;  /* string concat */
+  }
+  else {
+    *node = node_new_str(bufs, bufe);
+    if (bufs != buf) xfree(bufs);
+    goto end;
+  }
+
  string_raw:
   if (env->last_node && NTYPE(env->last_node) == N_STRING_RAW) {
     node_str_cat_char(env->last_node, (UChar )num);
@@ -2041,18 +2131,19 @@ scan_backslash(UChar** src, UChar* end, ScanEnv* env, Node** node)
 
 #define ADD_ALL_MULTI_BYTE_RANGE(code, mbuf) do {\
   if (! IS_SINGLEBYTE_CODE(code)) {\
-    r = add_wc_range(&(mbuf), (WCInt )0x80, ~((WCInt )0),\
-                    (UChar )0x80, (UChar )0xff);\
+    r = add_wc_range_to_buf(&(mbuf), (WCInt )0x80, ~((WCInt )0),\
+                            (UChar )0x80, (UChar )0xff);\
     if (r) return r;\
   }\
 } while (0)
 
 static int
 scan_backslash_in_char_class(UChar** src, UChar* end,
-			     RegCharEncoding code, Node* node, int* num)
+		     RegCharEncoding code, Node* node, int *num, WCInt *wc)
 {
   int c, r = 0;
-  UChar* p = *src;
+  UChar *prev;
+  UChar *p = *src;
   BitSetRef bs;
 
   bs = NCCLASS(node).bs;
@@ -2112,12 +2203,36 @@ scan_backslash_in_char_class(UChar** src, UChar* end,
 #endif
 
   case 'x':
-    *num = scan_unsigned_hexadecimal_number(&p, end, 2);
-    if (*num < 0) return REGERR_TOO_BIG_NUMBER;
-    if (p == *src) {  /* can't read nothing. */
-      *num = 0; /* but, it's not error */
+    if (!PEND && *p == '{') {
+      PINC;
+      prev = p;
+      *num = scan_unsigned_hexadecimal_number(&p, end, 8);
+      if (*num < 0) return REGERR_TOO_BIG_WIDE_CHAR_VALUE;
+      if (!PEND && IS_XDIGIT(*p) && p - prev >= 8)
+	return REGERR_TOO_LONG_WIDE_CHAR_VALUE;
+
+      if (p == prev || PEND || *p != '}') {
+	/* can't read nothing or invalid format */
+	*num = (int )'x';
+	p = prev - 1;
+	r = 1;
+      }
+      else {
+	*wc = *num;
+	*num = 0;
+	PINC;
+	r = 2; /* read wc number */
+      }
     }
-    r = 1; /* read number */
+    else {
+      prev = p;
+      *num = scan_unsigned_hexadecimal_number(&p, end, 2);
+      if (*num < 0) return REGERR_TOO_BIG_NUMBER;
+      if (p == prev) {  /* can't read nothing. */
+	*num = 0; /* but, it's not error */
+      }
+      r = 1; /* read number */
+    }
     break;
 
   case '0': case '1': case '2': case '3': case '4':
@@ -2247,11 +2362,13 @@ scan_char_class(UChar** src, UChar* end, RegCharEncoding code, Node* node)
 #define SCC_LAST_NONE      0
 #define SCC_LAST_VALUE     1
 #define SCC_LAST_MBVALUE   2
-#define SCC_LAST_CLASS     3
+#define SCC_LAST_WCVALUE   3
+#define SCC_LAST_CLASS     4
 
 #define SCC_BUF_LEN  8
 
-  int c, r, isnum, last_val, state, last;
+  WCInt wc, last_wc;
+  int i, c, r, isnum, last_val, state, last;
   int curr_mblen, curr_true_mblen, last_mblen, last_true_mblen;
   int curr_mbs_alloc_len, last_mbs_alloc_len;
   UChar curr_mbs_buf[SCC_BUF_LEN], *curr_mbs;
@@ -2295,7 +2412,7 @@ scan_char_class(UChar** src, UChar* end, RegCharEncoding code, Node* node)
     }
     else if (c == '\\') {
       pp = p - 1;
-      r = scan_backslash_in_char_class(&p, end, code, node, &c);
+      r = scan_backslash_in_char_class(&p, end, code, node, &c, &wc);
       if (r < 0) goto err_exit;
       if (r == 0) { /* char class */
 	if (state == SCC_ST_RANGE) {
@@ -2306,8 +2423,19 @@ scan_char_class(UChar** src, UChar* end, RegCharEncoding code, Node* node)
 	state = SCC_ST_NORMAL;
 	continue;
       }
-      else { /* 1: number */
+      else if (r == 1) { /* 1: number */
 	isnum = 1;
+      }
+      else { /* r == 2: wc number */
+	r = WC2MB_FIRST(code, wc);
+	if (r < 0) goto err_exit;
+	if (mblen(code, r) > 1) {
+	  isnum = 2;
+	}
+	else {
+	  isnum = 1;
+	  c = r;
+	}
       }
     }
     else if (c == '[' && PPEEK == ':') {
@@ -2362,22 +2490,35 @@ scan_char_class(UChar** src, UChar* end, RegCharEncoding code, Node* node)
       }
 
       if (state == SCC_ST_RANGE) {
-#ifndef REG_RUBY_M17N
-	if (last == SCC_LAST_VALUE && code == REGCODE_UTF8) {
-	  /* allow only if utf-8 */
-	  int i;
-	  for (i = last_val; i <= 0x7f; i++) {
-	    BITSET_SET_BIT(NCCLASS(node).bs, i);
-	  }
-	  last_mbs[0] = (UChar )0x80;
-	  last_mbs[1] = (UChar )0;
-	  last_true_mblen = 1;
-	}
-	else
-#endif
-	if (last != SCC_LAST_MBVALUE) {
+	if (last == SCC_LAST_VALUE) {
 	  r = REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE;
 	  goto err_exit;
+#if 0
+#ifndef REG_RUBY_M17N
+	  if (code == REGCODE_UTF8) {
+	    /* allow only if utf-8 */
+	    int i;
+	    for (i = last_val; i <= 0x7f; i++) {
+	      BITSET_SET_BIT(NCCLASS(node).bs, i);
+	    }
+	    last_mbs[0] = (UChar )0x80;
+	    last_mbs[1] = (UChar )0;
+	    last_true_mblen = 1;
+	  }
+	  else {
+	    r = REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE;
+	    goto err_exit;
+	  }
+#endif
+#endif
+	}
+	else if (last == SCC_LAST_WCVALUE) {
+	  wc = MB2WC(curr_mbs, curr_mbs + curr_true_mblen, code);
+	  r = add_wc_range(&(NCCLASS(node).mbuf), code, last_wc, wc);
+	  if (r < 0) goto err_exit;
+
+	  state = SCC_ST_NORMAL;
+	  continue;
 	}
 	last  = SCC_LAST_NONE;
       }
@@ -2426,25 +2567,65 @@ scan_char_class(UChar** src, UChar* end, RegCharEncoding code, Node* node)
     else {
     normal_char:
       if (state == SCC_ST_RANGE) {
-	if (last == SCC_LAST_VALUE) {
-	  if (c < last_val) {
-	    r = REGERR_RIGHT_SMALLER_THAN_LEFT_IN_CLASS_RANGE;
-	    goto err_exit;
+	if (isnum == 2) {
+	  if (last == SCC_LAST_WCVALUE) {
+	    r = add_wc_range(&(NCCLASS(node).mbuf), code, last_wc, wc);
+	    if (r < 0) goto err_exit;
 	  }
-	  for (; last_val <= c; last_val++) {
-	    BITSET_SET_BIT(NCCLASS(node).bs, last_val);
+	  else if (last == SCC_LAST_MBVALUE) {
+	    last_wc = MB2WC(last_mbs, last_mbs + last_true_mblen, code);
+	    r = add_wc_range(&(NCCLASS(node).mbuf), code, last_wc, wc);
+	    if (r < 0) goto err_exit;
+	  }
+	  else { /* SCC_LAST_VALUE */
+	    r = REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE;
+	    goto err_exit;
+#if 0
+#ifndef REG_RUBY_M17N
+	    if (code == REGCODE_UTF8) {
+	      for (i = last_val; i <= 0x7f; i++) {
+		BITSET_SET_BIT(NCCLASS(node).bs, i);
+	      }
+	      r = add_wc_range(&(NCCLASS(node).mbuf), code, (WCInt )0x80, wc);
+	      if (r < 0) goto err_exit;
+	    }
+	    else {
+	      r = REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE;
+	      goto err_exit;
+	    }
+#endif
+#endif
 	  }
 	}
-	else { /* last: SCC_LAST_MBVALUE */
-	  r = REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE;
-	  goto err_exit;
+	else {
+	  if (last == SCC_LAST_VALUE) {
+	    if (c < last_val) {
+	      r = REGERR_RIGHT_SMALLER_THAN_LEFT_IN_CLASS_RANGE;
+	      goto err_exit;
+	    }
+	    for (; last_val <= c; last_val++) {
+	      BITSET_SET_BIT(NCCLASS(node).bs, last_val);
+	    }
+	  }
+	  else { /* last: SCC_LAST_MBVALUE or WCVALUE */
+	    r = REGERR_MISMATCH_CODE_LENGTH_IN_CLASS_RANGE;
+	    goto err_exit;
+	  }
 	}
 	last  = SCC_LAST_NONE;
       }
       else {
-	BITSET_SET_BIT(NCCLASS(node).bs, c);
-	last_val = c;
-	last  = SCC_LAST_VALUE;
+	if (isnum == 2) {
+	  last_wc = wc;
+	  last = SCC_LAST_WCVALUE;
+	  r = add_wc_range(&(NCCLASS(node).mbuf), code, wc, wc);
+	  if (r < 0) goto err_exit;
+	}
+	else {
+	  BITSET_SET_BIT(NCCLASS(node).bs, c);
+	  last_val = c;
+	  last = SCC_LAST_VALUE;
+	}
       }
       state = SCC_ST_NORMAL;
     }
@@ -2515,8 +2696,14 @@ scan_make_node(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** rnode)
   case '?':
   case '+':
   case '*':
-    lower = (c == '+' ? 1 : 0);
-    upper = (c == '?' ? 1 : REPEAT_INFINITE);
+    {
+      int cc;
+      if (!PEND && ((cc = PPEEK) == '*' || cc == '+'))
+	return REGERR_NESTED_REPEAT_OPERATOR;
+
+      lower = (c == '+' ? 1 : 0);
+      upper = (c == '?' ? 1 : REPEAT_INFINITE);
+    }
     goto repeat_range;
     break;
 
@@ -2852,6 +3039,10 @@ is_valid_qualifier_target(Node* node)
   return 1;
 }
 
+#define IS_POPULAR_QUALIFIER(qf) \
+ (((qf)->lower == 0 && ((qf)->upper == 1 || IS_REPEAT_INFINITE((qf)->upper))) ||\
+  ((qf)->lower == 1 && IS_REPEAT_INFINITE((qf)->upper))) 
+
 static int
 scan_make_tree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
 {
@@ -2899,21 +3090,38 @@ scan_make_tree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
 	break;
 
       case N_QUALIFIER:
-	{ /* check double repeat '**', '+*', "?+", "{1,infinite}*" etc. */
+#ifdef USE_WARNING_STRANGE_NESTED_REPEAT_OPERATOR
+	{ /* check strange double repeat. */
+	  /* verbose warn (?:.?)? etc... but not warn (.?)? etc... */
 	  QualifierNode* qnlast = &(NQUALIFIER(*last));
 
-	  if (qn->by_number == 0 && qnlast->by_number == 0) {
-	    if ((qnlast->lower == 0 || qnlast->lower == 1)) {
-	      if (IS_REPEAT_INFINITE(qnlast->upper) || /* "*", "+" */
-		  qnlast->upper == 1) {                /* "?" */
-		if (qn->lower <= 1 && IS_REPEAT_INFINITE(qn->upper))
-		  return REGERR_NESTED_REPEAT_OPERATOR;
-		if (qn->lower == 0 && qn->upper == 1)
-		  return REGERR_NESTED_REPEAT_OPERATOR;
+	  if (qn->by_number == 0 && qnlast->by_number == 0 &&
+	      IS_POPULAR_QUALIFIER(qnlast)) {
+	    if (IS_REPEAT_INFINITE(qn->upper)) {
+	      if (qn->lower == 0) { /* '*' */
+		goto strange_nest;
+	      }
+	      else if (qn->lower == 1) { /* '+' */
+	      strange_nest:
+		{
+		  UChar *pat = k_strdup(env->pattern, env->pattern_end);
+		  rb_warning("redundant nested repeat operator %s", pat);
+		  xfree(pat);
+		  goto qualifier_exit;
+		}
+	      }
+	    }
+	    else if (qn->upper == 1 && qn->lower == 0) {
+	      if (qn->greedy) { /* '?' */
+		if (qnlast->lower != 1) goto strange_nest;
+	      }
+	      else { /* '??' */
+		if (!qnlast->greedy || qnlast->upper == 1) goto strange_nest;
 	      }
 	    }
 	  }
 	}
+#endif
 	break;
 
       default:
@@ -2922,6 +3130,7 @@ scan_make_tree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
 	break;
       }
 
+    qualifier_exit:
       NQUALIFIER(curr).target = *last;
       *last = curr;
       last_is_group = 0;
@@ -3008,11 +3217,13 @@ parse_make_tree(Node** root, UChar* pattern, UChar* end, regex_t* reg)
   UChar* p;
   ScanEnv env;
 
-  env.option     = reg->options;
-  env.code       = reg->code;
-  env.regnum     = 0;
-  env.last_node  = NULL;
-  env.paren_nest = 0;
+  env.option      = reg->options;
+  env.code        = reg->code;
+  env.regnum      = 0;
+  env.last_node   = NULL;
+  env.paren_nest  = 0;
+  env.pattern     = pattern;
+  env.pattern_end = end;
 
   *root = NULL;
   p = pattern;
@@ -6778,6 +6989,27 @@ void Init_REGEX_STAT()
 #define STATISTICS_PRINT_RESULT
 #endif
 
+static int
+is_in_wc_range(UChar* p, WCInt wc)
+{
+  WCInt n, *data;
+  int low, high, x;
+
+  GET_WCINT(n, p);
+  data = (WCInt* )p;
+  data++;
+
+  for (low = 0, high = n; low < high; ) {
+    x = (low + high) >> 1;
+    if (wc > data[x * 2 + 1])
+      low = x + 1;
+    else
+      high = x;
+  }
+
+  return ((low < n && wc >= data[low * 2]) ? 1 : 0);
+}
+
 /* match data(str - end) from position (sstart). */
 /* if sstart == str then set sprev to NULL. */
 static int
@@ -6914,8 +7146,9 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
 
     case OP_EXACT2:  STAT_OP_IN(OP_EXACT2);
       DATA_ENSURE(2);
-      if (*p++ != *s++) goto fail;
-      if (*p   != *s)   goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
       sprev = s;
       p++; s++;
       STAT_OP_OUT;
@@ -6924,36 +7157,45 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
 
     case OP_EXACT3:  STAT_OP_IN(OP_EXACT3);
       DATA_ENSURE(3);
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s)   goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
       sprev = s;
-      s++;
+      p++; s++;
       STAT_OP_OUT;
       continue;
       break;
 
     case OP_EXACT4:  STAT_OP_IN(OP_EXACT4);
       DATA_ENSURE(4);
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s)   goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
       sprev = s;
-      s++;
+      p++; s++;
       STAT_OP_OUT;
       continue;
       break;
 
     case OP_EXACT5:  STAT_OP_IN(OP_EXACT5);
       DATA_ENSURE(5);
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s)   goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
       sprev = s;
-      s++;
+      p++; s++;
       STAT_OP_OUT;
       continue;
       break;
@@ -6983,31 +7225,43 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
 
     case OP_EXACTMB2N1:  STAT_OP_IN(OP_EXACTMB2N1);
       DATA_ENSURE(2);
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
       STAT_OP_OUT;
       break;
 
     case OP_EXACTMB2N2:  STAT_OP_IN(OP_EXACTMB2N2);
       DATA_ENSURE(4);
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
       sprev = s;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
       STAT_OP_OUT;
       continue;
       break;
 
     case OP_EXACTMB2N3:  STAT_OP_IN(OP_EXACTMB2N3);
       DATA_ENSURE(6);
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
       sprev = s;
-      if (*p++ != *s++) goto fail;
-      if (*p++ != *s++) goto fail;
+      if (*p != *s) goto fail;
+      p++; s++;
+      if (*p != *s) goto fail;
+      p++; s++;
       STAT_OP_OUT;
       continue;
       break;
@@ -7016,8 +7270,10 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
       GET_LENGTH_INC(tlen, p);
       DATA_ENSURE(tlen * 2);
       while (tlen-- > 0) {
-	if (*p++ != *s++) goto fail;
-	if (*p++ != *s++) goto fail;
+	if (*p != *s) goto fail;
+	p++; s++;
+	if (*p != *s) goto fail;
+	p++; s++;
       }
       sprev = s - 2;
       STAT_OP_OUT;
@@ -7028,9 +7284,12 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
       GET_LENGTH_INC(tlen, p);
       DATA_ENSURE(tlen * 3);
       while (tlen-- > 0) {
-	if (*p++ != *s++) goto fail;
-	if (*p++ != *s++) goto fail;
-	if (*p++ != *s++) goto fail;
+	if (*p != *s) goto fail;
+	p++; s++;
+	if (*p != *s) goto fail;
+	p++; s++;
+	if (*p != *s) goto fail;
+	p++; s++;
       }
       sprev = s - 3;
       STAT_OP_OUT;
@@ -7043,7 +7302,8 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
       tlen2 *= tlen;
       DATA_ENSURE(tlen2);
       while (tlen2-- > 0) {
-	if (*p++ != *s++) goto fail;
+	if (*p != *s) goto fail;
+	p++; s++;
       }
       sprev = s - tlen;
       STAT_OP_OUT;
@@ -7750,6 +8010,103 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
  unexpected_bytecode_error:
   STACK_SAVE;
   return REGERR_UNEXPECTED_BYTECODE;
+}
+
+static UChar*
+get_left_adjust_char_head(RegCharEncoding code, UChar* start, UChar* s)
+{
+  UChar *p;
+  int len;
+
+  if (s <= start) return s;
+  p = s;
+
+#ifdef REG_RUBY_M17N
+  while (!m17n_islead(code, *p) && p > start) p--;
+  while (p + (len = mblen(code, *p)) < s) {
+    p += len;
+  }
+  if (p + len == s) return s;
+  return p;
+#else
+
+  if (code == REGCODE_ASCII) {
+    return p;
+  }
+  else if (code == REGCODE_EUCJP) {
+    while (!eucjp_islead(*p) && p > start) p--;
+    len = mblen(code, *p);
+    if (p + len > s) return p;
+    p += len;
+    return p + ((s - p) & ~1);
+  }
+  else if (code == REGCODE_SJIS) {
+    if (sjis_ismbtrail(*p)) {
+      while (p > start) {
+	if (! sjis_ismbfirst(*--p)) {
+	  p++;
+	  break;
+	}
+      } 
+    }
+    len = mblen(code, *p);
+    if (p + len > s) return p;
+    p += len;
+    return p + ((s - p) & ~1);
+  }
+  else { /* REGCODE_UTF8 */
+    while (!utf8_islead(*p) && p > start) p--;
+    return p;
+  }
+#endif  /* REG_RUBY_M17N */
+}
+
+static UChar*
+get_right_adjust_char_head(RegCharEncoding code, UChar* start, UChar* s)
+{
+  UChar* p = get_left_adjust_char_head(code, start, s);
+
+  if (p < s) {
+    p += mblen(code, *p);
+  }
+  return p;
+}
+
+static UChar*
+get_right_adjust_char_head_with_prev(RegCharEncoding code,
+				     UChar* start, UChar* s, UChar** prev)
+{
+  UChar* p = get_left_adjust_char_head(code, start, s);
+
+  if (p < s) {
+    if (prev) *prev = p;
+    p += mblen(code, *p);
+  }
+  else {
+    if (prev) *prev = (UChar* )NULL; /* Sorry */
+  }
+  return p;
+}
+
+static UChar*
+get_prev_char_head(RegCharEncoding code, UChar* start, UChar* s)
+{
+  if (s <= start)
+    return (UChar* )NULL;
+
+  return get_left_adjust_char_head(code, start, s - 1);
+}
+
+static UChar*
+step_backward_char(RegCharEncoding code, UChar* start, UChar* s, int n)
+{
+  while (IS_NOT_NULL(s) && n-- > 0) {
+    if (s <= start)
+      return (UChar* )NULL;
+
+    s = get_left_adjust_char_head(code, start, s - 1);
+  }
+  return s;
 }
 
 extern int
@@ -8650,6 +9007,10 @@ regex_search(regex_t* reg, UChar* str, UChar* end,
   regex_region_clear(region);
   reg->state--;  /* decrement as search counter */
   MATCH_STACK_ALLOC_FREE(msa);
+#ifdef REG_DEBUG
+  if (r != REG_MISMATCH)
+    fprintf(stderr, "regex_search: error %d", r);
+#endif
   return r;
 
  match:
@@ -8672,6 +9033,8 @@ extern int
 regex_clone(regex_t* to, regex_t* from)
 {
   int size;
+
+  THREAD_ATOMIC_START;
 
   regex_free_body(to);
   xmemcpy(to, from, sizeof(regex_t));
@@ -8703,6 +9066,7 @@ regex_clone(regex_t* to, regex_t* from)
     xmemcpy(to->int_map_backward, from->int_map_backward, size);
   }
 
+  THREAD_ATOMIC_END;
   return 0;
 }
 
@@ -9023,6 +9387,9 @@ re_mbcinit(int mb_code)
 extern int
 regex_init()
 {
+  regex_inited = 1;
+
+  THREAD_ATOMIC_START;
 #ifdef DEFAULT_TRANSTABLE_EXIST
   if (! DefaultTransTable)  /* check re_set_casetable() called already. */
     set_default_trans_table(DTT);
@@ -9032,8 +9399,8 @@ regex_init()
   Init_REGEX_STAT();
   STATISTICS_INIT;
 #endif
+  THREAD_ATOMIC_END;
 
-  regex_inited = 1;
   return 0;
 }
 
@@ -9043,11 +9410,13 @@ regex_end()
 #ifdef USE_RECYCLE_NODE
   FreeNode* n;
 
+  THREAD_ATOMIC_START;
   while (FreeNodeList) {
     n = FreeNodeList;
     FreeNodeList = FreeNodeList->next;
     xfree(n);
   }
+  THREAD_ATOMIC_END;
 #endif
 
   regex_inited = 0;

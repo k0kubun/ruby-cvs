@@ -9,7 +9,7 @@
 #define REGEX_H
 
 #define ONIGURUMA
-#define ONIGURUMA_VERSION           120    /* 1.2 */
+#define ONIGURUMA_VERSION           130    /* 1.3 */
 
 /* config parameters */
 #ifndef RE_NREGS
@@ -29,9 +29,9 @@ typedef m17n_encoding*        RegCharEncoding;
 #else
 typedef const char*           RegCharEncoding;
 #define MBCTYPE_ASCII         0
-#define MBCTYPE_UTF8          1
-#define MBCTYPE_EUC           2
-#define MBCTYPE_SJIS          3
+#define MBCTYPE_EUC           1
+#define MBCTYPE_SJIS          2
+#define MBCTYPE_UTF8          3
 
 #define REGCODE_ASCII         REG_MBLEN_TABLE[MBCTYPE_ASCII]
 #define REGCODE_UTF8          REG_MBLEN_TABLE[MBCTYPE_UTF8]
@@ -123,6 +123,9 @@ extern RegCharEncoding RegDefaultCharEncoding;
 #define REGERR_TOO_MANY_MULTI_BYTE_RANGES                   -205
 #define REGERR_TOO_SHORT_MULTI_BYTE_STRING                  -206
 #define REGERR_TOO_BIG_BACKREF_NUMBER                       -207
+#define REGERR_TOO_BIG_WIDE_CHAR_VALUE                      -208
+#define REGERR_TOO_LONG_WIDE_CHAR_VALUE                     -209
+#define REGERR_INVALID_WIDE_CHAR_VALUE                      -210
 
 /* match result region type */
 struct re_registers {
