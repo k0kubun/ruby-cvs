@@ -502,8 +502,8 @@ static void proc_args(int argc, char **argv)
 	    exit(0);
 	}
 	
-	if ((script_filename = getenv("SCRIPT_FILENAME")) != NULL
-	    && strstr(script_filename, argv[0]) != NULL)
+	if ((script_filename = getenv("SCRIPT_FILENAME")) == NULL
+	    || strstr(script_filename, argv[0]) != NULL)
 	    eruby_filename = NULL;
 	if ((path_translated = getenv("PATH_TRANSLATED")) != NULL) {
 	    eruby_filename = path_translated;
