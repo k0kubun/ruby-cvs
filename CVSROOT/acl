@@ -43,6 +43,7 @@ group:eruby:shugo
 group:mod_ruby:shugo
 group:rubicon:dave,andy,aleksi
 group:cvsmailer:knu
+group:div:seki
 group:rwiki:seki,nahi
 group:rwiki-installer:kazu
 group:drb:seki
@@ -87,6 +88,7 @@ grant:@eruby:eruby
 grant:@mod_ruby:mod_ruby
 grant:@rubicon:rubicon
 grant:@cvsmailer:app/cvsmailer
+grant:@div:app/div
 grant:@rwiki-installer:app/rwiki/installer
 grant:@rwiki:app/rwiki
 grant:@drb:lib/drb
