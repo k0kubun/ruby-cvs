@@ -281,8 +281,8 @@ class TestFloat < Rubicon::TestCase
 
     assert_equal("1.23456",    1.23456.to_s)
     assert_equal("-1.23456",  -1.23456.to_s)
-    assert_equal("1.23e+45",   1.23e45.to_s)
-    assert_equal("1.23e-45",   1.23e-45.to_s)
+    assert_flequal(1.23e+45,   Float(1.23e+45.to_s))
+    assert_flequal(1.23e-45,   Float(1.23e-45.to_s))
   end
   
   def test_truncate

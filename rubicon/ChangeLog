@@ -1,3 +1,11 @@
+2001-11-27    <chad fowler@CI29636-B>
+
+	* builtin/TestFloat.rb: fixed tests to work on Win32.
+
+2001-11-27    <chadfowler@chadfowler.com>
+
+	* builtin/TestTime.rb: Win32 fixes for asctime and ctime.
+
 2001-11-26  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestFile.rb: Patches from Patrick Cheng for basename and
