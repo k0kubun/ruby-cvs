@@ -26,8 +26,10 @@ class TestIO < Rubicon::TestCase
     teardownTestDir
   end
 
-  def stdin_copy_pipe
-    IO.popen("#$interpreter -e '$stdout.sync=true;while gets;puts $_;end'", "r+")
+  MsWin32.dont do
+    def stdin_copy_pipe
+      IO.popen("#$interpreter -e '$stdout.sync=true;while gets;puts $_;end'", "r")
+    end
   end
 
   # ---------------------------------------------------------------
@@ -334,29 +336,29 @@ class TestIO < Rubicon::TestCase
   end
 
   def test_close_read
-    pipe = stdin_copy_pipe
-    begin
-      pipe.puts "Hello"
-      assert_equal("Hello\n", pipe.gets)
-      pipe.close_read
-      assert_exception(IOError) { pipe.gets }
-    ensure
-      pipe.close_write
+    MsWin32.dont do
+      pipe = stdin_copy_pipe
+      begin
+	pipe.puts "Hello"
+	assert_equal("Hello\n", pipe.gets)
+	pipe.close_read
+	assert_exception(IOError) { pipe.gets }
+      ensure
+	pipe.close_write
+      end
     end
   end
 
   def test_close_write
-    MsWin32.only do
-      fail("SEGVs under Win32")
+    MsWin32.dont do
+      pipe = stdin_copy_pipe
+      
+      pipe.puts "Hello"
+      assert_equal("Hello\n", pipe.gets)
+      pipe.close_write
+      assert_exception(IOError) { pipe.puts "Hello" }
+      pipe.close
     end
-
-    pipe = stdin_copy_pipe
-
-    pipe.puts "Hello"
-    assert_equal("Hello\n", pipe.gets)
-    pipe.close_write
-    assert_exception(IOError) { pipe.puts "Hello" }
-    pipe.close
   end
 
   def test_closed?
@@ -365,12 +367,14 @@ class TestIO < Rubicon::TestCase
     f.close
     assert(f.closed?)
 
-    pipe = stdin_copy_pipe
-    assert(!pipe.closed?)
-    pipe.close_read
-    assert(!pipe.closed?)
-    pipe.close_write
-    assert(pipe.closed?)
+    MsWin32.dont do
+      pipe = stdin_copy_pipe
+      assert(!pipe.closed?)
+      pipe.close_read
+      assert(!pipe.closed?)
+      pipe.close_write
+      assert(pipe.closed?)
+    end
   end
 
   def test_each
@@ -695,9 +699,8 @@ class TestIO < Rubicon::TestCase
     File.open(@file) do |file|
       assert_equal("line 1\n",  file.gets)
       assert_equal("line 2\n",  file.gets)
-      assert_equal("dummy\n",  file.gets)
-      assert_equal("4\n",  file.gets)
-      assert_equal("dummy4\n",  file.gets)
+      assert_equal("dummy\n",   file.gets)
+      assert_equal("4\n",       file.gets)
     end
   end
 

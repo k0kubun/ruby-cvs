@@ -1,3 +1,8 @@
+2001-11-25    <Dave@Thomases.com>
+
+	* builtin\TestIO.rb: MsWin32 doesn't support bi-directional pipes,
+	so start removinh them from the tests.
+
 2001-11-18  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestFile.rb: Chad: changed line length tests to alkklow
