@@ -136,6 +136,21 @@ static VALUE server_log(int type, int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
+static VALUE server_log_emerg(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_EMERG, argc, argv, self);
+}
+
+static VALUE server_log_alert(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_ALERT, argc, argv, self);
+}
+
+static VALUE server_log_crit(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_CRIT, argc, argv, self);
+}
+
 static VALUE server_log_error(int argc, VALUE *argv, VALUE self)
 {
     return server_log(APLOG_ERR, argc, argv, self);
@@ -149,6 +164,11 @@ static VALUE server_log_warn(int argc, VALUE *argv, VALUE self)
 static VALUE server_log_notice(int argc, VALUE *argv, VALUE self)
 {
     return server_log(APLOG_NOTICE, argc, argv, self);
+}
+
+static VALUE server_log_info(int argc, VALUE *argv, VALUE self)
+{
+    return server_log(APLOG_INFO, argc, argv, self);
 }
 
 static VALUE server_log_debug(int argc, VALUE *argv, VALUE self)
@@ -208,12 +228,20 @@ void rb_init_apache_server()
 		     server_limit_req_fieldsize, 0);
     rb_define_method(rb_cApacheServer, "limit_req_fields",
 		     server_limit_req_fields, 0);
+    rb_define_method(rb_cApacheServer, "log_emerg",
+		     server_log_emerg, -1);
+    rb_define_method(rb_cApacheServer, "log_alert",
+		     server_log_alert, -1);
+    rb_define_method(rb_cApacheServer, "log_crit",
+		     server_log_crit, -1);
     rb_define_method(rb_cApacheServer, "log_error",
 		     server_log_error, -1);
     rb_define_method(rb_cApacheServer, "log_warn",
 		     server_log_warn, -1);
     rb_define_method(rb_cApacheServer, "log_notice",
 		     server_log_notice, -1);
+    rb_define_method(rb_cApacheServer, "log_info",
+		     server_log_info, -1);
     rb_define_method(rb_cApacheServer, "log_debug",
 		     server_log_debug, -1);
     rb_define_method(rb_cApacheServer, "document_root",

@@ -1,3 +1,13 @@
+Wed Jul  3 14:11:22 2002  Sean Chittenden <sean@ruby-lang.org>
+
+	* server.c (server_log_emerge): new method.
+
+	* server.c (server_log_alert): ditto.
+
+	* server.c (server_log_crit): ditto.
+
+	* server.c (server_log_info): ditto.
+
 Tue Jul  2 14:19:37 2002  Shugo Maeda <shugo@modruby.net>
 
 	* lib/apache/ruby-debug.rb (handler): do not catch SystemExit.
