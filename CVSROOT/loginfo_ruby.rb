@@ -8,7 +8,7 @@
 # 0.12 subject_prefix, smtp_ipaddr, multiple-email-address. (2000/6/1)
 #
 # $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
-# $devId: loginfo.rb,v 1.5 2001/01/30 17:46:14 knu Exp $
+# $devId: loginfo.rb,v 1.6 2001/01/31 14:58:24 knu Exp $
 # $Id$
 #
 
@@ -144,7 +144,7 @@ if !$isimport
     i.chomp!
     tk = i.split(/ /)
     croot = tk.shift + "/"      # CVSROOT mod-path file file file...
-    cmodpath = tk.shift.sub(/^#{croot}/, "")
+    cmodpath = tk.shift.sub(/^#{Regexp.quote(croot)}/, "")
     tk.each { |j|
       commithash["#{cmodpath}/#{j}"] = true
     }
@@ -184,7 +184,7 @@ if !$isimport
 	  nextline.strip!
 	  nextline =~ /lines:\s+(.+)\s+(.+)$/
 	  append_line($changelogfile, 
-		      sprintf("%-9s %-4s %-4s  %s/%s",
+		      sprintf("%-11s %-4s %-4s  %s/%s",
 			      revision, $1, $2, $modulename, f))
 	  break
 	end
@@ -307,7 +307,7 @@ else
      "Log:\n" +
      logtext.chomp.indent(2) + "\n" +
      "\n" +
-     ("Revision  Changes    Path\n" +
+     ("Revision    Changes    Path\n" +
       read_file($changelogfile).chomp rescue "")).indent(2)
 end
 

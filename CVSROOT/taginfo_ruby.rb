@@ -13,19 +13,21 @@
 # ARG6 : revision1
 # ..
 #
-# $devId: taginfo.rb,v 1.2 2001/01/31 05:18:14 knu Exp $
+# $devId: taginfo.rb,v 1.3 2001/01/31 14:58:24 knu Exp $
 # $Id$
 #
 
 if ARGV.size < 6
-  puts "Usage: #{$0} CVSROOT USER tagname operation module file1 rev1 [file2 rev2 ...]"
+  puts "Usage: #{$0} CVSROOT USER tagname operation modulepath file1 rev1 [file2 rev2 ...]"
   exit 1	# No way!
 end
 
-$cvsroot, $cvsuser, $tagname, $operation, $modulename, *$cvsfilerevs = *ARGV
+$cvsroot, $cvsuser, $tagname, $operation, $modulepath, *$cvsfilerevs = *ARGV
 
 $cvsroot.tr_s!('/', '/')
-$modulename.tr_s!('/', '/')
+$modulepath.tr_s!('/', '/')
+
+$modulename = $modulepath.sub(/^#{Regexp.quote($cvsroot)}/, '')
 
 $aclfile = "#{$cvsroot}/acl"
 
@@ -36,8 +38,10 @@ $hostname = Socket.gethostbyname(Socket.gethostname)[0]
 $:.unshift $cvsroot
 require "cvsacl"
 
-if File.exist?($aclfile) && !check_acl($aclfile, $hostname, $cvsuser, $modulename)
-  exit 1	# No way!
+if File.exist?($aclfile)
+  if !check_acl($aclfile, $hostname, $cvsuser, $modulename)
+    exit 1	# No way!
+  end
 end
 
 exit 0		# Let's do it!

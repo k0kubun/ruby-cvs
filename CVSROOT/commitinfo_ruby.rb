@@ -12,19 +12,21 @@
 # ..
 #
 # $Idaemons: /home/cvs/cvsmailer/commitinfo.rb,v 1.4 2001/01/19 17:22:53 knu Exp $
-# $devId: commitinfo.rb,v 1.7 2001/01/31 05:18:14 knu Exp $
+# $devId: commitinfo.rb,v 1.8 2001/01/31 14:58:24 knu Exp $
 # $Id$
 #
 
 if ARGV.size < 4
-  puts "Usage: #{$0} CVSROOT USER module file1 [file2...]"
+  puts "Usage: #{$0} CVSROOT USER modulepath file1 [file2...]"
   exit 1	# No way!
 end
 
-$cvsroot, $cvsuser, $modulename, *$cvsfiles = *ARGV
+$cvsroot, $cvsuser, $modulepath, *$cvsfiles = *ARGV
 
 $cvsroot.tr_s!('/', '/')
-$modulename.tr_s!('/', '/')
+$modulepath.tr_s!('/', '/')
+
+$modulename = $modulepath.sub(/^#{Regexp.quote($cvsroot)}/, '')
 
 $aclfile = "#{$cvsroot}/CVSROOT/acl"
 
@@ -35,8 +37,10 @@ $hostname = Socket.gethostbyname(Socket.gethostname)[0]
 $:.unshift "#{$cvsroot}/CVSROOT"
 require "cvsacl"
 
-if File.exist?($aclfile) && !check_acl($aclfile, $hostname, $cvsuser, $modulename)
-  exit 1	# No way!
+if File.exist?($aclfile)
+  if !check_acl($aclfile, $hostname, $cvsuser, $modulename)
+    exit 1	# No way!
+  end
 end
 
 # append a line to a file
@@ -46,7 +50,7 @@ end
 
 savefile = sprintf("/tmp/commitinfo.%s.%d", $cvsuser, Process.getpgrp())
 
-appendline savefile, "#{$cvsroot} #{$modulename} #{$cvsfiles.join(' ')}"
+appendline savefile, "#{$cvsroot} #{$modulepath} #{$cvsfiles.join(' ')}"
 
 exit 0		# Let's do it!
 

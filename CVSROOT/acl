@@ -70,13 +70,13 @@ group:doc:@all
 # Grant "admin" members everything
 grant:@admin:.*
 
-grant:@ruby:src/ruby
-grant:@eruby:src/eruby
-grant:@mod_ruby:src/mod_ruby
-grant:@rubicon:src/rubicon
-grant:@cvsmailer:src/app/cvsmailer
-grant:@rwiki:src/app/rwiki
-grant:@irc:src/lib/irc
+grant:@ruby:ruby
+grant:@eruby:eruby
+grant:@mod_ruby:mod_ruby
+grant:@rubicon:rubicon
+grant:@cvsmailer:app/cvsmailer
+grant:@rwiki:app/rwiki
+grant:@irc:lib/irc
 
 grant:@www:www
 
