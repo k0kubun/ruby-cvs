@@ -87,6 +87,10 @@ class TestProcess < Rubicon::TestCase
     assert_fail("untested")
   end
 
+  def test_s_wait2
+    assert_fail("untested")
+  end
+
   def test_s_waitpid
     assert_fail("untested")
   end

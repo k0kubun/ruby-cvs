@@ -6,17 +6,6 @@ class TestFloat < Rubicon::TestCase
   BIG = 3.1415926e43
   SML = 3.18309891613572e-44   # = 1/BIG
 
-  def assert_flequal(exp, actual, msg='')
-    if exp == 0.0
-      error = 1e-7
-    else
-      error = exp.abs/1e7
-    end
-
-    assert((exp - actual).abs < error, 
-           "#{msg} Expected #{'%f' % exp} got #{'%f' % actual}")
-  end
-
   ###########################################################################
 
   def test_UMINUS
