@@ -1,6 +1,15 @@
+Tue May 15 15:18:02 2001  Shugo Maeda <shugo@modruby.net>
+
+	* eruby_lib.c (eruby_import): new method. inspired by Hoss
+	Firooznia.
+
+Fri May 11 18:52:30 2001  Christian Lademann <lademann@zls.de>
+
+	* eruby_lib.c (eruby_compile): allow files to start with '#'.
+
 Tue May  1 18:14:56 2001  Shugo Maeda <shugo@modruby.net>
 
-	* Makefile.RB: add .1 to .SUFFIXES.
+	* Makefile.RB: added .1 to .SUFFIXES.
 
 Tue May  1 12:23:44 2001  YASUI Kentarow <kenyasui@alles.or.jp>
 

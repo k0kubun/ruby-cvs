@@ -445,13 +445,8 @@ static VALUE eruby_compile(eruby_compiler_t *compiler)
 	    compiler->lex_p = compiler->lex_pend;
 	}
 	else {
-	    while (c != EOF) {
-		c = nextc(compiler);
-		if (c == '\n') {
-		    output_char(compiler, c);
-		    break;
-		}
-	    }
+	    pushback(compiler, c);
+	    pushback(compiler, '#');
 	}
     }
     else {
@@ -573,6 +568,7 @@ VALUE eruby_compiler_compile_file(VALUE self, VALUE file)
 {
     eruby_compiler_t *compiler;
 
+    Check_Type(file, T_FILE);
     Data_Get_Struct(self, eruby_compiler_t, compiler);
     compiler->output = rb_str_new("", 0);
     compiler->lex_gets = lex_io_gets;
@@ -672,6 +668,17 @@ static VALUE eruby_set_default_charset(VALUE self, VALUE val)
     return val;
 }
 
+static VALUE eruby_import(VALUE self, VALUE filename)
+{
+    VALUE compiler, file, code;
+
+    compiler = eruby_compiler_new();
+    file = rb_file_open(STR2CSTR(filename), "r");
+    code = eruby_compiler_compile_file(compiler, file);
+    rb_eval_string(STR2CSTR(code));
+    return Qnil;
+}
+
 void eruby_init()
 {
     rb_define_virtual_variable("$NOHEADER", noheader_getter, noheader_setter);
@@ -685,6 +692,7 @@ void eruby_init()
 			       eruby_get_default_charset, 0);
     rb_define_singleton_method(mERuby, "default_charset=",
 			       eruby_set_default_charset, 1);
+    rb_define_singleton_method(mERuby, "import", eruby_import, 1);
 
     cERubyCompiler = rb_define_class_under(mERuby, "Compiler", rb_cObject);
     rb_define_singleton_method(cERubyCompiler, "new", eruby_compiler_s_new, 0);
