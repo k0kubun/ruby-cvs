@@ -1,7 +1,6 @@
 $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 
-
 class TestKernel < Rubicon::TestCase
 
   def test_EQUAL # '=='
@@ -534,33 +533,23 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_abort
-    f = fork
-    if !f
-      abort
-      exit 99                   # should not get here
-    else
-      Process.wait
-      assert_equal(1<<8, $?)
-    end
+    p = IO.popen("#$interpreter -e 'abort;exit 99'")
+    p.close
+    assert_equal(1<<8, $?)
   end
 
   def test_s_at_exit
-    p = IO.popen("-")
+    script = %{at_exit {puts "world"};at_exit {puts "cruel"};puts "goodbye";exit 99}
 
-    if !p
-      at_exit { puts "world" }
-      at_exit { puts "cruel" }
-      puts "goodbye"
-      exit 99
-    else
-      begin
-        assert_equal("goodbye\n", p.gets)
-        assert_equal("cruel\n", p.gets)
-        assert_equal("world\n", p.gets)
-      ensure
-        p.close
-        assert_equal(99<<8, $?)
-      end
+    p = IO.popen("#$interpreter -e '#{script}'")
+
+    begin
+      assert_equal("goodbye\n", p.gets)
+      assert_equal("cruel\n", p.gets)
+      assert_equal("world\n", p.gets)
+    ensure
+      p.close
+      assert_equal(99<<8, $?)
     end
   end
 
@@ -754,31 +743,20 @@ class TestKernel < Rubicon::TestCase
 
   def test_s_exec
     open("xyzzy.dat", "w") { |f| f.puts "stuff" }
+    int1 = $interpreter.gsub(/\\/) { $& + $& }
     begin
-      p = IO.popen("-")
-      if p.nil?
-        exec("echo xy*y.dat")
-        exit
-      else
-        begin
-          assert_equal("xyzzy.dat\n", p.gets)
-        ensure
-          p.close
-        end
+      # With separate parameters, don't do expansion
+      str = %{#$interpreter -e 'exec("echo", "xy*y.dat")'}
+      IO.popen(str) do |p|
+	assert_equal("xy*y.dat", p.gets.chomp)
+      end
+
+      # all in one line, do expansion
+      str = %{#$interpreter -e 'exec("echo xy*y.dat")'}
+      IO.popen(str) do |p|
+	assert_equal("xyzzy.dat", p.gets.chomp)
       end
       
-      # With separate parameters, don't do expansion
-      p = IO.popen("-")
-      if p.nil?
-        exec("echo", "zy*y.dat")
-        exit
-      else
-        begin
-          assert_equal("zy*y.dat\n", p.gets)
-        ensure
-          p.close
-        end
-      end
     ensure
       File.unlink "xyzzy.dat" if p
     end
@@ -794,52 +772,41 @@ class TestKernel < Rubicon::TestCase
       assert_fail("Bad exception: #$!")
     end
 
-    f = fork
-    if f.nil?
-      exit
-    end
-    Process.wait
+    p = IO.popen("#$interpreter -e 'exit'")
+    p.close
     assert_equal(0, $?)
 
-    f = fork
-    if f.nil?
-      exit 123
-    end
-    Process.wait
+    p = IO.popen("#$interpreter -e 'exit 123'")
+    p.close
     assert_equal(123 << 8, $?)
   end
 
   def test_s_exit!
-    f = fork
-
-    if f.nil?
+    tf = Tempfile.new("tf")
+    tf.puts %{
       begin
-        exit! 99
-        exit 1
+	exit! 99
+	exit 1
       rescue SystemExit
-        exit 2
+	exit 2
       rescue Exception
-        exit 3
+	exit 3
       end
-      exit 4
-    end
-    Process.wait
+      exit 4}
+    
+    tf.close
+    IO.popen("#$interpreter #{tf.path}").close
     assert_equal(99<<8, $?)
-
-    f = fork
-    if f.nil?
-      exit!
-    end
-    Process.wait
+    
+    IO.popen("#$interpreter -e 'exit!'").close
     assert_equal(0xff << 8, $?)
 
-    f = fork
-    if f.nil?
-      exit! 123
-    end
-    Process.wait
+    IO.popen("#$interpreter -e 'exit! 123'").close
     assert_equal(123 << 8, $?)
+  ensure
+    tf.close(true)
   end
+
 
   def test_s_fail
     begin
@@ -891,35 +858,38 @@ class TestKernel < Rubicon::TestCase
 
   end
 
-  def test_s_fork
-    f = fork
-    if f.nil?
-      File.open("_pid", "w") {|f| f.puts $$}
-      exit 99
-    end
-    begin
-      Process.wait
-      assert_equal(99<<8, $?)
-      File.open("_pid") do |file|
-        assert_equal(file.gets.to_i, f)
+  MsWin32.dont do
+    def test_s_fork
+      f = fork
+      if f.nil?
+	File.open("_pid", "w") {|f| f.puts $$}
+	exit 99
       end
-    ensure
-      File.delete("_pid")
-    end
-
-    f = fork do
-      File.open("_pid", "w") {|f| f.puts $$}
-    end
-    begin
-      Process.wait
-      assert_equal(0<<8, $?)
-      File.open("_pid") do |file|
-        assert_equal(file.gets.to_i, f)
+      begin
+	Process.wait
+	assert_equal(99<<8, $?)
+	File.open("_pid") do |file|
+	  assert_equal(file.gets.to_i, f)
+	end
+      ensure
+	File.delete("_pid")
       end
-    ensure
-      File.delete("_pid")
+      
+      f = fork do
+	File.open("_pid", "w") {|f| f.puts $$}
+      end
+      begin
+	Process.wait
+	assert_equal(0<<8, $?)
+	File.open("_pid") do |file|
+	  assert_equal(file.gets.to_i, f)
+	end
+      ensure
+	File.delete("_pid")
+      end
     end
   end
+
 
   def test_s_format
     assert_equals("00123", format("%05d", 123))
@@ -1262,13 +1232,8 @@ class TestKernel < Rubicon::TestCase
   def setup_s_open2
     setupTestDir
     @file  = "_test/_10lines"
-    begin    
-      File.open(@file, "w") { |f|
-        10.times { |i| f.printf "%02d: This is a line\n", i }
-      }
-    rescue Exception
-      puts $!
-      exit!
+    File.open(@file, "w") do |f|
+      10.times { |i| f.printf "%02d: This is a line\n", i }
     end
   end
 
@@ -1280,9 +1245,9 @@ class TestKernel < Rubicon::TestCase
       assert_nil(open("| echo hello") do |f|
                    assert_equal("hello\n", f.gets)
                  end)
-      
+
       # READ
-      p = open("|cat #@file")
+      p = open("|#$interpreter -e 'puts readlines' <#@file")
       begin
         count = 0
         p.each do |line|
@@ -1295,8 +1260,9 @@ class TestKernel < Rubicon::TestCase
         p.close
       end
 
+
       # READ with block
-    res = open("|cat #@file") do |p|
+      res = open("|#$interpreter -e 'puts readlines' <#@file") do |p|
         count = 0
         p.each do |line|
           num = line[0..1].to_i
@@ -1309,7 +1275,12 @@ class TestKernel < Rubicon::TestCase
       p.close
 
       # WRITE
-      p = open("|cat >#@file", "w")
+      
+      MsWin32.only do
+	fail "This hangs the tests as the background process never terminates"
+      end
+
+      p = open("|#$interpreter -e 'puts readlines' >#@file", "w")
       begin
         5.times { |i| p.printf "Line %d\n", i }
       ensure
@@ -1323,113 +1294,121 @@ class TestKernel < Rubicon::TestCase
         count += 1
       end
       assert_equal(5, count)
-      
+
       # Spawn an interpreter
-      parent = $$
-      p = open("|-")
-      if p
-        begin
-          assert_equal(parent, $$)
-          assert_equal("Hello\n", p.gets)
-        ensure
-          p.close
-        end
-      else
-        assert_equal(parent, Process.ppid)
-        puts "Hello"
-        exit
+      MsWin32.dont do
+	parent = $$
+	p = open("|-")
+	if p
+	  begin
+	    assert_equal(parent, $$)
+	    assert_equal("Hello\n", p.gets)
+	  ensure
+	    p.close
+	  end
+	else
+	  assert_equal(parent, Process.ppid)
+	  puts "Hello"
+	  exit
+	end
       end
 
       # Spawn an interpreter - WRITE
-      parent = $$
-      pipe = open("|-", "w")
-      
-      if pipe
-        begin
-          assert_equal(parent, $$)
-          pipe.puts "12"
-          Process.wait
-          assert_equal(12, $?>>8)
-        ensure
-          pipe.close
-        end
-      else
-        buff = $stdin.gets
-        exit buff.to_i
+      MsWin32.dont do
+	parent = $$
+	pipe = open("|-", "w")
+	
+	if pipe
+	  begin
+	    assert_equal(parent, $$)
+	    pipe.puts "12"
+	    Process.wait
+	    assert_equal(12, $?>>8)
+	  ensure
+	    pipe.close
+	  end
+	else
+	  buff = $stdin.gets
+	  exit buff.to_i
+	end
       end
-      
+
       # Spawn an interpreter - READWRITE
-      parent = $$
-      p = open("|-", "w+")
-      
-      if p
-        begin
-          assert_equal(parent, $$)
-          p.puts "Hello\n"
-          assert_equal("Goodbye\n", p.gets)
-          Process.wait
-        ensure
-          p.close
-        end
-      else
-        puts "Goodbye" if $stdin.gets == "Hello\n"
-        exit
+      MsWin32.dont do
+	parent = $$
+	p = open("|-", "w+")
+	
+	if p
+	  begin
+	    assert_equal(parent, $$)
+	    p.puts "Hello\n"
+	    assert_equal("Goodbye\n", p.gets)
+	    Process.wait
+	  ensure
+	    p.close
+	  end
+	else
+	  puts "Goodbye" if $stdin.gets == "Hello\n"
+	  exit
+	end
       end
     ensure
       teardownTestDir
     end
   end
 
-  class PTest2
-    def inspect
-      "ptest2"
-    end
-  end
     
   def test_s_p
-    IO.popen("-") do |pipe|
-      if !pipe
+    tf = Tempfile.new("tf")
+    begin
+      tf.puts %{
+	class PTest2
+	  def inspect
+	    "ptest2"
+	  end
+	end
         p 1
         p PTest2.new
-        exit
-      end
-      begin
-        assert_equal("1\n", pipe.gets)
+        exit}
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |pipe|
+	assert_equal("1\n", pipe.gets)
         assert_equal("ptest2\n", pipe.gets)
-      ensure
-        pipe.close
       end
-    end
-  end
-
-  class PrintTest
-    def to_s
-      "printtest"
+    ensure
+        tf.close(true)
     end
   end
 
   def test_s_print
-    IO.popen("-") do |pipe|
-      if !pipe
-        print 1
-        print PrintTest.new
-        print "\n"
-        $, = ":"
-        print 1, "cat", PrintTest.new, "\n"
-        exit
+    tf = Tempfile.new("tf")
+    begin
+      tf.puts %{
+	class PrintTest
+	  def to_s
+	    "printtest"
+	  end
+	end
+	print 1
+	print PrintTest.new
+	print "\n"
+	$, = ":"
+      print 1, "cat", PrintTest.new, "\n"
+	exit}
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |pipe|
+	assert_equal("1printtest\n", pipe.gets)
+	assert_equal("1:cat:printtest:\n", pipe.gets)
       end
-      begin
-        assert_equal("1printtest\n", pipe.gets)
-        assert_equal("1:cat:printtest:\n", pipe.gets)
-      ensure
-        pipe.close
-      end
+    ensure
+      tf.close(true)
     end
   end
 
   def test_s_printf
-    IO.popen("-") do |pipe|
-      if !pipe
+    tf = Tempfile.new("tf")
+    begin
+      tf.puts %{
         printf("%05d\n", 123)
         printf("%-5s|%08x\n", 123, 1)
         printf("%3s %-4s%%foo %.0s%5d %#x%c%3.1f %b %x %X %#b %#x %#X\n",
@@ -1446,18 +1425,19 @@ class TestKernel < Rubicon::TestCase
                 11,
                 171,
                 171)
-        exit
-      end
-      begin
-        assert_equal("00123\n", pipe.gets)
-        assert_equal("123  |00000001\n", pipe.gets)
-        assert_equal(" hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB\n",
+        exit}
+      tf.close
+      IO.popen("#$interpreter #{tf.path}") do |pipe|
+	assert_equal("00123\n", pipe.gets)
+	assert_equal("123  |00000001\n", pipe.gets)
+	assert_equal(" hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB\n",
                      pipe.gets)
-      ensure
-        pipe.close
       end
+    ensure
+        tf.close(true)
     end
   end
+
 
   def test_s_proc
     a = proc { "hello" }
@@ -1470,17 +1450,23 @@ class TestKernel < Rubicon::TestCase
     setupTestDir
     fname = "_test/_op"
     begin
-      File.open(fname, "w") do |file|
+      File.open(fname, "wb") do |file|
         file.putc "A"
         0.upto(255) { |ch| file.putc ch }
       end
       
-      File.open(fname) do |file|
+      File.open(fname, "rb") do |file|
         assert_equal(?A, file.getc)
         0.upto(255) { |ch| assert_equal(ch, file.getc) }
       end
     ensure
       teardownTestDir
+    end
+  end
+
+  class PrintTest
+    def to_s
+      "printtest"
     end
   end
 
@@ -1775,9 +1761,15 @@ class TestKernel < Rubicon::TestCase
     assert_nil(select(nil, nil, nil, 0))
     assert_exception(ArgumentError) { select(nil, nil, nil, -1) }
     
-    File.open(".") do |file|
-      res = select([file], [$stdout, $stderr], [], 1)
-      assert_equal([[file], [$stdout, $stderr], []], res)
+    tf = Tempfile.new("tf")
+    tf.close
+    begin
+      File.open(tf.path) do |file|
+	res = select([file], [$stdout, $stderr], [], 1)
+	assert_equal([[file], [$stdout, $stderr], []], res)
+      end
+    ensure
+      tf.close(true)
     end
   end
 
@@ -1994,29 +1986,19 @@ class TestKernel < Rubicon::TestCase
   def test_s_system
     open("xyzzy.dat", "w") { |f| f.puts "stuff" }
     begin
-      p = IO.popen("-")
-      if p.nil?
-        system("echo xy*y.dat")
-        exit
-      else
-        begin
-          assert_equal("xyzzy.dat\n", p.gets)
-        ensure
-          p.close
-        end
+      p = IO.popen(%{#$interpreter -e 'system("echo xy*y.dat")'})
+      begin
+	assert_equal("xyzzy.dat\n", p.gets)
+      ensure
+	p.close
       end
-      
+
       # With separate parameters, don't do expansion
-      p = IO.popen("-")
-      if p.nil?
-        system("echo", "zy*y.dat")
-        exit
-      else
-        begin
-          assert_equal("zy*y.dat\n", p.gets)
-        ensure
-          p.close
-        end
+      p = IO.popen(%{#$interpreter -e 'system("echo", "xy*y.dat")'})
+      begin
+	assert_equal("xyzzy.dat\n", p.gets)
+      ensure
+	p.close
       end
     ensure
       File.unlink "xyzzy.dat" if p
@@ -2053,7 +2035,7 @@ class TestKernel < Rubicon::TestCase
     # "IGNORE" discards child termination status (but apparently not
     # under Cygwin/W2k
 
-    if $os != Cygwin
+    Unix.only do
       trap "CHLD", "IGNORE"
       pid = fork
       exit unless pid
@@ -2063,29 +2045,30 @@ class TestKernel < Rubicon::TestCase
 
     # 2. check that we run a proc as a handler when a child
     # terminates
-    res = nil
-    lastProc = proc { res = 1 }
-    trap("SIGCHLD", lastProc)
-    fork { ; }
-    Process.wait
-    assert_equal(1, res)
+
+    MsWin32.dont do
+      res = nil
+      lastProc = proc { res = 1 }
+      trap("SIGCHLD", lastProc)
+      fork { ; }
+      Process.wait
+      assert_equal(1, res)
+    end
 
     # 3. Reset the signal handler (checking it returns the previous
     # value) and ensure that the proc doesn't get called
 
-    assert_equal(lastProc, trap("SIGCHLD", "DEFAULT"))
-    res = nil
-    fork { ; }
-    Process.wait
-    assert_nil(res)
-    
+    MsWin32.dont do
+      assert_equal(lastProc, trap("SIGCHLD", "DEFAULT"))
+      res = nil
+      fork { ; }
+      Process.wait
+      assert_nil(res)
+    end
+
     # 4. test EXIT handling
-    fork {
-      trap "EXIT", "exit!"      # sets return code to -1
-      exit 99
-    }
-    Process.wait
-    assert_equal(255<<8, $?)
+    IO.popen(%{#$interpreter -e 'trap "EXIT", "exit! 123";exit 99'}).close
+    assert_equal(123<<8, $?)
   end
 
   def test_s_untrace_var1

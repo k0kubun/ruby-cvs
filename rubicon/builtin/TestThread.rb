@@ -34,11 +34,11 @@ class TestThread < Rubicon::TestCase
   end
   
   def teardown
-    Thread.list.each {|t|
+    Thread.list.each do |t|
       if t != Thread.main
         t.kill
       end
-    }
+    end
   end
 
   def test_AREF # '[]'
@@ -79,26 +79,47 @@ class TestThread < Rubicon::TestCase
 
   def test_abort_on_exception
     # Test default
-    assert_equal(false,Thread.current.abort_on_exception)
+    assert_equal(false, Thread.current.abort_on_exception)
     Thread.current.abort_on_exception = true
-    assert_equal(true,Thread.current.abort_on_exception)
+    assert_equal(true, Thread.current.abort_on_exception)
     Thread.current.abort_on_exception = false
-    assert_equal(false,Thread.current.abort_on_exception)
+    assert_equal(false, Thread.current.abort_on_exception)
   end
 
-  def test_abort_on_exception=
-    result = runChild do
-      Thread.new { 
-        $stderr.close # Don't want to see the mess.
-        Thread.new {
-          Thread.current.abort_on_exception = true
-          raise "Error"
-        }
-      }
-      sleep 5
-      exit 1
+  def test_abort_on_exception=()
+    tf = Tempfile.new("tf")
+    begin
+      tf.puts %{
+	$stderr.close # Don't want to see the mess.
+	t = Thread.new {
+	  Thread.current.abort_on_exception = true
+	  raise "Error"
+	}
+	t.join
+	sleep 5
+	exit 1}
+      tf.close
+      IO.popen("#$interpreter #{tf.path}").close
+      assert_equal(0, $?) # Relies on abort doing exit(0)
+
+      tf.open
+      tf.puts %{
+	$stderr.puts "start"
+	Thread.current.abort_on_exception = false
+	t = Thread.new {
+	  $stderr.puts "Raising"
+	  raise "Error"
+	}
+	$stderr.puts "sleeping"
+	sleep .5
+	$stderr.puts "exiting"
+	exit 1}
+      tf.close
+      IO.popen("#$interpreter #{tf.path}").close
+      assert_equal(1, $?)
+    ensure
+      tf.close(true)
     end
-    assert_equal(0,result) # Relies on abort doing exit(0)
   end
 
   def test_alive?

@@ -13,24 +13,27 @@ class TestObjectSpace < Rubicon::TestCase
     assert_equal(s.id, t.id)
   end
 
-  class CollectMe
-    def initialize(f)
-      ObjectSpace.define_finalizer(self) { f.puts(WORKED) }
-    end
-  end
 
   # finalizer manipulation
   def test_s_finalizers
-    pipe = File.pipe
-    Process.fork {
-      CollectMe.new(pipe[1])
-      exit
-    }
+    tf = Tempfile.new("tf")
     begin
-      Process.wait
-    rescue Exception
+      tf.puts %{
+	a = "string"
+	ObjectSpace.define_finalizer(a) { puts(WORKED) }
+	a = "another string"
+	GC.start
+	exit}
+      tf.close
+      p = IO.popen("#$interpreter #{tf.path}")
+      begin
+	assert_equal(WORKED, p.gets)
+      ensure
+	p.close
+      end
+    ensure
+      tf.close(true)
     end
-    assert_equal(WORKED, pipe[0].gets)
   end
 
   class A;      end

@@ -1,3 +1,5 @@
+require "tempfile"
+
 #
 # Simple wrapper for RubyUnit, primarily designed to capture
 # statsistics and report them at the end.

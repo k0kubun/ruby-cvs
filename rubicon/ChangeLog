@@ -1,3 +1,8 @@
+2001-11-02    <dave@pragmaticprogrammer.com>
+
+	* Various: Start getting tests to run under MsWin32. Add
+	better support for OS dependent blocks of code.
+
 2001-10-25  Dave Thomas  <Dave@Thomases.com>
 
 	* Various: Fixes to remove implicit dependence on order of tests
