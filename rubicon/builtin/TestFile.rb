@@ -448,8 +448,8 @@ class TestFile < Rubicon::TestCase
   def test_s_utime
     Dir.chdir("_test")
     begin
-      [ [ 0,                      0 ],
-	[ Time.at(0),             Time.at(12345) ],
+      [ 
+	[ Time.at(18000),             Time.at(53423) ],
 	[ Time.at(Time.now.to_i), Time.at(54321) ],
 	[ Time.at(121314),        Time.now.to_i ]
       ].each { |aTime, mTime|

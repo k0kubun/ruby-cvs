@@ -1,5 +1,7 @@
 2001-11-27    <chad fowler@CI29636-B>
 
+	* builtin/TestFile.rb: Windows doesn't like pre-18000-second dates on its files.  Changed the tests to accomodate.
+
 	* builtin/TestFloat.rb: fixed tests to work on Win32.
 
 2001-11-27    <chadfowler@chadfowler.com>
