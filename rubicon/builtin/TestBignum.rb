@@ -38,6 +38,10 @@ class TestBignum < Rubicon::TestCase
     assert_equal(-1, 9999  <=> @big1)
     assert_equal(-1, 1.23  <=> @big1)
     assert_equal(+1, @big2 <=> 1.23)
+    # Negatives:
+    assert_equal(-1, -@big1 <=> @big1)
+    assert_equal(1,  @big1 <=> -@big1)
+    assert_equal(-1,  -@big1 <=> -@big2)
   end
 
   def test_DIV # '/'
@@ -60,6 +64,15 @@ class TestBignum < Rubicon::TestCase
     checkBits([81, 41, 21, 11, 1],  @big2 << 1)
     checkBits([90, 50, 30, 20, 10], @big2 << 10)
     checkBits([79, 39, 19,  9],     @big2 << -1)
+
+    # there was a bug where the top digits were getting dropped
+    num = 0x80000000
+    num = 0x8000000000000000 unless num.is_a?(Bignum)
+    if num.is_a?(Bignum)
+      assert_equal(num*2, num << 1)
+      assert_equal((num << 1)>>1, num)
+    end
+
   end
 
   def test_MINUS # '-'
@@ -146,13 +159,21 @@ class TestBignum < Rubicon::TestCase
   end
 
   def test_VERY_EQUAL # '==='
-    assert(81402749386839761113321 == 121**11)
-    assert(!(81402749386839761113320 == 121**11))
+    assert(81402749386839761113321 === 121**11)
+    assert(!(81402749386839761113320 === 121**11))
   end
 
-  def test_eql? # '=='
-    assert(81402749386839761113321 == 121**11)
-    assert(!(81402749386839761113320 == 121**11))
+  def test_eql? #
+    assert(81402749386839761113321.eql?(121**11))
+    assert(!( 81402749386839761113320.eql?(121**11) ))
+  end
+
+  def test_equal?
+    a = 81402749386839761113321
+    b = a
+    c = 81402749386839761113321
+    assert(a.equal?(b))
+    assert(!(a.equal?(c)))
   end
 
   def test_XOR # '^'

@@ -1,3 +1,28 @@
+2001-01-13  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/many: Old tests had a bug where they'd try to taint
+	frozen objects. Changed the order to tain first, then freeze.
+
+2001-01-11  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestBignum.rb: Fixes to operators used for === and eql?
+	(Hugh Sasse)
+
+	* builtin/TestFixnum.rb: Replaced an assert_equal with
+	assert_flequal, and added a description to MOD (Hugh Sasse).
+
+2001-01-10  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestString.rb: Added patches to test .dup behavior from
+	Hugh Sasse.
+
+	* builtin/TestFloat.rb: Added a number of patches from Hugh Sasse.
+
+2000-11-19  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestArray.rb: (test_sort!) The test for sort! was wrong: it shouldn't 
+	return nil for 0 or 1 length arrays (thanks to Ryan Davis)
+
 2000-11-16  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestTime.rb: (test_isdst) Don't do isdst check unless in the US

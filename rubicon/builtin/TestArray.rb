@@ -244,9 +244,9 @@ class TestArray < Rubicon::TestCase
   def test_clone
     for taint in [ false, true ]
       for frozen in [ false, true ]
-        a = (0.99).to_a
-        a.freeze if frozen
+        a = (0..99).to_a
         a.taint  if taint
+        a.freeze if frozen
         b = a.clone
 
         assert_equal(a, b)
@@ -380,9 +380,9 @@ class TestArray < Rubicon::TestCase
   def test_dup
     for taint in [ false, true ]
       for frozen in [ false, true ]
-        a = (0.99).to_a
-        a.freeze if frozen
+        a = (0..99).to_a
         a.taint  if taint
+        a.freeze if frozen
         b = a.dup
 
         assert_equal(a, b)
@@ -875,7 +875,8 @@ class TestArray < Rubicon::TestCase
     a.fill(1)
     assert_equal([1, 1, 1, 1], a.sort!)
     
-    assert_nil([].sort!)
+    assert_equal([1], [1].sort!)
+    assert_equal([], [].sort!)
   end
 
   def test_to_a

@@ -59,8 +59,8 @@ class TestStruct < Rubicon::TestCase
       for frozen in [ false, true ]
         a = Struct::TestStruct.new
         a.alpha = 112
-        a.freeze if frozen
         a.taint  if taint
+        a.freeze if frozen
         b = a.clone
 
         assert_equal(a, b)

@@ -152,8 +152,8 @@ class TestTime < Rubicon::TestCase
     for taint in [ false, true ]
       for frozen in [ false, true ]
         a = Time.now
-        a.freeze if frozen
         a.taint  if taint
+        a.freeze if frozen
         b = a.clone
 
         assert_equal(a, b)

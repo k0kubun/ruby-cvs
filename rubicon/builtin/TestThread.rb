@@ -213,13 +213,13 @@ class TestThread < Rubicon::TestCase
     wokeup = false
     t1 = nil
     thread_control do
-      t1 = Thread.new { _signal; Thread.stop; wokeup = true }
+      t1 = Thread.new { _signal; Thread.stop; wokeup = true ; _signal}
       _wait
+      assert_equals(false, wokeup)
+      t1.run
+      _wait
+      assert_equals(true, wokeup)
     end
-
-    assert_equals(false, wokeup)
-    t1.run
-    assert_equals(true, wokeup)
 
     wokeup = false
     thread_control do

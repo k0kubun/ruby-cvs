@@ -45,9 +45,9 @@ class TestRegexp < Rubicon::TestCase
   def test_clone
     for taint in [ false, true ]
       for frozen in [ false, true ]
-        a = /SIT/
-        a.freeze if frozen
+        a = /SIT/.dup
         a.taint  if taint
+        a.freeze if frozen
         b = a.clone
 
         assert_equal(a, b)

@@ -13,7 +13,14 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_UMINUS
-    [ -99, -1, 0, +1 , +99].each { |n| assert_equal(0, -n + n) }
+    # This is actually a test of + !
+    # [ -99, -1, 0, +1 , +99].each { |n| assert_equal(0, -n + n) }
+
+    # But I suppose this might be a test of Array.. :-(
+    a = [ -99, -1, 0, +1 , +99]
+    b = a.reverse
+    a.each_index { |n| assert_equal(b[n], -a[n]) }
+
   end
 
   def test_AND # '&'
@@ -149,11 +156,21 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_MOD # '%'
-    assert_equal(0,  0%123)
-    assert_equal(1,  13%4)
-    assert_equal(-3, 13%(-4))
-    assert_equal(3,  (-13)%4)
-    assert_equal(-1, (-13)%(-4))
+    # See "The Higher Arithmetic" H. Davenport, Fifth Edition
+    # Cambridge University press, (C)1962-1982
+    # ISBN 0-521-28678-6
+    # Page 41 Ch 2
+    # a = b mod m is defined to mean that a - b is divisible by m.
+    # so a = b mod m => (a - b) mod m = 0
+
+    a = [  0,  1, -3,   3,  -1]
+    b = [  0, 13, 13, -13, -13]
+    m = [123,  4, -4,   4,  -4]
+    a.each_index do
+      |i|
+      assert_equal(a[i], b[i] % m[i])
+      assert_equal(0, (a[i]-b[i]) % m[i])
+    end
   end
 
   def test_MUL # '*'
@@ -173,7 +190,7 @@ class TestFixnum < Rubicon::TestCase
     assert_equal(-MIN, a)
     assert_instance_of(Bignum, a)
 
-    assert_equal(9.5, 19 * 0.5)
+    assert_flequal(9.5, 19 * 0.5)
   end
 
   def test_OR # '|'

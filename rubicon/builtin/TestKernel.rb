@@ -33,8 +33,12 @@ class TestKernel < Rubicon::TestCase
     # naive test - no 2 ids the same
     objs = []
     ObjectSpace.each_object { |obj| objs << obj.__id__ }
-    s1 = objs.size
-    assert_equal(s1, objs.uniq.size)
+
+    # See if this is faster than using uniq
+    objs.sort!
+    0.upto(objs.size-2) {|i| assert(objs[i] != objs[i+1]) }
+
+#    assert_equal(s1, objs.uniq.size)
 
     assert_equal(1.__id__, (3-2).__id__)
     assert_instance_of(Fixnum, 1.__id__)

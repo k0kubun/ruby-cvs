@@ -122,28 +122,19 @@ class TestHash < Rubicon::TestCase
   end
 
   def test_clone
-    h = @h.clone
-    assert(@h == h)
-    assert(!@h.tainted?)
-    assert(!h.tainted?)
-    assert(!@h.frozen?)
-    assert(!h.frozen?)
+    for taint in [ false, true ]
+      for frozen in [ false, true ]
+        a = @h.clone
+        a.taint  if taint
+        a.freeze if frozen
+        b = a.clone
 
-    h.freeze
-    h1 = h.clone
-    assert(h1 == h)
-    assert(!h1.tainted?)
-    assert(!h.tainted?)
-    assert(h1.frozen?)
-    assert(h.frozen?)
-
-    h.taint
-    h1 = h.clone
-    assert(h1 == h)
-    assert(h1.tainted?)
-    assert(h.tainted?)
-    assert(h1.frozen?)
-    assert(h.frozen?)
+        assert_equal(a, b)
+        assert(a.id != b.id)
+        assert_equal(a.frozen?, b.frozen?)
+        assert_equal(a.tainted?, b.tainted?)
+      end
+    end
   end
 
   def test_default
@@ -202,28 +193,19 @@ class TestHash < Rubicon::TestCase
   end
 
   def test_dup
-    h = @h.dup
-    assert(@h == h)
-    assert(!@h.tainted?)
-    assert(!h.tainted?)
-    assert(!@h.frozen?)
-    assert(!h.frozen?)
+    for taint in [ false, true ]
+      for frozen in [ false, true ]
+        a = @h.dup
+        a.taint  if taint
+        a.freeze if frozen
+        b = a.dup
 
-    h.freeze
-    h1 = h.dup
-    assert(h1 == h)
-    assert(!h1.tainted?)
-    assert(!h.tainted?)
-    assert(!h1.frozen?)
-    assert(h.frozen?)
-
-    h.taint
-    h1 = h.dup
-    assert(h1 == h)
-    assert(h1.tainted?)
-    assert(h.tainted?)
-    assert(!h1.frozen?)
-    assert(h.frozen?)
+        assert_equal(a, b)
+        assert(a.id != b.id)
+        assert_equals(false, b.frozen?)
+        assert_equals(a.tainted?, b.tainted?)
+      end
+    end
   end
 
   def test_each

@@ -14,6 +14,7 @@ class TestString < Rubicon::TestCase
     assert_equal(nil,"FooBar"[-7,10])
 
     assert_equal("Foo","FooBar"[0..2])
+    assert_equal("Foo","FooBar"[0...3])
     assert_equal("Bar","FooBar"[-3..-1])
     assert_equal(nil,"FooBar"[6..2])
     assert_equal(nil,"FooBar"[-10..-7])
@@ -196,6 +197,15 @@ class TestString < Rubicon::TestCase
     assert_equal("123abc", a)
     assert_equal(nil,"123abc".capitalize!)
     assert_equal("123abc","123ABC".capitalize!)
+    assert_equal("Abc","ABC".capitalize!)
+    assert_equal("Abc","abc".capitalize!)
+    assert_equal(nil,"Abc".capitalize!)
+
+    a = "hello"
+    b = a.dup
+    assert_equal("Hello", a.capitalize!)
+    assert_equal("hello", b)
+   
   end
 
   def test_center
@@ -241,6 +251,12 @@ class TestString < Rubicon::TestCase
     assert_equal("hello", a)
 
     $/="\n"
+
+    a = "hello\n"
+    b = a.dup
+    assert_equal("hello", a.chomp!)
+    assert_equal("hello\n", b)
+   
   end
 
   def test_chop
@@ -262,14 +278,20 @@ class TestString < Rubicon::TestCase
     assert_equal("", a)
     a="".chop!
     assert_equal(nil,a)
+
+    a = "hello\n"
+    b = a.dup
+    assert_equal("hello", a.chop!)
+    assert_equal("hello\n", b)
+   
   end
 
   def test_clone
     for taint in [ false, true ]
       for frozen in [ false, true ]
         a = "Cool"
-        a.freeze if frozen
         a.taint  if taint
+        a.freeze if frozen
         b = a.clone
 
         assert_equal(a, b)
@@ -323,6 +345,13 @@ class TestString < Rubicon::TestCase
 
     a="hello"
     assert_equal(nil,a.delete!("z"))
+
+    a="hello"
+    b=a.dup
+    a.delete!("lo")
+    assert_equal("he",a)
+    assert_equal("hello",b)
+
   end
 
 
@@ -335,8 +364,10 @@ class TestString < Rubicon::TestCase
 
   def test_downcase!
     a="heLlO"
-    a.downcase!
+    b=a.dup
+    assert_equal("hello",a.downcase!)
     assert_equal("hello",a)
+    assert_equal("heLlO",b)
 
     a="hello"
     assert_equal(nil,a.downcase!)
@@ -352,8 +383,8 @@ class TestString < Rubicon::TestCase
     for taint in [ false, true ]
       for frozen in [ false, true ]
         a = "Hello"
-        a.freeze if frozen
         a.taint  if taint
+        a.freeze if frozen
         b = a.dup 
 
         assert_equal(a, b)
@@ -440,8 +471,10 @@ class TestString < Rubicon::TestCase
 
   def test_gsub!
     a = "hello"
+    b = a.dup
     a.gsub!(/[aeiou]/,'*')
     assert_equal("h*ll*",a)
+    assert_equal("hello",b)
 
     a = "hello"
     a.gsub!(/([aeiou])/,'<\1>')
@@ -535,8 +568,10 @@ class TestString < Rubicon::TestCase
 
   def test_next!
     a="abc"
+    b=a.dup
     assert_equal("abd",a.next!)
     assert_equal("abd",a)
+    assert_equal("abc",b)
 
     a="y"
     assert_equal("z",a.next!)
@@ -591,12 +626,21 @@ class TestString < Rubicon::TestCase
   def test_reverse
     assert_equal("beta","ateb".reverse)
     assert_equal("madamImadam","madamImadam".reverse)
+    a="beta"
+    assert_equal("ateb",a.reverse)
+    assert_equal("beta",a)
   end
 
   def test_reverse!
     a="beta"
-    assert_equal("ateb",a.reverse!)
-    assert_equal("ateb",a)
+    b = a.dup
+    assert_equal("ateb", a.reverse!)
+    assert_equal("ateb", a)
+    assert_equal("beta", b)
+    assert_equal("madamImadam", "madamImadam".reverse!)
+    a="madamImadam"
+    assert_equal("madamImadam", a.reverse!)  # ??
+    assert_equal("madamImadam", a)
   end
 
   def test_rindex
@@ -677,8 +721,10 @@ class TestString < Rubicon::TestCase
 
   def test_slice!
     a="AooBar"
+    b=a.dup
     assert_equal(65,a.slice!(0))
     assert_equal("ooBar",a)
+    assert_equal("AooBar",b)
 
     a="FooBar"
     assert_equal(?r,a.slice!(-1))
@@ -774,8 +820,11 @@ class TestString < Rubicon::TestCase
 
   def test_squeeze!
     a="aaabbbbccc"
+    b=a.dup
     assert_equal("abc",a.squeeze!)
     assert_equal("abc",a)
+    assert_equal("aaabbbbccc",b)
+
     a="aa   bb      cc"
     assert_equal("aa bb cc",a.squeeze!(" "))
     assert_equal("aa bb cc",a)
@@ -796,11 +845,17 @@ class TestString < Rubicon::TestCase
 
   def test_strip!
     a="      x        "
+    b=a.dup
     assert_equal("x",a.strip!)
+    assert_equal("x",a)
+    assert_equal("      x        ",b)
+
     a=" \n\r\t     x  \t\r\n\n      "
     assert_equal("x",a.strip!)
+    assert_equal("x",a)
     a="x"
     assert_equal(nil,a.strip!)
+    assert_equal("x",a)
   end
 
   def test_sub
@@ -818,8 +873,10 @@ class TestString < Rubicon::TestCase
 
   def test_sub!
     a = "hello"
+    b = a.dup
     a.sub!(/[aeiou]/,'*')
     assert_equal("h*llo",a)
+    assert_equal("hello",b)
 
     a = "hello"
     a.sub!(/([aeiou])/,'<\1>')
@@ -857,8 +914,10 @@ class TestString < Rubicon::TestCase
 
   def test_succ!
     a="abc"
+    b=a.dup
     assert_equal("abd",a.succ!)
     assert_equal("abd",a)
+    assert_equal("abc",b)
 
     a="y"
     assert_equal("z",a.succ!)
@@ -904,8 +963,11 @@ class TestString < Rubicon::TestCase
 
   def test_swapcase!
     a="hi&LOW"
+    b=a.dup
     assert_equal("HI&low",a.swapcase!)
     assert_equal("HI&low",a)
+    assert_equal("hi&LOW",b)
+
     a="$^#^%$#!!"
     assert_equal(nil,a.swapcase!)
     assert_equal("$^#^%$#!!",a)
@@ -943,8 +1005,10 @@ class TestString < Rubicon::TestCase
 
   def test_tr!
     a="hello"
+    b=a.dup
     assert_equal("hippo",a.tr!("el","ip"))
     assert_equal("hippo",a)
+    assert_equal("hello",b)
 
     a="hello"
     assert_equal("*e**o",a.tr!("^aeiou","*"))
@@ -966,8 +1030,10 @@ class TestString < Rubicon::TestCase
 
   def test_tr_s!
     a="hello"
+    b=a.dup
     assert_equal("hypo", a.tr_s!("el","yp"))
     assert_equal("hypo", a)
+    assert_equal("hello", b)
 
     a="hello"
     assert_equal("h*o",a.tr_s!("el","*"))
@@ -1061,8 +1127,10 @@ class TestString < Rubicon::TestCase
 
   def test_upcase!
     a="heLlO"
-    a.upcase!
+    b=a.dup
+    assert_equal("HELLO",a.upcase!)
     assert_equal("HELLO",a)
+    assert_equal("heLlO",b)
 
     a="HELLO"
     assert_equal(nil,a.upcase!)

@@ -25,6 +25,10 @@ class TestFloat < Rubicon::TestCase
     assert_flequal(-1, SML <=> BIG)
     assert_flequal(-1, SML <=> 0.1)
     assert_flequal(-1, SML <=> 1)
+
+    # and negatives:
+    assert_flequal(1, 1.0 <=> -1.0)
+    assert_flequal(-1, -1.0 <=> 1.0)
   end
 
   def test_DIV # '/'
@@ -80,6 +84,7 @@ class TestFloat < Rubicon::TestCase
     assert(0.0 ==  0.0)
     assert(BIG == BIG)
     assert(SML == SML)
+    assert(-1.0 == -1.0)
     assert(!(0.0 == 1e-6))
   end
 
@@ -88,6 +93,9 @@ class TestFloat < Rubicon::TestCase
     assert(1.0 >= 0.0)
     assert(BIG >= 0.0)
     assert(SML >= 0.0)
+    assert(0.0 >= -1.0)
+    assert(1.0 >= -1.0)
+    assert(-1.0 >= -2.0)
 
     assert(!(0.0 >= 1.0))
     assert(!(0.0 >= BIG))
@@ -98,6 +106,9 @@ class TestFloat < Rubicon::TestCase
     assert(1.0 > 0.0)
     assert(BIG > 0.0)
     assert(SML > 0.0)
+    assert(0.0 > -1.0)
+    assert(1.0 > -1.0)
+    assert(-1.0 > -2.0)
 
     assert(!(0.0 > 0.0))
     assert(!(0.0 > 1.0))
@@ -110,6 +121,8 @@ class TestFloat < Rubicon::TestCase
     assert(0.0 <= 1.0)
     assert(0.0 <= BIG)
     assert(0.0 <= SML)
+    assert(-1.0 <= 0.0)
+    assert(-2.0 <= -1.0)
 
     assert(!(1.0 <= 0.0))
     assert(!(BIG <= 0.0))
@@ -120,6 +133,8 @@ class TestFloat < Rubicon::TestCase
     assert(0.0 < 1.0)
     assert(0.0 < BIG)
     assert(0.0 < SML)
+    assert(-1.0 < 0.0)
+    assert(-2.0 < -1.0)
 
     assert(!(0.0 < 0.0))
     assert(!(1.0 < 0.0))
@@ -131,6 +146,8 @@ class TestFloat < Rubicon::TestCase
     assert_flequal(0.0, 0.0-0.0)
     assert_flequal(0.0, 1.0-1.0)
     assert_flequal(0.0, -1.0 - (-1.0))
+    assert_flequal(-2.0, -1.0 - (1.0))
+    assert_flequal(2.0, 1.0 - (-1.0))
     
     assert_flequal(77, 100.0 - 20.0 - 3.0)
   end
@@ -154,12 +171,18 @@ class TestFloat < Rubicon::TestCase
     assert_flequal(BIG, 1.0*BIG)
     assert_flequal(SML, 1.0*SML)
     assert_flequal(1.0, BIG*SML)
+    assert_flequal(-1.0, -1.0 *  1.0)
+    assert_flequal( 1.0, -1.0 * -1.0)
   end
 
   def test_PLUS # '+'
     assert_flequal(0.0, 0.0 + 0.0)
     assert_flequal(1.0, 0.0 + 1.0)
     assert_flequal(1.0, 1.0 + 0.0)
+    assert_flequal(0.0, 1.0 + (-1.0))
+    assert_flequal(-1.0, 0.0 + (-1.0))
+    assert_flequal(-2.0, -1.0 + (-1.0))
+    assert_flequal(0.0, -1.0 + (1.0))
 
     assert_flequal(3.0, 0.0 + 3)
   end
