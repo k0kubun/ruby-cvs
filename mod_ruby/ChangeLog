@@ -1,3 +1,7 @@
+Fri Jun 28 14:01:08 2002  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_require): do not require doubly.
+
 Tue Jun 18 17:46:33 2002  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb.in: cause error if both --with-apache and

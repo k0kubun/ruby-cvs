@@ -483,7 +483,6 @@ int ruby_require(char *filename,
     int state;
 
     setup_loadpath(sconf, dconf);
-    rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
     fname = rb_str_new2(filename);
     rb_protect_funcall(Qnil, rb_intern("require"), &state, 1, fname);
     if (state == TAG_RAISE &&
