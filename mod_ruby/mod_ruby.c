@@ -765,7 +765,8 @@ static VALUE ruby_handler_0(void *arg)
 }
 
 static int ruby_handler(request_rec *r,
-			array_header *handlers_arr, ID mid, int run_all)
+			array_header *handlers_arr, ID mid,
+			int run_all, int flush)
 {
     ruby_server_config *sconf;
     ruby_dir_config *dconf;
@@ -805,7 +806,7 @@ static int ruby_handler(request_rec *r,
 	if (retval != DECLINED && (!run_all || retval != OK))
 	    break;
     }
-    per_request_cleanup(retval == OK);
+    per_request_cleanup(flush && retval == OK);
     return retval;
 }
 
@@ -813,7 +814,7 @@ static int ruby_object_handler(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
     
-    return ruby_handler(r, dconf->ruby_handler, rb_intern("handler"), 0);
+    return ruby_handler(r, dconf->ruby_handler, rb_intern("handler"), 0, 1);
 }
 
 static int ruby_trans_handler(request_rec *r)
@@ -821,7 +822,7 @@ static int ruby_trans_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     return ruby_handler(r, dconf->ruby_trans_handler,
-			rb_intern("translate_uri2file"), 0);
+			rb_intern("translate_uri"), 0, 0);
 }
 
 static int ruby_authen_handler(request_rec *r)
@@ -832,7 +833,7 @@ static int ruby_authen_handler(request_rec *r)
     if (dconf->ruby_authen_handler == NULL) return DECLINED;
     ap_table_set(r->notes, "ruby_in_authen_handler", "true");
     retval = ruby_handler(r, dconf->ruby_authen_handler,
-			  rb_intern("authenticate"), 0);
+			  rb_intern("authenticate"), 0, 0);
     ap_table_unset(r->notes, "ruby_in_authen_handler");
     return retval;
 }
@@ -842,7 +843,7 @@ static int ruby_authz_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     return ruby_handler(r, dconf->ruby_authz_handler,
-			rb_intern("authorize"), 0);
+			rb_intern("authorize"), 0, 0);
 }
 
 static int ruby_access_handler(request_rec *r)
@@ -850,7 +851,7 @@ static int ruby_access_handler(request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
 
     return ruby_handler(r, dconf->ruby_access_handler,
-			rb_intern("check_access"), 1);
+			rb_intern("check_access"), 1, 0);
 }
 
 static int ruby_type_handler(request_rec *r)
@@ -859,7 +860,7 @@ static int ruby_type_handler(request_rec *r)
 
     if (dconf->ruby_type_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_type_handler,
-			rb_intern("find_types"), 0);
+			rb_intern("find_types"), 0, 0);
 }
 
 static int ruby_fixup_handler(request_rec *r)
@@ -868,7 +869,7 @@ static int ruby_fixup_handler(request_rec *r)
 
     if (dconf->ruby_fixup_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_fixup_handler,
-			rb_intern("fixup"), 1);
+			rb_intern("fixup"), 1, 0);
 }
 
 static int ruby_log_handler(request_rec *r)
@@ -877,7 +878,7 @@ static int ruby_log_handler(request_rec *r)
 
     if (dconf->ruby_log_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_log_handler,
-			rb_intern("log_transaction"), 1);
+			rb_intern("log_transaction"), 1, 0);
 }
 
 static int ruby_header_parser_handler(request_rec *r)
@@ -888,13 +889,13 @@ static int ruby_header_parser_handler(request_rec *r)
     if (dconf->ruby_init_handler &&
 	ap_table_get(r->notes, "ruby_init_ran") == NULL) {
 	retval = ruby_handler(r, dconf->ruby_init_handler,
-			      rb_intern("init"), 1);
+			      rb_intern("init"), 1, 0);
 	if (retval != OK && retval != DECLINED)
 	    return retval;
     }
     if (dconf->ruby_header_parser_handler == NULL) return DECLINED;
     return ruby_handler(r, dconf->ruby_header_parser_handler,
-			rb_intern("header_parse"), 1);
+			rb_intern("header_parse"), 1, 0);
 }
 
 static void ruby_cleanup_handler(void *data)
@@ -903,7 +904,7 @@ static void ruby_cleanup_handler(void *data)
     ruby_dir_config *dconf = get_dir_config(r);
 
     ruby_handler(r, dconf->ruby_cleanup_handler,
-		 rb_intern("cleanup"), 1);
+		 rb_intern("cleanup"), 1, 0);
     rb_request = Qnil;
     rb_stdin = orig_stdin;
     rb_stdout = orig_stdout;
@@ -920,13 +921,13 @@ static int ruby_post_read_request_handler(request_rec *r)
 
     if (dconf->ruby_init_handler) {
 	retval = ruby_handler(r, dconf->ruby_init_handler,
-			      rb_intern("init"), 1);
+			      rb_intern("init"), 1, 0);
 	ap_table_set(r->notes, "ruby_init_ran", "true");
 	if (retval != OK && retval != DECLINED)
 	    return retval;
     }
     return ruby_handler(r, dconf->ruby_post_read_request_handler,
-			rb_intern("post_read_request"), 1);
+			rb_intern("post_read_request"), 1, 0);
 }
 
 static int script_handler(VALUE (*func)(void*), request_rec *r)

@@ -22,6 +22,9 @@
  * USA.
  */
 
+/* for core_module */
+#define CORE_PRIVATE
+
 #include "httpd.h"
 #include "http_config.h"
 #include "http_core.h"
@@ -125,6 +128,17 @@ static VALUE server_log_debug(int argc, VALUE *argv, VALUE self)
     return server_log(APLOG_DEBUG, argc, argv, self);
 }
 
+static VALUE server_document_root(VALUE self)
+{
+    server_rec *server;
+    core_server_config *conf;
+
+    Data_Get_Struct(self, server_rec, server);
+    conf = (core_server_config *)
+	ap_get_module_config(server->module_config, &core_module);
+    return conf->ap_document_root ? rb_str_new2(conf->ap_document_root) : Qnil;
+}
+
 void rb_init_apache_server()
 {
     rb_cApacheServer = rb_define_class_under(rb_mApache, "Server", rb_cObject);
@@ -169,4 +183,6 @@ void rb_init_apache_server()
 		     server_log_notice, -1);
     rb_define_method(rb_cApacheServer, "log_debug",
 		     server_log_debug, -1);
+    rb_define_method(rb_cApacheServer, "document_root",
+		     server_document_root, 0);
 }
