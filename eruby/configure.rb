@@ -25,10 +25,10 @@ end
 
 def create_file(filename, config)
   print "creating ", filename, "\n"
-  open(filename + ".in") do |min|
-    open(filename, "w") do |mout|
-      while line = min.gets
-	line.gsub!(/@.*?@/) do |s|
+  open(filename + ".in") do |fin|
+    open(filename, "w") do |fout|
+      while line = fin.gets
+	line.gsub!(/@[A-Za-z_]+@/) do |s|
 	  key = s[1..-2]
 	  if config.key?(key)
 	    config[key]
@@ -36,7 +36,7 @@ def create_file(filename, config)
 	    s
 	  end
 	end
-	mout.print(line)
+	fout.print(line)
       end
     end
   end
@@ -238,22 +238,6 @@ config["EXEEXT"] = CONFIG["EXEEXT"]
 config["DLEXT"] = CONFIG["DLEXT"]
 
 config["DEFAULT_CHARSET"] = $DEFAULT_CHARSET
-
-open("Makefile.in") do |min|
-  open("Makefile", "w") do |mout|
-    while line = min.gets
-      line.gsub!(/@.*?@/) do |s|
-	key = s[1..-2]
-	if config.key?(key)
-	  config[key]
-	else
-	  s
-	end
-      end
-      mout.print(line)
-    end
-  end
-end
 
 if CONFIG["DLEXT"] != $OBJEXT
   config["MKDLLIB"] = ""
