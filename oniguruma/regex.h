@@ -1,6 +1,6 @@
 /**********************************************************************
 
-  regex.h - Oni Guruma (regular expression library)
+  regex.h - OniGuruma (regular expression library)
 
   Copyright (C) 2002  K.Kosako (kosako@sofnec.co.jp)
 
@@ -9,37 +9,34 @@
 #define REGEX_H
 
 #define ONIGURUMA
-#define ONIGURUMA_VERSION          110    /* 1.1 */
+#define ONIGURUMA_VERSION           120    /* 1.2 */
 
 /* config parameters */
 #ifndef RE_NREGS
 #define RE_NREGS                     10
 #endif
 #define REG_NREGION            RE_NREGS
-#define REG_MAX_BACKREF_NUM       10000
-#define REG_MAX_REPEAT_NUM     10000000
+#define REG_MAX_BACKREF_NUM        1000
+#define REG_MAX_REPEAT_NUM       100000
 #define REG_CHAR_TABLE_SIZE         256
+
+#define REGCODE_UNDEF         ((RegCharEncoding )0)
 
 #if defined(RUBY_PLATFORM) && defined(M17N_H)
 #define REG_RUBY_M17N
-
 typedef m17n_encoding*        RegCharEncoding;
-#define REGCODE_UNDEF         ((RegCharEncoding )NULL)
 #define REGCODE_DEFAULT       REGCODE_UNDEF
-
 #else
-
 typedef const char*           RegCharEncoding;
 #define MBCTYPE_ASCII         0
+#define MBCTYPE_UTF8          1
 #define MBCTYPE_EUC           2
 #define MBCTYPE_SJIS          3
-#define MBCTYPE_UTF8          1
 
 #define REGCODE_ASCII         REG_MBLEN_TABLE[MBCTYPE_ASCII]
 #define REGCODE_UTF8          REG_MBLEN_TABLE[MBCTYPE_UTF8]
 #define REGCODE_EUCJP         REG_MBLEN_TABLE[MBCTYPE_EUC]
 #define REGCODE_SJIS          REG_MBLEN_TABLE[MBCTYPE_SJIS]
-#define REGCODE_UNDEF         ((RegCharEncoding )0)
 #define REGCODE_DEFAULT       REGCODE_ASCII
 
 extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
@@ -48,13 +45,15 @@ extern const char REG_MBLEN_TABLE[][REG_CHAR_TABLE_SIZE];
 #if defined(RUBY_PLATFORM) && !defined(M17N_H)
 #undef ismbchar
 #define ismbchar(c)    (mbclen((c)) != 1)
-#define mbclen(c)      RegDefaultCharCode[(unsigned char )(c)]
+#define mbclen(c)      RegDefaultCharEncoding[(unsigned char )(c)]
 
-extern RegCharEncoding RegDefaultCharCode;
+extern RegCharEncoding RegDefaultCharEncoding;
 #endif
 
 
-#define REG_OPTION_DEFAULT      REG_OPTION_NONE
+/* argument values for regex_new(), regex_recompile() */
+#define REG_TRANSTABLE_USE_DEFAULT   ((RegTransTableType )0)
+#define REG_OPTION_DEFAULT            REG_OPTION_NONE
 
 /* GNU regex options */
 #define RE_OPTION_IGNORECASE    (1L)
@@ -156,7 +155,6 @@ typedef struct re_pattern_buffer {
   int num_null_check;       /* OP_NULL_CHECK_START/END id counter */
   unsigned int mem_stats;   /* mem:n -> n-bit flag (n:1-31)
                               (backref-ed or must be cleared in backtrack) */
-
   RegCharEncoding   code;
   RegOptionType     options;
   RegTransTableType transtable;  /* char-case trans table */
@@ -194,51 +192,51 @@ typedef struct re_pattern_buffer {
 #define register_info_type      ruby_register_info_type
 #define re_error_code_to_str    ruby_error_code_to_str
 
-#define ruby_error_code_to_str  RegexErrorCodeToStr
-#define ruby_re_copy_registers  RegexRegionCopy
+#define ruby_error_code_to_str  regex_error_code_to_str
+#define ruby_re_copy_registers  regex_region_copy
 #else
-#define re_error_code_to_str    RegexErrorCodeToStr
-#define re_copy_registers       RegexRegionCopy
+#define re_error_code_to_str    regex_error_code_to_str
+#define re_copy_registers       regex_region_copy
 #endif
 
 
 /* Native API */
 #ifdef __STDC__
-extern int   RegexInit(void);
-extern char* RegexErrorCodeToStr(int err_code);
-extern int   RegexNew(regex_t** reg, UChar* pattern, UChar* pattern_end,
+extern int   regex_init(void);
+extern char* regex_error_code_to_str(int err_code);
+extern int   regex_new(regex_t** reg, UChar* pattern, UChar* pattern_end,
 		RegOptionType option, RegCharEncoding code, UChar* transtable);
-extern int   RegexClone(regex_t* to, regex_t* from);
-extern void  RegexFree(regex_t* reg);
-extern int   RegexReCompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
+extern int   regex_clone(regex_t* to, regex_t* from);
+extern void  regex_free(regex_t* reg);
+extern int   regex_recompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
 		RegOptionType option, RegCharEncoding code, UChar* transtable);
-extern int   RegexSearch(regex_t* reg, UChar* str, UChar* end,
-			 UChar* start, UChar* range, RegRegion* region);
-extern int   RegexMatch(regex_t* reg, UChar* str, UChar* end, UChar* at,
-			RegRegion* region);
-extern RegRegion* RegexRegionNew(void);
-extern void  RegexRegionFree(RegRegion* region, int free_self);
-extern void  RegexRegionCopy(RegRegion* r1, RegRegion* r2);
-extern void  RegexRegionClear(RegRegion* region);
-extern int   RegexRegionResize(RegRegion* region, int n);
-extern int   RegexEnd(void);
+extern int   regex_search(regex_t* reg, UChar* str, UChar* end,
+			  UChar* start, UChar* range, RegRegion* region);
+extern int   regex_match(regex_t* reg, UChar* str, UChar* end, UChar* at,
+			 RegRegion* region);
+extern RegRegion* regex_region_new(void);
+extern void  regex_region_free(RegRegion* region, int free_self);
+extern void  regex_region_copy(RegRegion* r1, RegRegion* r2);
+extern void  regex_region_clear(RegRegion* region);
+extern int   regex_region_resize(RegRegion* region, int n);
+extern int   regex_end(void);
 
 #else
 
-extern int   RegexInit();
-extern char* RegexErrorCodeToStr();
-extern int   RegexNew();
-extern int   RegexClone();
-extern void  RegexFree();
-extern int   RegexReCompile();
-extern int   RegexSearch();
-extern int   RegexMatch();
-extern RegRegion* RegexRegionNew();
-extern void  RegexRegionFree();
-extern void  RegexRegionCopy();
-extern void  RegexRegionClear();
-extern int   RegexRegionResize();
-extern int   RegexEnd();
+extern int   regex_init();
+extern char* regex_error_code_to_str();
+extern int   regex_new();
+extern int   regex_clone();
+extern void  regex_free();
+extern int   regex_recompile();
+extern int   regex_search();
+extern int   regex_match();
+extern RegRegion* regex_region_new();
+extern void  regex_region_free();
+extern void  regex_region_copy();
+extern void  regex_region_clear();
+extern int   regex_region_resize();
+extern int   regex_end();
 #endif
 
 /* GNU regex compatible API */
