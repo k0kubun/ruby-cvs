@@ -86,7 +86,7 @@ Submitting Results to the Rubicon Result Repository
     particularly interested in Ruby version/architecture combinations
     we don't yet have.
 
-    To submit a result, do:
+    To submit a result, stay in the top-level directory and do:
 
 
        ruby AllTests.rb -op xml | ruby post.rb
