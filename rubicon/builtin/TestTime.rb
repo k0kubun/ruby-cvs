@@ -460,7 +460,7 @@ class TestTime < Rubicon::TestCase
   end
 
   def test_s_times
-    assert_instance_of(Time.times,Struct::Tms)
+    assert_instance_of(Struct::Tms, Time.times)
   end
 
 end
