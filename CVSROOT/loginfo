@@ -25,6 +25,6 @@
 # or
 #DEFAULT (echo ""; id; echo %{sVv}; date; cat) >> $CVSROOT/CVSROOT/commitlog
 
-^CVSROOT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb %s knu@ruby-lang.org ruby-lang.org localhost ruby-cvs
+^CVSROOT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb %s $USER cvs-admin@ruby-lang.org ruby-lang.org localhost ruby-cvs
 
-DEFAULT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb %s knu@ruby-lang.org,ruby-comitters@cvs.ruby-lang.org ruby-lang.org localhost ruby-cvs
+DEFAULT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb %s $USER knu@ruby-lang.org,ruby-comitters@cvs.ruby-lang.org ruby-lang.org localhost ruby-cvs
