@@ -36,6 +36,8 @@ class TestBignum < Rubicon::TestCase
     assert_equal(0,  @big1 <=> @big1)
     assert_equal(1,  @big1 <=> 9999)
     assert_equal(-1, 9999  <=> @big1)
+    assert_equal(-1, 1.23  <=> @big1)
+    assert_equal(+1, @big2 <=> 1.23)
   end
 
   def test_DIV # '/'

@@ -1307,7 +1307,31 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_printf
-    assert_fail("untested")
+    IO.popen("-") do |pipe|
+      if !pipe
+        printf("%05d\n", 123)
+        printf("%-5s|%08x\n", 123, 1)
+        printf("%3s %-4s%%foo %.0s%5d %#x%c%3.1f %b %x %X %#b %#x %#X\n",
+                "hi",
+                123,
+                "never seen",
+                456,
+                0,
+                ?A,
+                3.0999,
+                11,
+                171,
+                171,
+                11,
+                171,
+                171)
+        exit
+      end
+      assert_equal("00123\n", pipe.gets)
+      assert_equal("123  |00000001\n", pipe.gets)
+      assert_equal(" hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB\n",
+                   pipe.gets)
+    end
   end
 
   def test_s_proc
@@ -1318,11 +1342,41 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_putc
-    assert_fail("untested")
+    setupTestDir
+    fname = "_test/_op"
+    begin
+      File.open(fname, "w") do |file|
+        file.putc "A"
+        0.upto(255) { |ch| file.putc ch }
+      end
+      
+      File.open(fname) do |file|
+        assert_equal(?A, file.getc)
+        0.upto(255) { |ch| assert_equal(ch, file.getc) }
+      end
+    ensure
+      teardownTestDir
+    end
   end
 
   def test_s_puts
-    assert_fail("untested")
+    setupTestDir
+    fname = "_test/_op"
+    begin
+      File.open(fname, "w") do |file|
+        file.puts "line 1", "line 2"
+        file.puts [ PrintTest.new, 4 ]
+      end
+      
+      File.open(fname) do |file|
+        assert_equal("line 1\n",  file.gets)
+        assert_equal("line 2\n",  file.gets)
+        assert_equal("printtest\n",  file.gets)
+        assert_equal("4\n",  file.gets)
+      end
+    ensure
+      teardownTestDir
+    end
   end
 
   def test_s_raise
@@ -1362,16 +1416,136 @@ class TestKernel < Rubicon::TestCase
     end
   end
 
+  def rand_test(limit, result_type, bucket_scale, average)
+
+    n = rand(limit)
+    assert_instance_of(result_type, n)
+
+    repeat = 10000
+    sum = 0
+    sumsq = 0
+    min = 2**30
+    max = -1
+    buckets = [0] * 100
+
+    repeat.times do
+      n = rand(limit)
+      min = n if min > n
+      max = n if max < n
+      sum += n
+      sumsq += (n*n)
+      buckets[bucket_scale(n)] += 1
+    end
+    
+    assert(min >= 0.0)
+    assert(max < 1)
+    avg = Float(sum) / Float(repeat)
+    puts avg
+    if (avg < Float(average)*.95 or avg > Float(average)*1.05) 
+      $stderr.puts "
+         I am about to fail a test, but the failure may be purely
+         a statistical coincidence. Try a difference see and see if
+         if still happens."
+      assert_fail("Average out of range (got #{avg}, expected #{average}")
+    end
+
+    # check that no bucket has les than repeats/100/2 or more than
+    # repeats/100*1.5
+
+    expected = repeat/100
+    low = expected/2
+    high = (expected*3)/2
+
+    buckets.each_with_index do |item, index|
+      assert(item > low && item < high, 
+             "Bucket[#{index}] has #{item} entries. Expected roughly #{expected}")
+    end
+    
+    # Calculate T-test
+    variance = (sumsq - sum*sum/repeat)/(repeat-1)
+    t = (avg - 0.5)*Math.sqrt(repeat)/Math.sqrt(variance)
+    puts "Variance = #{variance}, t = #{t}"
+  end
+  
+  # Now the same, but with integers
   def test_s_rand
-    assert_fail("untested")
+    rand_test(0,   Float, proc {|n| (100*n).to_i }, .5)
+    rand_test(100, Fixnum, proc {|n| n }, 49.5)
   end
 
-  def test_s_readline
-    assert_fail("untested")
+  def test_s_readline1
+    setupFiles
+    begin
+      count = 0
+      4.times do |count|
+        line = readline
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_exception(EOFError) { readline }
+    ensure
+      teardownFiles
+    end
   end
 
-  def test_s_readlines
-    assert_fail("untested")
+  def test_s_readline2
+    setupFiles
+    begin
+      count = 0
+      contents = readline(nil)
+      contents.split(/\n/).each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(2, count)
+
+      contents = readline(nil)
+      contents.split(/\n/).each do |line|
+        num = line[0..1].to_i
+        assert_equal(count, num)
+        count += 1
+      end
+      assert_equal(4, count)
+      assert_exception(EOFError) { readline }
+    ensure
+      teardownFiles
+    end
+  end
+
+  def test_s_readline3
+    setupFiles
+    begin
+      count = 0
+      10.times do |count|
+        thing = readline(' ')
+        count += 1
+      end
+      assert_exception(EOFError) { readline }
+    ensure
+      teardownFiles
+    end
+  end
+  
+  def test_s_readlines1
+    setupFiles
+    begin
+      lines = readlines
+      assert_equal(4, lines.size)
+    ensure
+      teardownFiles
+    end
+  end
+
+  def test_s_readlines2
+    setupFiles
+    begin
+      lines = readlines(nil)
+      assert_equal(2, lines.size)
+    ensure
+      teardownFiles
+    end
   end
 
   def test_s_require
@@ -1379,7 +1553,24 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_scan
-    assert_fail("untested")
+    $_ = "cruel world"
+    assert_equal(["cruel","world"],          scan(/\w+/))
+    assert_equal(["cru", "el ","wor"],       scan(/.../))
+    assert_equal([["cru"], ["el "],["wor"]], scan(/(...)/))
+
+    res=[]
+    assert_equal($_, scan(/\w+/) { |w| res << w })
+    assert_equal(["cruel","world"], res)
+
+    res=[]
+    assert_equal($_, scan(/.../) { |w| res << w })
+    assert_equal(["cru", "el ","wor"], res)
+
+    res=[]
+    assert_equal($_, scan(/(...)/) { |w| res << w })
+    assert_equal([["cru"], ["el "],["wor"]], res)
+    
+    assert_equal("cruel world", $_)
   end
 
   def test_s_select
@@ -1399,11 +1590,55 @@ class TestKernel < Rubicon::TestCase
   end
 
   def test_s_split
-    assert_fail("untested")
+    assert_equal(nil,$;)
+    $_ =  " a   b\t c "
+    assert_equal(["a", "b", "c"], split)
+    assert_equal(["a", "b", "c"], split(" "))
+
+    $_ = " a | b | c "
+    assert_equal([" a "," b "," c "], split("|"))
+
+    $_ =  "aXXbXXcXX"
+    assert_equal(["a", "b", "c"], split(/X./))
+
+    $_ = "abc"
+    assert_equal(["a", "b", "c"], split(//))
+
+    $_ = "a|b|c"
+    assert_equal(["a|b|c"],            split('|',1))
+    assert_equal(["a", "b|c"],         split('|',2))
+    assert_equal(["a","b","c"],        split('|',3))
+
+    $_ = "a|b|c|"
+    assert_equal(["a","b","c",""],     split('|',-1))
+
+    $_ = "a|b|c||"
+    assert_equal(["a","b","c","",""],  split('|',-1))
+
+    $_ = "a||b|c|"
+    assert_equal(["a","", "b", "c"],    split('|'))
+    assert_equal(["a","", "b", "c",""], split('|',-1))
   end
 
   def test_s_sprintf
-    assert_fail("untested")
+    assert_equals("00123", sprintf("%05d", 123))
+    assert_equals("123  |00000001", sprintf("%-5s|%08x", 123, 1))
+    x = sprintf("%3s %-4s%%foo %.0s%5d %#x%c%3.1f %b %x %X %#b %#x %#X",
+                "hi",
+                123,
+                "never seen",
+                456,
+                0,
+                ?A,
+                3.0999,
+                11,
+                171,
+                171,
+                11,
+                171,
+                171)
+
+    assert_equal(' hi 123 %foo   456 0x0A3.1 1011 ab AB 0b1011 0xab 0XAB', x)
   end
 
   def test_s_srand
