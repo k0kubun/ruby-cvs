@@ -2,18 +2,13 @@
 #
 # CVS commit mail script (loginfo)
 #
-# ChangeLog:
-# 0.1 Created usable version by Kengo Nakajima
-# 0.11 Added "_nomail_" command 
-# 0.12 subject_prefix, smtp_ipaddr, multiple-email-address. (2000/6/1)
-#
 # $Idaemons: /home/cvs/cvsmailer/loginfo.rb,v 1.3 2001/01/15 19:42:12 knu Exp $
-# $devId: loginfo.rb,v 1.7 2001/05/01 08:25:57 knu Exp $
+# $devId: loginfo.rb,v 1.8 2001/05/07 16:35:22 knu Exp $
 # $Id$
 #
 
-$cvs = "/usr/bin/cvs"
-
+require 'parsearg'
+require 'socket'
 
 def time2str(tm)
   ret = tm.strftime("%a, #{tm.mday} %b %Y %X ")
@@ -31,14 +26,57 @@ $pgrp = Process.getpgrp()
 # parse arguments
 #
 
-if ARGV.size != 8
-  puts "Usage: #{$0} CVSROOT USER 'CVS-LOG-STRING' MAILADDR HELO_DOMAIN\n SMTP_IP SUBJECT_PREFIX X_HEADER_PREFIX"
+puts "Invoking loginfo.rb...."
+
+def usage()
+  puts <<-EOF
+Usage: ./loginfo.rb CVSROOT USER 'CVS-LOG-STRING' MAILADDR
+         [-d HELO_DOMAIN] [-s SMTP_SERVER] [-p SUBJECT_PREFIX]
+         [-x X_HEADER_PREFIX] [-w CVSWEB_URL] [-C PATH_TO_CVS] [-J]
+
+-d	specify the domain to use in the SMTP session and in the mail header
+	(default: FQDN of the host)
+-s	specify the SMTP server to mail via
+	(default: "localhost")
+-p	specify the prefix for the mail subject (which will be surrounded
+	by `[' and `]')
+	(default: "cvs")
+-x	specify the prefix for the CVS informative headers
+	(default: "X-")
+-w	specify the URL of the CVSweb with two %s's, one for a path, and
+	the other for a query (e.g. "'http://a.b/cvsweb.cgi%s?cvsroot=xyz&%s'")
+	(default: none - no CVSweb links will be added)
+-C	specify the full path to cvs
+	(default: "/usr/bin/cvs")
+-J	enable Japanese support (send mail in the JIS encoding)
+	(default: disabled)
+  EOF
+end
+
+if ARGV.size < 4
+  usage()
   exit 1	# No way!
 end
 
-puts "Invoking loginfo.rb...."
+$cvsroot, $cvsuser, $cvsarg, $mailaddr = ARGV.slice!(0, 4)
 
-$cvsroot, $cvsuser, $cvsarg, $mailaddr, $helo_domain, $smtp_ipaddr, $subject_prefix, $x_header_prefix = *ARGV
+$USAGE = 'usage'
+parseArgs(0, nil, 'J',
+	  'd:' + Socket::gethostbyname(Socket::gethostname)[0],
+	  's:localhost',
+	  'p:cvs',
+	  'x:X-',
+	  'w:',
+	  'C:/usr/bin/cvs')
+
+$helo_domain = $OPT_d
+$smtp_server = $OPT_s
+$subject_prefix = $OPT_p.strip
+$x_header_prefix = $OPT_x.strip
+$cvsweb_url = $OPT_w
+$cvs_cmd = $OPT_C
+$japanese_support = $OPT_J
+
 
 # Temporary control files
 $commitinfosavefile	= sprintf("/tmp/commitinfo.%s.%d", $cvsuser, $pgrp)
@@ -107,15 +145,48 @@ end
 
 def send_mail(mail)
   require "net/smtp"
-  require "kconv"
 
   begin
-    sm = Net::SMTPSession.new($smtp_ipaddr, 25)
+    sm = Net::SMTPSession.new($smtp_server, 25)
     sm.start($helo_domain)
-    sm.sendmail(Kconv.tojis(mail), "#{$ecvsuser}@#{$helo_domain}", $mailaddr.split(/,/))
+
+    if $japanese_support
+      require "kconv"
+      mail = Kconv.tojis(mail)
+    end
+
+    sm.sendmail(mail, "#{$ecvsuser}@#{$helo_domain}", $mailaddr.split(/,/))
   rescue
-    puts "ERROR: cannot send email using MTA on #{$smtp_ipaddr}"
+    puts "ERROR: cannot send email using MTA on #{$smtp_server}"
   end
+end
+
+def previous_rev(rev)
+  /^(.*\.)(\d+)$/ =~ rev or return nil
+
+  main = $1
+  last = $2.to_i
+
+  if last == 1 && rev.split('.').length & 1 == 0 	# a branch, EVILNESS
+    main.sub(/\.(\d+)\.$/, '')
+  else
+    main + (last - 1).to_s
+  end
+end
+
+def cvsweb_url(modulename, filename, query)
+  i = 0
+
+  $cvsweb_url.gsub(/@/) { |at|
+    case i += 1
+    when 1
+      "/#{modulename}/#{filename}"
+    when 2
+      query
+    else
+      at
+    end
+  }
 end
 
 
@@ -168,28 +239,60 @@ if !$isimport
   modulename = cvsargtk.shift
 
   cvsargtk.each { |f|
-    revision = ""
-    `#{$cvs} -Qn status #{f}`.each_line { |l|
+    rev = ""
+    `#{$cvs_cmd} -Qn status #{f}`.each_line { |l|
       l.strip!
 	    
       if /^Repository revision:\s+(\S+)/ =~ l
-	revision = $1
+	rev = $1
 	break
       end
     }
     found = false
-    `#{$cvs} -Qn log #{f}`.each_line { |l|
+    `#{$cvs_cmd} -Qn log #{f}`.each_line { |l|
       l.strip!
 	    
       if found
-	if /lines:\s+(.+)\s+(.+)$/ =~ l
-	  append_line($changelogfile, 
-		      sprintf("%-11s %-4s %-4s  %s/%s",
-			      revision, $1, $2, modulename, f))
+	if /state:\s+(\S+);(?:\s+lines:\s+(\S+)\s+(\S+))?$/ =~ l
+	  state, plus, minus = $1, $2, $3
+
+	  rev_prev = previous_rev(rev)
+
+	  if state == 'dead'
+	    append_line($changelogfile, 
+			sprintf("%-11s %-9s  %s/%s",
+				rev, '-REMOVED-', modulename, f))
+
+	    if $cvsweb_url
+	      append_line($changelogfile, 
+			  cvsweb_url(modulename, f,
+				     "rev=#{rev_prev}").indent(2))
+	    end
+	  elsif plus.nil?
+	    append_line($changelogfile, 
+			sprintf("%-11s %-9s  %s/%s",
+				rev, '-ADDED-', modulename, f))
+
+	    if $cvsweb_url
+	      append_line($changelogfile, 
+			  cvsweb_url(modulename, f,
+				     "rev=#{rev}").indent(2))
+	    end
+	  else
+	    append_line($changelogfile, 
+			sprintf("%-11s %-4s %-4s  %s/%s",
+				rev, plus, minus, modulename, f))
+
+	    if $cvsweb_url
+	      append_line($changelogfile, 
+			  cvsweb_url(modulename, f,
+				     "r1=#{rev_prev}&r2=#{rev}").indent(2))
+	    end
+	  end
 	end
 
 	break
-      elsif /^revision\s(.+)$/ =~ l && $1 == revision
+      elsif /^revision\s(.+)$/ =~ l && $1 == rev
 	found = true
       end
     }
@@ -268,7 +371,7 @@ puts "done"
 # We need more modules...
 print "loginfo.rb is testing modules..."
 commithash.each_key { |k|
-  if loghash[k] == nil   
+  if loghash[k].nil?
     puts "log info for `#{k}' is not ready" 
     exit 0
   end
