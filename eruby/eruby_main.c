@@ -521,13 +521,14 @@ static void proc_args(int argc, char **argv)
 
 static void run()
 {
+    VALUE stack_start;
     VALUE code;
     int state;
     char *out;
     int nout;
-    void Init_stack _((void*));
+    void Init_stack _((VALUE*));
 
-    Init_stack(&code);
+    Init_stack(&stack_start);
     code = eruby_load(eruby_filename, 0, &state);
     ruby_finalize();
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {

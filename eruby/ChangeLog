@@ -1,3 +1,7 @@
+Mon Oct 15 13:54:18 2001  Shugo Maeda  <shugo@modruby.net>
+
+	* eruby_main.c (run): fix prototype of Init_stack().
+
 Wed Oct 10 15:15:48 2001  Shugo Maeda  <shugo@modruby.net>
 
 	* eruby_main.c (run): call ruby_finalize().
