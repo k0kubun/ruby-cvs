@@ -61,10 +61,6 @@ module Apache
       if r.finfo.mode == 0
 	return NOT_FOUND
       end
-      if r.allow_options & OPT_EXECCGI == 0
-	r.log_reason("Options ExecCGI is off in this directory", r.filename)
-	return FORBIDDEN
-      end
       open(r.filename) do |f|
 	ERuby.noheader = false
 	ERuby.charset = ERuby.default_charset

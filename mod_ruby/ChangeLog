@@ -1,3 +1,9 @@
+Thu Jun 21 18:40:44 2001  Shugo Maeda <shugo@modruby.net>
+
+	* lib/apache/eruby-run.rb: don't check ExecCGI.
+
+	* lib/apache/erb-run.rb: ditto.
+
 Thu Jun 21 18:31:05 2001  Shugo Maeda <shugo@modruby.net>
 
 	* ruby_config.c (ruby_cmd_require): use ruby_required_libraries
