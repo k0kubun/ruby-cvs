@@ -175,7 +175,7 @@ class TestModule < Rubicon::TestCase
 
   def test_constants
     assert_equal(["MIXIN"], Mixin.constants)
-    assert_equal(["USER", "MIXIN"], User.constants)
+    assert_equal(["MIXIN", "USER"], User.constants.sort)
   end
 
   def test_included_modules

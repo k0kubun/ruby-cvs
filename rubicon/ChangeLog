@@ -5,6 +5,17 @@
 	subdirectory, but some are class specific. The latter go into the
 	appropriate files in builtins
 
+2001-06-05  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestModule.rb: list of constants should be sorted before
+	  comparison.
+
+2001-04-23  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestFixnum.rb: -1 (in fact, negative integers in
+	  general) should be considered as infinite sequence of 1 bits,
+	  so that checkBits() test on -1 should be removed.
+
 2001-03-28  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestTime.rb: Time.zone now returns 'UTC' rather than 'GMT'

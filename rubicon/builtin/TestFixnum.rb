@@ -35,7 +35,6 @@ class TestFixnum < Rubicon::TestCase
   def test_AREF # '[]'
     checkBits([], 0)
     checkBits([15, 11, 7, 3], 0x8888)
-    checkBits((0..(1.size*8-1)).to_a, -1)
   end
 
   def test_CMP # '<=>'
