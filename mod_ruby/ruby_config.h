@@ -3,7 +3,7 @@
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  *
- * Author: Shugo Maeda <shugo@ruby-lang.org>
+ * Author: Shugo Maeda <shugo@modruby.net>
  *
  * This file is part of mod_ruby.
  *

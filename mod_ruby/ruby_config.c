@@ -3,7 +3,7 @@
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  *
- * Author: Shugo Maeda <shugo@ruby-lang.org>
+ * Author: Shugo Maeda <shugo@modruby.net>
  *
  * This file is part of mod_ruby.
  *
@@ -59,7 +59,7 @@ void *ruby_create_dir_config (pool *p, char *dirname)
     conf->kcode = NULL;
     conf->env = ap_make_table(p, 5); 
     conf->safe_level = MOD_RUBY_DEFAULT_SAFE_LEVEL;
-    conf->handler_objects = ap_make_array(p, 1, sizeof(char*));
+    conf->handlers = ap_make_array(p, 1, sizeof(char*));
     return conf;
 }
 
@@ -78,9 +78,8 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
     else {
 	new->safe_level = base->safe_level;
     }
-    new->handler_objects = ap_append_arrays(p,
-					    add->handler_objects,
-					    base->handler_objects);
+    new->handlers =
+	ap_append_arrays(p, add->handlers, base->handlers);
     return (void *) new;
 }
 
@@ -173,7 +172,7 @@ const char *ruby_cmd_safe_level(cmd_parms *cmd, ruby_dir_config *conf, char *arg
 
 const char *ruby_cmd_handler(cmd_parms *cmd, ruby_dir_config *conf, char *arg)
 {
-    *(char **) ap_push_array(conf->handler_objects) =
+    *(char **) ap_push_array(conf->handlers) =
 	ap_pstrdup(cmd->pool, arg);
     return NULL;
 }

@@ -3,7 +3,7 @@
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  *
- * Author: Shugo Maeda <shugo@ruby-lang.org>
+ * Author: Shugo Maeda <shugo@modruby.net>
  *
  * This file is part of mod_ruby.
  *
@@ -33,7 +33,7 @@ extern VALUE rb_cApacheInTable;
 extern VALUE rb_cApacheRequest;
 extern VALUE rb_eApacheTimeoutError;
 
-VALUE ruby_create_request(request_rec *r, VALUE input);
+VALUE ruby_request_new(request_rec *r);
 long ruby_request_outbuf_length(VALUE self);
 VALUE rb_request_send_http_header(VALUE self);
 void rb_request_flush(VALUE request);

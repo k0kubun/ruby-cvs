@@ -1,3 +1,19 @@
+Thu Apr 19 15:09:58 2001  Shugo Maeda <shugo@modruby.net>
+
+	* ruby/apache/ruby.rb: new handler Apache::Ruby.
+
+	* ruby/apache/rd2html.rb: renamed from mod_rd2html.rb.
+
+Mon Apr 15 20:37:41 2001  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.c (request_read): do not use buffer.
+
+	* apachelib.c (ruby_init_apachelib): remove methods from
+	Apache::request. (gets, readline, readlines, each, getc,
+	readchar, ungetc, tell, seek, rewind, pos, pos=)
+
+	* apachelib.c (ruby_init_apachelib): new class Apache::Server.
+
 Fri Apr 13 13:16:58 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.8.0 released.

@@ -3,7 +3,7 @@
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
  *
- * Author: Shugo Maeda <shugo@ruby-lang.org>
+ * Author: Shugo Maeda <shugo@modruby.net>
  *
  * This file is part of mod_ruby.
  *
@@ -42,20 +42,98 @@ extern VALUE rb_defout;
 extern VALUE rb_stdin;
 
 VALUE rb_mApache;
-VALUE rb_cApacheConnection;
 VALUE rb_cApacheTable;
 VALUE rb_cApacheInTable;
+VALUE rb_cApacheConnection;
+VALUE rb_cApacheServer;
 VALUE rb_cApacheRequest;
 VALUE rb_eApacheTimeoutError;
 
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
+#define CSTR2OBJ(s) ((s) ? rb_str_new2(s) : Qnil)
+#define INT2BOOL(n) ((n) ? Qtrue : Qfalse)
 
-#define define_string_attr_reader(fname, type, member) \
+#define DEFINE_ATTR_READER(fname, type, member, convert) \
 static VALUE fname(VALUE self) \
 { \
     type *data; \
     Data_Get_Struct(self, type, data); \
-    return data->member ? rb_str_new2(data->member) : Qnil; \
+    return convert(data->member); \
+}
+
+#define DEFINE_ATTR_WRITER(fname, type, member, convert) \
+static VALUE fname(VALUE self, VALUE val) \
+{ \
+    type *data; \
+    Data_Get_Struct(self, type, data); \
+    data->member = convert(val); \
+    return val; \
+}
+
+#define DEFINE_STRING_ATTR_READER(fname, type, member) \
+	DEFINE_ATTR_READER(fname, type, member, CSTR2OBJ)
+
+#define DEFINE_INT_ATTR_READER(fname, type, member) \
+	DEFINE_ATTR_READER(fname, type, member, INT2NUM)
+#define DEFINE_INT_ATTR_WRITER(fname, type, member) \
+	DEFINE_ATTR_WRITER(fname, type, member, NUM2INT)
+
+#define DEFINE_UINT_ATTR_READER(fname, type, member) \
+	DEFINE_ATTR_READER(fname, type, member, UINT2NUM)
+#define DEFINE_UINT_ATTR_WRITER(fname, type, member) \
+	DEFINE_ATTR_WRITER(fname, type, member, NUM2UINT)
+
+#define DEFINE_LONG_ATTR_READER(fname, type, member) \
+	DEFINE_ATTR_READER(fname, type, member, INT2NUM)
+#define DEFINE_LONG_ATTR_WRITER(fname, type, member) \
+	DEFINE_ATTR_WRITER(fname, type, member, NUM2LONG)
+
+#define DEFINE_ULONG_ATTR_READER(fname, type, member) \
+	DEFINE_ATTR_READER(fname, type, member, UINT2NUM)
+#define DEFINE_ULONG_ATTR_WRITER(fname, type, member) \
+	DEFINE_ATTR_WRITER(fname, type, member, NUM2ULONG)
+
+#define DEFINE_BOOL_ATTR_READER(fname, type, member) \
+	DEFINE_ATTR_READER(fname, type, member, INT2BOOL)
+#define DEFINE_BOOL_ATTR_WRITER(fname, type, member) \
+	DEFINE_ATTR_WRITER(fname, type, member, RTEST)
+
+static VALUE f_p(int argc, VALUE *argv, VALUE self)
+{
+    int i;
+
+    for (i = 0; i < argc; i++) {
+	rb_io_write(rb_defout, rb_inspect(argv[i]));
+	rb_io_write(rb_defout, rb_default_rs);
+    }
+    return Qnil;
+}
+
+static void mod_ruby_exit(int status)
+{
+    VALUE exit;
+
+    exit = rb_exc_new(rb_eSystemExit, 0, 0);
+    rb_iv_set(exit, "status", INT2NUM(status));
+    rb_exc_raise(exit);
+}
+
+static VALUE f_exit(int argc, VALUE *argv, VALUE obj)
+{
+    VALUE status;
+    int status_code;
+
+    rb_secure(4);
+    if (rb_scan_args(argc, argv, "01", &status) == 1) {
+	status_code = NUM2INT(status);
+	if (status_code < 0)
+	    rb_raise(rb_eArgError, "negative status code %d", status_code);
+    }
+    else {
+	status_code = OK;
+    }
+    mod_ruby_exit(status_code);
+    return Qnil;		/* not reached */
 }
 
 static VALUE apache_server_version(VALUE self)
@@ -81,30 +159,23 @@ static VALUE apache_request(VALUE self)
 
 static VALUE apache_unescape_url(VALUE self, VALUE url)
 {
-    char *buff;
+    char *buf;
 
     Check_Type(url, T_STRING);
-    buff = ALLOCA_N(char, RSTRING(url)->len + 1);
-    memcpy(buff, RSTRING(url)->ptr, RSTRING(url)->len);
-    buff[RSTRING(url)->len] = '\0';
-    ap_unescape_url(buff);
-    return rb_str_new2(buff);
+    buf = ALLOCA_N(char, RSTRING(url)->len + 1);
+    memcpy(buf, RSTRING(url)->ptr, RSTRING(url)->len);
+    buf[RSTRING(url)->len] = '\0';
+    ap_unescape_url(buf);
+    return rb_str_new2(buf);
 }
 
-static VALUE ruby_create_connection(conn_rec *conn)
+static VALUE apache_chdir_file(VALUE self, VALUE file)
 {
-    return Data_Wrap_Struct(rb_cApacheConnection, NULL, NULL, conn);
+    ap_chdir_file(STR2CSTR(file));
+    return Qnil;
 }
 
-define_string_attr_reader(connection_remote_ip, conn_rec, remote_ip);
-define_string_attr_reader(connection_remote_host, conn_rec, remote_host);
-define_string_attr_reader(connection_remote_logname, conn_rec, remote_logname);
-define_string_attr_reader(connection_user, conn_rec, user);
-define_string_attr_reader(connection_auth_type, conn_rec, ap_auth_type);
-define_string_attr_reader(connection_local_ip, conn_rec, local_ip);
-define_string_attr_reader(connection_local_host, conn_rec, local_host);
-
-static VALUE ruby_create_table(VALUE klass, table *tbl)
+static VALUE table_new(VALUE klass, table *tbl)
 {
     return Data_Wrap_Struct(klass, NULL, NULL, tbl);
 }
@@ -335,41 +406,80 @@ static VALUE in_table_each_value(VALUE self)
     return Qnil;
 }
 
+static VALUE connection_new(conn_rec *conn)
+{
+    return Data_Wrap_Struct(rb_cApacheConnection, NULL, NULL, conn);
+}
+
+DEFINE_STRING_ATTR_READER(connection_remote_ip, conn_rec, remote_ip);
+DEFINE_STRING_ATTR_READER(connection_remote_host, conn_rec, remote_host);
+DEFINE_STRING_ATTR_READER(connection_remote_logname, conn_rec, remote_logname);
+DEFINE_STRING_ATTR_READER(connection_user, conn_rec, user);
+DEFINE_STRING_ATTR_READER(connection_auth_type, conn_rec, ap_auth_type);
+DEFINE_STRING_ATTR_READER(connection_local_ip, conn_rec, local_ip);
+DEFINE_STRING_ATTR_READER(connection_local_host, conn_rec, local_host);
+
+static VALUE server_new(server_rec *server)
+{
+    return Data_Wrap_Struct(rb_cApacheServer, NULL, NULL, server);
+}
+
+DEFINE_STRING_ATTR_READER(server_defn_name, server_rec, defn_name);
+DEFINE_UINT_ATTR_READER(server_defn_line_number, server_rec, defn_line_number);
+DEFINE_STRING_ATTR_READER(server_srm_confname, server_rec, srm_confname);
+DEFINE_STRING_ATTR_READER(server_access_confname, server_rec, access_confname);
+DEFINE_STRING_ATTR_READER(server_admin, server_rec, server_admin);
+DEFINE_STRING_ATTR_READER(server_hostname, server_rec, server_hostname);
+DEFINE_UINT_ATTR_READER(server_port, server_rec, port);
+DEFINE_STRING_ATTR_READER(server_error_fname, server_rec, error_fname);
+DEFINE_INT_ATTR_READER(server_loglevel, server_rec, loglevel);
+DEFINE_BOOL_ATTR_READER(server_is_virtual, server_rec, is_virtual);
+
 typedef struct request_data {
     request_rec *request;
-    VALUE inbuf;
     VALUE outbuf;
     VALUE connection;
+    VALUE server;
     VALUE headers_in;
     VALUE headers_out;
+    VALUE err_headers_out;
     VALUE subprocess_env;
+    VALUE notes;
     int send_http_header;
     long pos;
 } request_data;
 
-#define request_string_attr_reader(fname, member) \
-	define_string_attr_reader(fname, request_data, request->member)
-#define request_string_attr_writer(fname, member) \
-static VALUE fname(VALUE self, VALUE str) \
+#define REQUEST_STRING_ATTR_READER(fname, member) \
+	DEFINE_STRING_ATTR_READER(fname, request_data, request->member)
+
+#define REQUEST_STRING_ATTR_WRITER(fname, member) \
+static VALUE fname(VALUE self, VALUE val) \
 { \
     request_data *data; \
     Data_Get_Struct(self, request_data, data); \
     data->request->member = \
-	ap_pstrdup(data->request->pool, STR2CSTR(str)); \
-    return str; \
+	ap_pstrdup(data->request->pool, STR2CSTR(val)); \
+    return val; \
 }
+
+#define REQUEST_INT_ATTR_READER(fname, member) \
+	DEFINE_INT_ATTR_READER(fname, request_data, request->member)
+#define REQUEST_INT_ATTR_WRITER(fname, member) \
+	DEFINE_INT_ATTR_WRITER(fname, request_data, request->member)
 
 static void request_mark(request_data *data)
 {
-    rb_gc_mark(data->inbuf);
     rb_gc_mark(data->outbuf);
     rb_gc_mark(data->connection);
+    rb_gc_mark(data->server);
     rb_gc_mark(data->headers_in);
     rb_gc_mark(data->headers_out);
+    rb_gc_mark(data->err_headers_out);
     rb_gc_mark(data->subprocess_env);
+    rb_gc_mark(data->notes);
 }
 
-VALUE ruby_create_request(request_rec *r, VALUE input)
+VALUE ruby_request_new(request_rec *r)
 {
     request_data *data;
     VALUE result;
@@ -378,12 +488,13 @@ VALUE ruby_create_request(request_rec *r, VALUE input)
     result = Data_Make_Struct(rb_cApacheRequest, request_data,
 			      request_mark, free, data);
     data->request = r;
-    data->inbuf = input;
     data->outbuf = rb_tainted_str_new("", 0);
     data->connection = Qnil;
     data->headers_in = Qnil;
     data->headers_out = Qnil;
+    data->err_headers_out = Qnil;
     data->subprocess_env = Qnil;
+    data->notes = Qnil;
     data->send_http_header = 0;
     data->pos = 0;
 
@@ -570,24 +681,37 @@ static VALUE request_connection(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->connection)) {
-	data->connection = ruby_create_connection(data->request->connection);
+	data->connection = connection_new(data->request->connection);
     }
     return data->connection;
 }
 
-request_string_attr_reader(request_protocol, protocol);
-request_string_attr_reader(request_hostname, hostname);
-request_string_attr_reader(request_unparsed_uri, unparsed_uri);
-request_string_attr_reader(request_uri, uri);
-request_string_attr_reader(request_filename, filename);
-request_string_attr_reader(request_set_filename, filename);
-request_string_attr_reader(request_path_info, path_info);
-request_string_attr_reader(request_status_line, status_line);
-request_string_attr_writer(request_set_status_line, status_line);
-request_string_attr_reader(request_request_method, method);
-request_string_attr_reader(request_args, args);
-request_string_attr_reader(request_get_content_type, content_type);
-request_string_attr_reader(request_get_content_encoding, content_encoding);
+static VALUE request_server(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->server)) {
+	data->server = server_new(data->request->server);
+    }
+    return data->server;
+}
+
+REQUEST_STRING_ATTR_READER(request_protocol, protocol);
+REQUEST_STRING_ATTR_READER(request_hostname, hostname);
+REQUEST_STRING_ATTR_READER(request_unparsed_uri, unparsed_uri);
+REQUEST_STRING_ATTR_READER(request_uri, uri);
+REQUEST_STRING_ATTR_READER(request_get_filename, filename);
+REQUEST_STRING_ATTR_WRITER(request_set_filename, filename);
+REQUEST_STRING_ATTR_READER(request_path_info, path_info);
+REQUEST_INT_ATTR_READER(request_get_status, status);
+REQUEST_INT_ATTR_WRITER(request_set_status, status);
+REQUEST_STRING_ATTR_READER(request_get_status_line, status_line);
+REQUEST_STRING_ATTR_WRITER(request_set_status_line, status_line);
+REQUEST_STRING_ATTR_READER(request_request_method, method);
+REQUEST_STRING_ATTR_READER(request_args, args);
+REQUEST_STRING_ATTR_READER(request_get_content_type, content_type);
+REQUEST_STRING_ATTR_READER(request_get_content_encoding, content_encoding);
 
 static VALUE request_request_time(VALUE self)
 {
@@ -595,23 +719,6 @@ static VALUE request_request_time(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     return rb_time_new(data->request->request_time, 0);
-}
-
-static VALUE request_status(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return INT2NUM(data->request->status);
-}
-
-static VALUE request_set_status(VALUE self, VALUE status)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    data->request->status = NUM2INT(status);
-    return status;
 }
 
 static VALUE request_header_only(VALUE self)
@@ -702,8 +809,8 @@ static VALUE request_headers_in(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->headers_in)) {
-	data->headers_in = ruby_create_table(rb_cApacheInTable,
-					     data->request->headers_in);
+	data->headers_in = table_new(rb_cApacheInTable,
+				     data->request->headers_in);
     }
     return data->headers_in;
 }
@@ -714,10 +821,22 @@ static VALUE request_headers_out(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->headers_out)) {
-	data->headers_out = ruby_create_table(rb_cApacheTable,
-					      data->request->headers_out);
+	data->headers_out = table_new(rb_cApacheTable,
+				      data->request->headers_out);
     }
     return data->headers_out;
+}
+
+static VALUE request_err_headers_out(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->err_headers_out)) {
+	data->err_headers_out =
+	    table_new(rb_cApacheTable, data->request->err_headers_out);
+    }
+    return data->err_headers_out;
 }
 
 static VALUE request_subprocess_env(VALUE self)
@@ -726,10 +845,21 @@ static VALUE request_subprocess_env(VALUE self)
 
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->subprocess_env)) {
-	data->subprocess_env = ruby_create_table(rb_cApacheTable,
-						 data->request->subprocess_env);
+	data->subprocess_env = table_new(rb_cApacheTable,
+					 data->request->subprocess_env);
     }
     return data->subprocess_env;
+}
+
+static VALUE request_notes(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->notes)) {
+	data->notes = table_new(rb_cApacheTable, data->request->notes);
+    }
+    return data->notes;
 }
 
 static VALUE request_aref(VALUE self, VALUE vkey)
@@ -836,255 +966,97 @@ static VALUE request_each_value(VALUE self)
     return Qnil;
 }
 
-static VALUE request_read_all(VALUE self)
+static VALUE request_setup_client_block(int argc, VALUE *argv, VALUE self)
 {
     request_data *data;
-    VALUE str;
+    VALUE policy;
+    int read_policy = REQUEST_CHUNKED_ERROR;
 
     Data_Get_Struct(self, request_data, data);
-    if (data->pos >= RSTRING(data->inbuf)->len)
-	return Qnil;
-    str = rb_str_substr(data->inbuf, data->pos,
-			RSTRING(data->inbuf)->len - data->pos);
-    data->pos = RSTRING(data->inbuf)->len;
-    OBJ_TAINT(str);
-    return str;
+    if (rb_scan_args(argc, argv, "01", &policy) == 1) {
+	read_policy = NUM2INT(policy);
+    }
+    return INT2NUM(ap_setup_client_block(data->request, read_policy));
+}
+
+static VALUE request_should_client_block(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2BOOL(ap_should_client_block(data->request));
+}
+
+static VALUE request_get_client_block(VALUE self, VALUE length)
+{
+    request_data *data;
+    char *buf;
+    int len;
+
+    Data_Get_Struct(self, request_data, data);
+    len = NUM2INT(length);
+    buf = (char *) ap_palloc(data->request->pool, len);
+    len = ap_get_client_block(data->request, buf, len);
+    return rb_tainted_str_new(buf, len);
+}
+
+static VALUE read_client_block(request_rec *r, int len)
+{
+    char *buf;
+    int rc;
+    int nrd = 0;
+    int old_read_length;
+    VALUE result;
+
+    if (r->read_length == 0) {
+        if ((rc = ap_setup_client_block(r, REQUEST_CHUNKED_ERROR)) != OK) {
+	    mod_ruby_exit(rc);
+        }
+    }
+    old_read_length = r->read_length;
+    r->read_length = 0;
+    if (ap_should_client_block(r)) {
+	if (len < 0)
+	    len = r->remaining;
+	buf = (char *) ap_palloc(r->pool, len);
+        nrd = ap_get_client_block(r, buf, len);
+	result = rb_tainted_str_new(buf, len);
+    }
+    else {
+	result = Qnil;
+    }
+    r->read_length += old_read_length;
+    return result;
 }
 
 static VALUE request_read(int argc, VALUE *argv, VALUE self)
 {
     request_data *data;
-    VALUE length, str;
-    long len, rest;
+    VALUE length;
+    int len;
 
     Data_Get_Struct(self, request_data, data);
     rb_scan_args(argc, argv, "01", &length);
     if (NIL_P(length)) {
-	return request_read_all(self);
+	return read_client_block(data->request, -1);
     }
-
-    len = NUM2LONG(length);
+    len = NUM2INT(length);
     if (len < 0) {
 	rb_raise(rb_eArgError, "negative length %d given", len);
     }
-
-    if (data->pos >= RSTRING(data->inbuf)->len)
-	return Qnil;
-    if (len == 0)
-	return rb_str_new("", 0);
-
-    rest = RSTRING(data->inbuf)->len - data->pos;
-    if (len > rest) len = rest;
-
-    str = rb_str_substr(data->inbuf, data->pos, len);
-    data->pos += len;
-    OBJ_TAINT(str);
-    return str;
-}
-
-static long memsearch(char *s, size_t slen, char *t, size_t tlen)
-{
-    long i, j, k;
-
-    if (tlen == 0)
-	return -1;
-    for (i = 0; i < slen; i++) {
-	for (j = i, k = 0; s[j] == t[k]; j++, k++) {
-	    if (k == tlen - 1)
-		return i;
-	}
-    }
-    return -1;
-}
-
-static VALUE request_gets(int argc, VALUE *argv, VALUE self)
-{
-    request_data *data;
-    VALUE rs, str;
-    char *rsptr;
-    long rslen, len, i;
-
-    Data_Get_Struct(self, request_data, data);
-    if (rb_scan_args(argc, argv, "01", &rs) == 0) {
-	rs = rb_rs;
-    }
-    else {
-	if (!NIL_P(rs)) Check_Type(rs, T_STRING);
-    }
-
-    if (data->pos >= RSTRING(data->inbuf)->len)
-	return Qnil;
-
-    if (NIL_P(rs)) {
-	str = request_read_all(self);
-	if (!NIL_P(str)) {
-	    rb_lastline_set(str);
-	}
-	return str;
-    }
-    else {
-	rsptr = RSTRING(rs)->ptr;
-	rslen = RSTRING(rs)->len;
-    }
-    i = memsearch(RSTRING(data->inbuf)->ptr + data->pos,
-		  RSTRING(data->inbuf)->len - data->pos,
-		  rsptr, rslen);
-    if (i == -1) {
-	len = RSTRING(data->inbuf)->len - data->pos;
-    }
-    else {
-	len = i + rslen;
-    }
-    str = rb_str_substr(data->inbuf, data->pos, len);
-    data->pos += len;
-
-    OBJ_TAINT(str);
-    rb_lastline_set(str);
-    return str;
-}
-
-static VALUE request_readline(int argc, VALUE *argv, VALUE self)
-{
-    VALUE line = request_gets(argc, argv, self);
-
-    if (NIL_P(line)) {
-	rb_raise(rb_eEOFError, "End of file reached");
-    }
-    return line;
-}
-
-static VALUE request_readlines(int argc, VALUE *argv, VALUE self)
-{
-    VALUE line, ary;
-
-    ary = rb_ary_new();
-    while (!NIL_P(line = request_gets(argc, argv, self))) {
-	rb_ary_push(ary, line);
-    }
-    return ary;
-}
-
-static VALUE request_each_line(int argc, VALUE *argv, VALUE self)
-{
-    VALUE line;
-
-    while (!NIL_P(line = request_gets(argc, argv, self))) {
-	rb_yield(line);
-    }
-    return self;
-}
-
-static VALUE request_each_byte(int argc, VALUE *argv, VALUE self)
-{
-    request_data *data;
-    unsigned char c;
-
-    Data_Get_Struct(self, request_data, data);
-    while (data->pos < RSTRING(data->inbuf)->len) {
-	c = RSTRING(data->inbuf)->ptr[data->pos];
-	rb_yield(INT2FIX(c));
-	data->pos++;
-    }
-    return self;
+    return read_client_block(data->request, len);
 }
 
 static VALUE request_getc(VALUE self)
 {
     request_data *data;
-    unsigned char c;
+    VALUE str;
 
     Data_Get_Struct(self, request_data, data);
-    if (data->pos >= RSTRING(data->inbuf)->len)
+    str = read_client_block(data->request, 1);
+    if (NIL_P(str) || RSTRING(str)->len == 0)
 	return Qnil;
-    c = RSTRING(data->inbuf)->ptr[data->pos];
-    data->pos++;
-    return INT2FIX(c);
-}
-
-static VALUE request_readchar(VALUE self)
-{
-    VALUE c = request_getc(self);
-
-    if (NIL_P(c)) {
-	rb_raise(rb_eEOFError, "End of file reached");
-    }
-    return c;
-}
-
-static VALUE request_ungetc(VALUE self, VALUE c)
-{
-    request_data *data;
-    int cc = NUM2INT(c);
-
-    Data_Get_Struct(self, request_data, data);
-    if (data->pos == 0)
-	return Qnil;
-    data->pos--;
-    RSTRING(data->inbuf)->ptr[data->pos] = cc;
-    return Qnil;
-}
-
-static VALUE request_tell(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    return INT2NUM(data->pos);
-}
-
-static VALUE request_seek(int argc, VALUE *argv, VALUE self)
-{
-    request_data *data;
-    VALUE offset, ptrname;
-    int whence;
-
-    Data_Get_Struct(self, request_data, data);
-    rb_scan_args(argc, argv, "11", &offset, &ptrname);
-    if (argc == 1) whence = SEEK_SET;
-    else whence = NUM2INT(ptrname);
-
-    switch (whence) {
-    case SEEK_SET:
-	data->pos = NUM2LONG(offset);
-	break;
-    case SEEK_CUR:
-	data->pos = data->pos + NUM2LONG(offset);
-	break;
-    case SEEK_END:
-	data->pos = RSTRING(data->inbuf)->len + NUM2LONG(offset);
-	break;
-    default:
-	rb_raise(rb_eArgError, "invalid whence: %d", whence);
-	break;
-    }
-    if (data->pos < 0)
-	data->pos = 0;
-    if (data->pos > RSTRING(data->inbuf)->len)
-	data->pos = RSTRING(data->inbuf)->len;
-
-    return INT2FIX(0);
-}
-
-static VALUE request_rewind(VALUE self)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    data->pos = 0;
-    return INT2FIX(0);
-}
-
-static VALUE request_set_pos(VALUE self, VALUE pos)
-{
-    request_data *data;
-
-    Data_Get_Struct(self, request_data, data);
-    data->pos = NUM2LONG(pos);
-    if (data->pos < 0)
-	data->pos = 0;
-    if (data->pos > RSTRING(data->inbuf)->len)
-	data->pos = RSTRING(data->inbuf)->len;
-    return INT2NUM(pos);
+    return INT2FIX(RSTRING(str)->ptr[0]);
 }
 
 static VALUE request_eof(VALUE self)
@@ -1092,7 +1064,7 @@ static VALUE request_eof(VALUE self)
     request_data *data;
 
     Data_Get_Struct(self, request_data, data);
-    return data->pos >= RSTRING(data->inbuf)->len ? Qtrue : Qfalse;
+    return INT2BOOL(data->request->remaining == 0);
 }
 
 static VALUE request_binmode(VALUE self)
@@ -1214,6 +1186,9 @@ static VALUE request_add_cgi_vars(VALUE self)
 
 void ruby_init_apachelib()
 {
+    rb_define_global_function("p", f_p, -1);
+    rb_define_global_function("exit", f_exit, -1);
+
     rb_mApache = rb_define_module("Apache");
     rb_define_module_function(rb_mApache, "server_version", apache_server_version, 0);
     rb_define_module_function(rb_mApache, "add_version_component",
@@ -1221,22 +1196,7 @@ void ruby_init_apachelib()
     rb_define_module_function(rb_mApache, "server_built", apache_server_built, 0);
     rb_define_module_function(rb_mApache, "request", apache_request, 0);
     rb_define_module_function(rb_mApache, "unescape_url", apache_unescape_url, 1);
-
-    rb_cApacheConnection = rb_define_class_under(rb_mApache, "Connection", rb_cObject);
-    rb_undef_method(CLASS_OF(rb_cApacheConnection), "new");
-    rb_define_method(rb_cApacheConnection, "remote_ip",
-		     connection_remote_ip, 0);
-    rb_define_method(rb_cApacheConnection, "remote_host",
-		     connection_remote_host, 0);
-    rb_define_method(rb_cApacheConnection, "remote_logname",
-		     connection_remote_logname, 0);
-    rb_define_method(rb_cApacheConnection, "user", connection_user, 0);
-    rb_define_method(rb_cApacheConnection, "auth_type",
-		     connection_auth_type, 0);
-    rb_define_method(rb_cApacheConnection, "local_ip",
-		     connection_local_ip, 0);
-    rb_define_method(rb_cApacheConnection, "local_host",
-		     connection_local_host, 0);
+    rb_define_module_function(rb_mApache, "chdir_file", apache_chdir_file, 1);
 
     rb_cApacheTable = rb_define_class_under(rb_mApache, "Table", rb_cObject);
     rb_include_module(rb_cApacheTable, rb_mEnumerable);
@@ -1263,6 +1223,37 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheInTable, "each_key", in_table_each_key, 0);
     rb_define_method(rb_cApacheInTable, "each_value", in_table_each_value, 0);
 
+    rb_cApacheConnection = rb_define_class_under(rb_mApache, "Connection", rb_cObject);
+    rb_undef_method(CLASS_OF(rb_cApacheConnection), "new");
+    rb_define_method(rb_cApacheConnection, "remote_ip",
+		     connection_remote_ip, 0);
+    rb_define_method(rb_cApacheConnection, "remote_host",
+		     connection_remote_host, 0);
+    rb_define_method(rb_cApacheConnection, "remote_logname",
+		     connection_remote_logname, 0);
+    rb_define_method(rb_cApacheConnection, "user", connection_user, 0);
+    rb_define_method(rb_cApacheConnection, "auth_type",
+		     connection_auth_type, 0);
+    rb_define_method(rb_cApacheConnection, "local_ip",
+		     connection_local_ip, 0);
+    rb_define_method(rb_cApacheConnection, "local_host",
+		     connection_local_host, 0);
+
+    rb_cApacheServer = rb_define_class_under(rb_mApache, "Server", rb_cObject);
+    rb_undef_method(CLASS_OF(rb_cApacheConnection), "new");
+    rb_define_method(rb_cApacheServer, "defn_name", server_defn_name, 0);
+    rb_define_method(rb_cApacheServer, "defn_line_number",
+		     server_defn_line_number, 0);
+    rb_define_method(rb_cApacheServer, "srm_confname", server_srm_confname, 0);
+    rb_define_method(rb_cApacheServer, "access_confname", server_access_confname, 0);
+    rb_define_method(rb_cApacheServer, "admin", server_admin, 0);
+    rb_define_method(rb_cApacheServer, "hostname", server_hostname, 0);
+    rb_define_method(rb_cApacheServer, "port", server_port, 0);
+    rb_define_method(rb_cApacheServer, "error_fname", server_error_fname, 0);
+    rb_define_method(rb_cApacheServer, "loglevel", server_loglevel, 0);
+    rb_define_method(rb_cApacheServer, "is_virtual", server_is_virtual, 0);
+    rb_define_method(rb_cApacheServer, "virtual?", server_is_virtual, 0);
+
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
     rb_include_module(rb_cApacheRequest, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheRequest), "new");
@@ -1278,19 +1269,20 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "send_http_header",
 		     rb_request_send_http_header, 0);
     rb_define_method(rb_cApacheRequest, "connection", request_connection, 0);
+    rb_define_method(rb_cApacheRequest, "server", request_server, 0);
     rb_define_method(rb_cApacheRequest, "protocol", request_protocol, 0);
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
     rb_define_method(rb_cApacheRequest, "unparsed_uri",
 		     request_unparsed_uri, 0);
     rb_define_method(rb_cApacheRequest, "uri", request_uri, 0);
-    rb_define_method(rb_cApacheRequest, "filename", request_filename, 0);
+    rb_define_method(rb_cApacheRequest, "filename", request_get_filename, 0);
     rb_define_method(rb_cApacheRequest, "filename=", request_set_filename, 1);
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);
     rb_define_method(rb_cApacheRequest, "request_time",
 		     request_request_time, 0);
-    rb_define_method(rb_cApacheRequest, "status", request_status, 0);
+    rb_define_method(rb_cApacheRequest, "status", request_get_status, 0);
     rb_define_method(rb_cApacheRequest, "status=", request_set_status, 1);
-    rb_define_method(rb_cApacheRequest, "status_line", request_status_line, 0);
+    rb_define_method(rb_cApacheRequest, "status_line", request_get_status_line, 0);
     rb_define_method(rb_cApacheRequest, "status_line=",
 		     request_set_status_line, 1);
     rb_define_method(rb_cApacheRequest, "request_method",
@@ -1313,28 +1305,26 @@ void ruby_init_apachelib()
 		     request_set_content_languages, 1);
     rb_define_method(rb_cApacheRequest, "headers_in", request_headers_in, 0);
     rb_define_method(rb_cApacheRequest, "headers_out", request_headers_out, 0);
+    rb_define_method(rb_cApacheRequest, "err_headers_out",
+		     request_err_headers_out, 0);
     rb_define_method(rb_cApacheRequest, "subprocess_env",
 		     request_subprocess_env, 0);
+    rb_define_method(rb_cApacheRequest, "notes", request_notes, 0);
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);
     rb_define_method(rb_cApacheRequest, "each_header", request_each_header, 0);
     rb_define_method(rb_cApacheRequest, "each_key", request_each_key, 0);
     rb_define_method(rb_cApacheRequest, "each_value", request_each_value, 0);
+    rb_define_method(rb_cApacheRequest, "setup_client_block",
+		     request_setup_client_block, -1);
+    rb_define_method(rb_cApacheRequest, "should_client_block",
+		     request_should_client_block, 0);
+    rb_define_method(rb_cApacheRequest, "should_client_block?",
+		     request_should_client_block, 0);
+    rb_define_method(rb_cApacheRequest, "get_client_block",
+		     request_get_client_block, 1);
     rb_define_method(rb_cApacheRequest, "read", request_read, -1);
-    rb_define_method(rb_cApacheRequest, "gets", request_gets, -1);
-    rb_define_method(rb_cApacheRequest, "readline", request_readline, -1);
-    rb_define_method(rb_cApacheRequest, "readlines", request_readlines, -1);
-    rb_define_method(rb_cApacheRequest, "each", request_each_line, -1);
-    rb_define_method(rb_cApacheRequest, "each_line", request_each_line, -1);
-    rb_define_method(rb_cApacheRequest, "each_byte", request_each_byte, 0);
     rb_define_method(rb_cApacheRequest, "getc", request_getc, 0);
-    rb_define_method(rb_cApacheRequest, "readchar", request_readchar, 0);
-    rb_define_method(rb_cApacheRequest, "ungetc", request_ungetc, 1);
-    rb_define_method(rb_cApacheRequest, "tell", request_tell, 0);
-    rb_define_method(rb_cApacheRequest, "seek", request_seek, -1);
-    rb_define_method(rb_cApacheRequest, "rewind", request_rewind, 0);
-    rb_define_method(rb_cApacheRequest, "pos", request_tell, 0);
-    rb_define_method(rb_cApacheRequest, "pos=", request_set_pos, 1);
     rb_define_method(rb_cApacheRequest, "eof", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "eof?", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "binmode", request_binmode, 0);

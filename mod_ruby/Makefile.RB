@@ -3,6 +3,11 @@
 require "mkmf"
 require "getoptlong"
 
+if RUBY_VERSION < "1.6"
+  $stderr.print("mod_ruby requires Ruby 1.6.x or later.")
+  exit 1
+end
+
 $APXS = "apxs"
 $ENABLE_ERUBY = false
 $ERUBY_INCLUDES = nil
