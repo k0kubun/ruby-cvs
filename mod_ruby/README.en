@@ -11,7 +11,7 @@ What's mod_ruby?
 Required environment
 ====================
 
-  * Ruby version 1.3.1(99/03/11) or later.
+  * Ruby version 1.6.x or later.
   * Apache version 1.3.3 or later.
 
 
