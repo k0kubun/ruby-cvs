@@ -82,9 +82,10 @@ class TestMarshal < Rubicon::TestCase
   def test_s_dump_load4
     b1 = 123456789012345678901234567890
     b2 = -123**99
-    
+    b3 = 2**32
     assert_equal(b1, Marshal.load(Marshal.dump(b1)))
     assert_equal(b2, Marshal.load(Marshal.dump(b2)))
+    assert_equal(b3, Marshal.load(Marshal.dump(b3)))
   end
 
   def test_s_restore
