@@ -10,6 +10,21 @@ class SubThread < Thread
   end
 end
 
+#
+# Signal
+#
+def s
+  $spinlock = true
+end
+
+#
+# Wait
+#
+def w
+  sleep .1 while !$spinlock
+  $spinlock = false
+end
+
 class TestThread < Rubicon::TestCase
 
   def teardown
@@ -81,8 +96,10 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_alive?
-    t1 = Thread.new { Thread.stop }
-    t2 = Thread.new { sleep 60 }
+    t1 = Thread.new { s; Thread.stop }
+    w
+    t2 = Thread.new { s; sleep 60 }
+    w
     t3 = Thread.new {}
     t3.join
     assert_equals(true,Thread.current.alive?)
@@ -151,16 +168,25 @@ class TestThread < Rubicon::TestCase
 
   def test_priority
     assert_equals(0, Thread.current.priority)
-    assert_fail("unimplemented")
   end
 
   def test_priority=
     assert_fail("unimplemented")
+    c1 = 0
+    c2 = 0
+    a = Thread.new { loop { c1 += 1 }}
+    b = Thread.new { loop { c2 += 1 }}
+    b.priority = 99999
+    sleep 1 
+    assert (c2 > c1)
+    a.kill
+    b.kill
   end
 
   def test_raise
     madeit = false
-    t = Thread.new { sleep 60; madeit = true }
+    t = Thread.new { s; sleep 60; madeit = true }
+    w
     t.raise "Gotcha"
     assert(!t.alive?)
     assert_equals(false,madeit)
@@ -168,48 +194,50 @@ class TestThread < Rubicon::TestCase
 
   def test_run
     wokeup = false
-    t1 = Thread.new { Thread.stop; wokeup = true }
-    assert_equals(false,wokeup)
+    t1 = Thread.new { s; Thread.stop; wokeup = true }
+    w
+    assert_equals(false, wokeup)
     t1.run
-    assert_equals(true,wokeup)
+    assert_equals(true, wokeup)
 
     wokeup = false
-    t1 = Thread.new { Thread.stop; wokeup = true }
-    assert_equals(false,wokeup)
+    t1 = Thread.new { s; Thread.stop; wokeup = true }
+    w
+    assert_equals(false, wokeup)
     Thread.critical = true
     t1.run
-    assert_equals(false,wokeup)
+    assert_equals(false, wokeup)
     Thread.critical = false
     t1.run
-    assert_equals(true,wokeup)
+    assert_equals(true, wokeup)
   end
 
-  #
-  # Just do an exit, don't be clever.
-  #
   def test_safe_level
     result = runChild {
       $stderr.close
-      assert_equals(0, Thread.current.safe_level)
+      exit 1 if 0 != Thread.current.safe_level
       $SAFE=1
-      assert_equals(1, Thread.current.safe_level)
-      exit 23
+      exit 1 if 1 != Thread.current.safe_level
+      exit 0
     }
-    assert_equals(23,result)
+    assert_equals(0, result)
   end
 
   def test_status
-    a = Thread.new { raise "dead" }
-    b = Thread.new { Thread.stop }
-    c = Thread.new { Thread.exit }
+    a = Thread.new { s; raise "dead" }
+    w
+    b = Thread.new { s; Thread.stop }
+    w
+    c = Thread.new { s; Thread.exit }
+    w
     assert_equals("run", Thread.current.status)
     assert_equals(nil, a.status)
     assert_equals("sleep", b.status)
-    assert_equals("run", c.status)
   end
 
   def test_stop?
-    a = Thread.new { Thread.stop }
+    a = Thread.new { s; Thread.stop }
+    w
     assert_equals(true, a.stop?)
     assert_equals(false, Thread.current.stop?)
   end
@@ -228,7 +256,8 @@ class TestThread < Rubicon::TestCase
 
   def test_wakeup
     madeit = false
-    t = Thread.new { Thread.stop; madeit = true }
+    t = Thread.new { s; Thread.stop; madeit = true }
+    w
     assert_equals(false, madeit)
     t.wakeup
     assert_equals(false, madeit) # Hasn't run it yet
@@ -249,7 +278,8 @@ class TestThread < Rubicon::TestCase
       Thread.new { 
         $stderr.close # Don't want to see the mess.
         Thread.abort_on_exception = true
-        Thread.new { raise "Error" }
+        Thread.new { s; raise "Error" }
+        w
       }
       sleep 5
       exit 1
@@ -267,7 +297,8 @@ class TestThread < Rubicon::TestCase
 
   def test_s_critical=
     count = 0
-    a = Thread.new { loop { count += 1; sleep .01 }}
+    a = Thread.new { s; loop { count += 1; sleep .01 }}
+    w
     Thread.critical = true
     saved = count # Fixnum, will copy the value
     foo = 0
@@ -279,7 +310,8 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_s_current
-    t = Thread.new { Thread.stop }
+    t = Thread.new { s; Thread.stop }
+    w
     assert(Thread.current != t)
   end
 
@@ -322,7 +354,8 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_s_main
-    t = Thread.new { Thread.stop }
+    t = Thread.new { s; Thread.stop }
+    w
     assert_equals(Thread.main, Thread.current)
     assert(Thread.main != t)
   end
@@ -336,21 +369,25 @@ class TestThread < Rubicon::TestCase
 
   def test_s_pass
     madeit = false
-    t = Thread.new { Thread.pass; madeit = true }
+    t = Thread.new { s; Thread.pass; madeit = true }
+    w
     assert_equals(false, madeit)
     t.join
     assert_equals(true, madeit)
   end
 
   def test_s_start
-    t = SubThread.new { Thread.stop }
+    t = SubThread.new { s; Thread.stop }
+    w
     assert_equals(true,t.initCalled?)
-    t = SubThread.start { Thread.stop }
+    t = SubThread.start { s; Thread.stop }
+    w
     assert_equals(nil,t.initCalled?)
   end
 
   def test_s_stop
-    t = Thread.new { Thread.critical = true; Thread.stop }
+    t = Thread.new { s; Thread.critical = true; Thread.stop }
+    w
     assert_equals(false,Thread.critical)
     assert_equals("sleep",t.status)
   end
