@@ -27,7 +27,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.8.3"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.8.4"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
@@ -41,7 +41,7 @@ typedef struct {
     char *kcode;
     table *env;
     int safe_level;
-    array_header *handlers;
+    array_header *ruby_handlers;
 } ruby_dir_config;
 
 extern MODULE_VAR_EXPORT module ruby_module;

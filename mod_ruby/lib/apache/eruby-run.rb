@@ -58,6 +58,7 @@ module Apache
 	  ERuby.noheader = false
 	  ERuby.charset = ERuby.default_charset
 	  ERuby.cgi = nil
+	  @compiler.sourcefile = r.filename
 	  code = @compiler.compile_file(f)
 	  emulate_cgi(r) do
 	    eval(code, TOPLEVEL_BINDING, r.filename)

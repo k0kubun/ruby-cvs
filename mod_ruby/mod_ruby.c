@@ -481,27 +481,27 @@ static void get_exception_info(VALUE str)
     }
 
     if (!NIL_P(errat)) {
-	int i;
-	struct RArray *ep = RARRAY(errat);
+	long i, len;
+	struct RArray *ep;
 
 #define TRACE_MAX (TRACE_HEAD+TRACE_TAIL+5)
 #define TRACE_HEAD 8
 #define TRACE_TAIL 5
 
-	rb_ary_pop(errat);
 	ep = RARRAY(errat);
-	for (i=1; i<ep->len; i++) {
+	len = ep->len;
+	for (i=1; i<len; i++) {
 	    if (TYPE(ep->ptr[i]) == T_STRING) {
 		STR_CAT_LITERAL(str, "\tfrom ");
 		rb_str_cat(str, RSTRING(ep->ptr[i])->ptr, RSTRING(ep->ptr[i])->len);
 		STR_CAT_LITERAL(str, "\n");
 	    }
-	    if (i == TRACE_HEAD && ep->len > TRACE_MAX) {
+	    if (i == TRACE_HEAD && len > TRACE_MAX) {
 		char buff[BUFSIZ];
 		snprintf(buff, BUFSIZ, "\t ... %ld levels...\n",
-			 ep->len - TRACE_HEAD - TRACE_TAIL);
+			 len - TRACE_HEAD - TRACE_TAIL);
 		rb_str_cat(str, buff, strlen(buff));
-		i = ep->len - TRACE_TAIL;
+		i = len - TRACE_TAIL;
 	    }
 	}
     }
@@ -578,7 +578,7 @@ static void log_error(request_rec *r, int state)
 
     errmsg = get_error_info(r, state);
     ap_rputs(ap_escape_html(r->pool, STR2CSTR(errmsg)), r);
-    logmsg = STRING_LITERAL("mod_ruby:\n");
+    logmsg = STRING_LITERAL("mod_ruby: error in ruby program\n");
     rb_str_concat(logmsg, errmsg);
     ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
 		 "%s", STR2CSTR(logmsg));
@@ -706,16 +706,22 @@ static VALUE ruby_object_handler_0(void *arg)
     VALUE ret;
     char **list;
     int n, i;
+    int state;
 
     if (r->per_dir_config == NULL)
 	return INT2NUM(DECLINED);
     dconf = (ruby_dir_config *) ap_get_module_config(r->per_dir_config,
 						     &ruby_module);
-    list = (char **) dconf->handlers->elts;
-    n = dconf->handlers->nelts;
+    list = (char **) dconf->ruby_handlers->elts;
+    n = dconf->ruby_handlers->nelts;
     retval = DECLINED;
     for (i = 0; i < n; i++) {
-	ret = rb_funcall(rb_eval_string(list[i]), id_handler, 1, rb_request);
+	ret = protect_funcall(rb_eval_string(list[i]), id_handler, &state,
+			      1, rb_request);
+	if (state) {
+	    log_error(r, state);
+	    return INT2NUM(SERVER_ERROR);
+	}
 	retval = NUM2INT(ret);
 	if (retval != DECLINED)
 	    break;

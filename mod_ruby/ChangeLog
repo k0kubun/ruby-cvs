@@ -1,3 +1,11 @@
+Sat Jun  9 18:47:13 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb.in: check for gcc.
+
+	* mod_ruby.c (ruby_object_handler_0): call log_error().
+
+	* lib/apache/eruby-run.rb (handler): set @compiler.sourcefile.
+
 Fri Jun  8 18:02:57 2001  Shugo Maeda <shugo@modruby.net>
 
 	* Makefile.in: libruby.a support.
@@ -12,7 +20,7 @@ Fri Jun  8 18:02:57 2001  Shugo Maeda <shugo@modruby.net>
 	* mod_ruby.c (protect_funcall0): changed type of argument to
 	VALUE.
 
-	* mod_ruby.c (ruby_require): cast rb_require() to VALUE (*)(VALUE).
+	* mod_ruby.c (ruby_require): cast rb_require to VALUE (*)(VALUE).
 
 Fri Jun  8 17:00:32 2001  Shugo Maeda <shugo@modruby.net>
 

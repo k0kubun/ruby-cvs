@@ -23,7 +23,7 @@ USA.
 
 == Overview
 
-autoreload reloads required libraries automatically.
+autoreload reloads modified libraries automatically.
 This library is useful to develop mod_ruby scripts.
 
 =end
