@@ -1,3 +1,45 @@
+Fri Apr 13 13:16:58 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.8.0 released.
+
+Fri Apr 13 12:18:12 2001  Shugo Maeda <shugo@modruby.net>
+
+	* examples/httpd.conf: example of httpd.conf.
+
+	* ruby/mod_rd2html.rb: RD2HTML module.
+
+	* apachelib.c (ruby_request_outbuf_length): return long.
+
+	* apachelib.c (apache_add_version_component): new method.
+
+	* apachelib.c (connection_auth_type): new method.
+
+	* apachelib.c (request_protocol): new method.
+
+	* apachelib.c (request_subprocess_env): new method.
+
+	* apachelib.c (request_remote_host): new method.
+
+	* apachelib.c (request_remote_logname): new method.
+
+	* apachelib.c (request_server_name): new method.
+
+	* apachelib.c (request_server_port): new method.
+
+	* apachelib.c (request_signature): new method.
+
+	* apachelib.c (reset_timeout): new method.
+
+	* apachelib.c (hard_timeout): new method.
+
+	* apachelib.c (soft_timeout): new method.
+
+	* apachelib.c (kill_timeout): new method.
+
+	* apachelib.c (add_common_vars): new method.
+
+	* apachelib.c (add_cgi_vars): new method.
+
 Thu Apr 12 17:53:24 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c (run_safely): call rb_thread_stop_timer() for

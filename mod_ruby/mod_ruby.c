@@ -833,15 +833,14 @@ static VALUE load_eruby_script(request_rec *r, void *arg)
     }
     else {
 	if (!eruby_noheader) {
-	    int len = ruby_request_outbuf_length(rb_defout);
+	    long len = ruby_request_outbuf_length(rb_defout);
 
 	    if (strcmp(r->content_type, "text/html") == 0) {
 		r->content_type = ap_psprintf(r->pool,
 					      "text/html; charset=%s",
 					      ERUBY_CHARSET);
 	    }
-	    ap_table_set(r->headers_out, "Content-Length",
-			 ap_psprintf(r->pool, "%d", len));
+	    ap_set_content_length(r, len);
 	    rb_request_send_http_header(rb_defout);
 	}
 	rb_request_flush(rb_defout);

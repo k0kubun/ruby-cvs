@@ -153,10 +153,11 @@ install: $(TARGET)
 	$(INSTALL_DLLIB) $(TARGET) #{$APACHE_LIBEXECDIR}
 
 clean:
-	rm -f $(TARGET) $(OBJS) *~
+	rm -f $(TARGET) $(OBJS)
 
 distclean: clean
 	rm -f mod_ruby.imp Makefile
+	rm -f *~ */*~
 
 $(TARGET): $(OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) \

@@ -63,6 +63,12 @@ static VALUE apache_server_version(VALUE self)
     return rb_str_new2(ap_get_server_version());
 }
 
+static VALUE apache_add_version_component(VALUE self, VALUE component)
+{
+    ap_add_version_component(STR2CSTR(component));
+    return Qnil;
+}
+
 static VALUE apache_server_built(VALUE self)
 {
     return rb_str_new2(ap_get_server_built());
@@ -94,6 +100,7 @@ define_string_attr_reader(connection_remote_ip, conn_rec, remote_ip);
 define_string_attr_reader(connection_remote_host, conn_rec, remote_host);
 define_string_attr_reader(connection_remote_logname, conn_rec, remote_logname);
 define_string_attr_reader(connection_user, conn_rec, user);
+define_string_attr_reader(connection_auth_type, conn_rec, ap_auth_type);
 define_string_attr_reader(connection_local_ip, conn_rec, local_ip);
 define_string_attr_reader(connection_local_host, conn_rec, local_host);
 
@@ -335,6 +342,7 @@ typedef struct request_data {
     VALUE connection;
     VALUE headers_in;
     VALUE headers_out;
+    VALUE subprocess_env;
     int send_http_header;
     long pos;
 } request_data;
@@ -358,6 +366,7 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->connection);
     rb_gc_mark(data->headers_in);
     rb_gc_mark(data->headers_out);
+    rb_gc_mark(data->subprocess_env);
 }
 
 VALUE ruby_create_request(request_rec *r, VALUE input)
@@ -374,13 +383,14 @@ VALUE ruby_create_request(request_rec *r, VALUE input)
     data->connection = Qnil;
     data->headers_in = Qnil;
     data->headers_out = Qnil;
+    data->subprocess_env = Qnil;
     data->send_http_header = 0;
     data->pos = 0;
 
     return result;
 }
 
-int ruby_request_outbuf_length(VALUE self)
+long ruby_request_outbuf_length(VALUE self)
 {
     request_data *data;
 
@@ -565,6 +575,7 @@ static VALUE request_connection(VALUE self)
     return data->connection;
 }
 
+request_string_attr_reader(request_protocol, protocol);
 request_string_attr_reader(request_hostname, hostname);
 request_string_attr_reader(request_unparsed_uri, unparsed_uri);
 request_string_attr_reader(request_uri, uri);
@@ -704,9 +715,21 @@ static VALUE request_headers_out(VALUE self)
     Data_Get_Struct(self, request_data, data);
     if (NIL_P(data->headers_out)) {
 	data->headers_out = ruby_create_table(rb_cApacheTable,
-					     data->request->headers_out);
+					      data->request->headers_out);
     }
     return data->headers_out;
+}
+
+static VALUE request_subprocess_env(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->subprocess_env)) {
+	data->subprocess_env = ruby_create_table(rb_cApacheTable,
+						 data->request->subprocess_env);
+    }
+    return data->subprocess_env;
 }
 
 static VALUE request_aref(VALUE self, VALUE vkey)
@@ -811,16 +834,6 @@ static VALUE request_each_value(VALUE self)
 	rb_yield(hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
     }
     return Qnil;
-}
-
-static VALUE request_escape_html(VALUE self, VALUE str)
-{
-    request_data *data;
-    char *tmp;
-
-    Data_Get_Struct(self, request_data, data);
-    tmp = ap_escape_html(data->request->pool, STR2CSTR(str));
-    return rb_str_new2(tmp);
 }
 
 static VALUE request_read_all(VALUE self)
@@ -1087,10 +1100,124 @@ static VALUE request_binmode(VALUE self)
     return Qnil;
 }
 
+static VALUE request_remote_host(VALUE self)
+{
+    request_data *data;
+    const char *host;
+
+    Data_Get_Struct(self, request_data, data);
+    host = ap_get_remote_host(data->request->connection,
+			      data->request->per_dir_config,
+			      REMOTE_HOST);
+    return host ? rb_str_new2(host) : Qnil;
+}
+
+static VALUE request_remote_logname(VALUE self)
+{
+    request_data *data;
+    const char *logname;
+
+    Data_Get_Struct(self, request_data, data);
+    logname = ap_get_remote_logname(data->request);
+    return logname ? rb_str_new2(logname) : Qnil;
+}
+
+static VALUE request_server_name(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return rb_str_new2(ap_get_server_name(data->request));
+}
+
+static VALUE request_server_port(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return INT2NUM(ap_get_server_port(data->request));
+}
+
+static VALUE request_escape_html(VALUE self, VALUE str)
+{
+    request_data *data;
+    char *tmp;
+
+    Data_Get_Struct(self, request_data, data);
+    tmp = ap_escape_html(data->request->pool, STR2CSTR(str));
+    return rb_str_new2(tmp);
+}
+
+static VALUE request_signature(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return rb_str_new2(ap_psignature("", data->request));
+}
+
+static VALUE request_reset_timeout(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_reset_timeout(data->request);
+    return Qnil;
+}
+
+static VALUE request_hard_timeout(VALUE self, VALUE name)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_hard_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
+		    data->request);
+    return Qnil;
+}
+
+static VALUE request_soft_timeout(VALUE self, VALUE name)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_soft_timeout(ap_pstrdup(data->request->pool, STR2CSTR(name)),
+		    data->request);
+    return Qnil;
+}
+
+static VALUE request_kill_timeout(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_kill_timeout(data->request);
+    return Qnil;
+}
+
+static VALUE request_add_common_vars(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_add_common_vars(data->request);
+    return Qnil;
+}
+
+static VALUE request_add_cgi_vars(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    ap_add_cgi_vars(data->request);
+    return Qnil;
+}
+
 void ruby_init_apachelib()
 {
     rb_mApache = rb_define_module("Apache");
     rb_define_module_function(rb_mApache, "server_version", apache_server_version, 0);
+    rb_define_module_function(rb_mApache, "add_version_component",
+			      apache_add_version_component, 1);
     rb_define_module_function(rb_mApache, "server_built", apache_server_built, 0);
     rb_define_module_function(rb_mApache, "request", apache_request, 0);
     rb_define_module_function(rb_mApache, "unescape_url", apache_unescape_url, 1);
@@ -1104,6 +1231,8 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheConnection, "remote_logname",
 		     connection_remote_logname, 0);
     rb_define_method(rb_cApacheConnection, "user", connection_user, 0);
+    rb_define_method(rb_cApacheConnection, "auth_type",
+		     connection_auth_type, 0);
     rb_define_method(rb_cApacheConnection, "local_ip",
 		     connection_local_ip, 0);
     rb_define_method(rb_cApacheConnection, "local_host",
@@ -1149,21 +1278,27 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "send_http_header",
 		     rb_request_send_http_header, 0);
     rb_define_method(rb_cApacheRequest, "connection", request_connection, 0);
+    rb_define_method(rb_cApacheRequest, "protocol", request_protocol, 0);
     rb_define_method(rb_cApacheRequest, "hostname", request_hostname, 0);
-    rb_define_method(rb_cApacheRequest, "unparsed_uri", request_unparsed_uri, 0);
+    rb_define_method(rb_cApacheRequest, "unparsed_uri",
+		     request_unparsed_uri, 0);
     rb_define_method(rb_cApacheRequest, "uri", request_uri, 0);
     rb_define_method(rb_cApacheRequest, "filename", request_filename, 0);
     rb_define_method(rb_cApacheRequest, "filename=", request_set_filename, 1);
     rb_define_method(rb_cApacheRequest, "path_info", request_path_info, 0);
-    rb_define_method(rb_cApacheRequest, "request_time", request_request_time, 0);
+    rb_define_method(rb_cApacheRequest, "request_time",
+		     request_request_time, 0);
     rb_define_method(rb_cApacheRequest, "status", request_status, 0);
     rb_define_method(rb_cApacheRequest, "status=", request_set_status, 1);
     rb_define_method(rb_cApacheRequest, "status_line", request_status_line, 0);
-    rb_define_method(rb_cApacheRequest, "status_line=", request_set_status_line, 1);
-    rb_define_method(rb_cApacheRequest, "request_method", request_request_method, 0);
+    rb_define_method(rb_cApacheRequest, "status_line=",
+		     request_set_status_line, 1);
+    rb_define_method(rb_cApacheRequest, "request_method",
+		     request_request_method, 0);
     rb_define_method(rb_cApacheRequest, "header_only?", request_header_only, 0);
     rb_define_method(rb_cApacheRequest, "args", request_args, 0);
-    rb_define_method(rb_cApacheRequest, "content_length", request_content_length, 0);
+    rb_define_method(rb_cApacheRequest, "content_length",
+		     request_content_length, 0);
     rb_define_method(rb_cApacheRequest, "content_type",
 		     request_get_content_type, 0);
     rb_define_method(rb_cApacheRequest, "content_type=",
@@ -1178,12 +1313,13 @@ void ruby_init_apachelib()
 		     request_set_content_languages, 1);
     rb_define_method(rb_cApacheRequest, "headers_in", request_headers_in, 0);
     rb_define_method(rb_cApacheRequest, "headers_out", request_headers_out, 0);
+    rb_define_method(rb_cApacheRequest, "subprocess_env",
+		     request_subprocess_env, 0);
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);
     rb_define_method(rb_cApacheRequest, "each_header", request_each_header, 0);
     rb_define_method(rb_cApacheRequest, "each_key", request_each_key, 0);
     rb_define_method(rb_cApacheRequest, "each_value", request_each_value, 0);
-    rb_define_method(rb_cApacheRequest, "escape_html", request_escape_html, 1);
     rb_define_method(rb_cApacheRequest, "read", request_read, -1);
     rb_define_method(rb_cApacheRequest, "gets", request_gets, -1);
     rb_define_method(rb_cApacheRequest, "readline", request_readline, -1);
@@ -1202,6 +1338,25 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "eof", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "eof?", request_eof, 0);
     rb_define_method(rb_cApacheRequest, "binmode", request_binmode, 0);
+    rb_define_method(rb_cApacheRequest, "remote_host", request_remote_host, 0);
+    rb_define_method(rb_cApacheRequest, "remote_logname",
+		     request_remote_logname, 0);
+    rb_define_method(rb_cApacheRequest, "server_name", request_server_name, 0);
+    rb_define_method(rb_cApacheRequest, "server_port", request_server_port, 0);
+    rb_define_method(rb_cApacheRequest, "escape_html", request_escape_html, 1);
+    rb_define_method(rb_cApacheRequest, "signature", request_signature, 0);
+    rb_define_method(rb_cApacheRequest, "reset_timeout",
+		     request_reset_timeout, 0);
+    rb_define_method(rb_cApacheRequest, "hard_timeout",
+		     request_hard_timeout, 1);
+    rb_define_method(rb_cApacheRequest, "soft_timeout",
+		     request_soft_timeout, 1);
+    rb_define_method(rb_cApacheRequest, "kill_timeout",
+		     request_kill_timeout, 0);
+    rb_define_method(rb_cApacheRequest, "add_common_vars",
+		     request_add_common_vars, 0);
+    rb_define_method(rb_cApacheRequest, "add_cgi_vars",
+		     request_add_cgi_vars, 0);
 
     rb_eApacheTimeoutError =
 	rb_define_class_under(rb_mApache, "TimeoutError", rb_eException);
