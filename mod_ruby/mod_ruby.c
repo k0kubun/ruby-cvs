@@ -104,7 +104,7 @@ static const command_rec ruby_cmds[] =
 {
     {"RubyKanjiCode", ruby_cmd_kanji_code, NULL, OR_ALL, TAKE1,
      "set $KCODE"},
-    {"RubyAddPath", ruby_cmd_add_path, NULL, RSRC_CONF, ITERATE,
+    {"RubyAddPath", ruby_cmd_add_path, NULL, OR_ALL, ITERATE,
      "add path to $:"},
     {"RubyRequire", ruby_cmd_require, NULL, OR_ALL, ITERATE,
      "ruby script name, pulled in via require"},
@@ -778,11 +778,19 @@ static int run_safely(int safe_level, int timeout,
 static void per_request_init(request_rec *r)
 {
     ruby_dir_config *dconf = get_dir_config(r);
-    int i;
+    char **paths;
+    int i, n;
 
     rb_load_path = rb_ary_new();
     for (i = 0; i < RARRAY(default_load_path)->len; i++) {
 	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
+    }
+    if (dconf->load_path) {
+	paths = (char **) dconf->load_path->elts;
+	n = dconf->load_path->nelts;
+	for (i = 0; i < n; i++) {
+	    rb_ary_push(rb_load_path, rb_str_new2(paths[i]));
+	}
     }
     ruby_debug = Qfalse;
     ruby_verbose = Qfalse;

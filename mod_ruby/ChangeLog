@@ -1,3 +1,8 @@
+Thu Feb 28 15:30:06 2002  Shugo Maeda <shugo@modruby.net>
+
+	* ruby_config.c (ruby_cmd_add_path): allow to use RubyAddPath in
+	.htaccess.
+
 Fri Feb 15 15:01:40 2002  Shugo Maeda <shugo@modruby.net>
 
 	* request.c (request_get_allowed): new method.

@@ -30,7 +30,7 @@
 #ifndef MOD_RUBY_H
 #define MOD_RUBY_H
 
-#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.7"
+#define MOD_RUBY_STRING_VERSION "mod_ruby/0.9.8"
 #define RUBY_GATEWAY_INTERFACE "CGI-Ruby/1.1"
 
 typedef struct {
@@ -44,6 +44,7 @@ typedef struct {
     table *env;
     int safe_level;
     int output_mode;
+    array_header *load_path;
     array_header *ruby_handler;
     array_header *ruby_trans_handler;
     array_header *ruby_authen_handler;

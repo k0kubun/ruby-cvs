@@ -68,6 +68,7 @@ void *ruby_create_dir_config(pool *p, char *dirname)
     conf->env = ap_make_table(p, 5); 
     conf->safe_level = MR_DEFAULT_SAFE_LEVEL;
     conf->output_mode = MR_OUTPUT_DEFAULT;
+    conf->load_path = NULL;
     conf->ruby_handler = NULL;
     conf->ruby_trans_handler = NULL;
     conf->ruby_authen_handler = NULL;
@@ -112,6 +113,16 @@ void *ruby_merge_dir_config(pool *p, void *basev, void *addv)
     }
     new->output_mode = add->output_mode ? add->output_mode : base->output_mode;
 
+    if (add->load_path == NULL) {
+	new->load_path = base->load_path;
+    }
+    else if (base->load_path == NULL) {
+	new->load_path = add->load_path;
+    }
+    else {
+	new->load_path = ap_append_arrays(p, base->load_path, add->load_path);
+    }
+
     new->ruby_handler =
 	merge_handlers(p, base->ruby_handler, add->ruby_handler);
     new->ruby_trans_handler =
@@ -147,15 +158,23 @@ const char *ruby_cmd_kanji_code(cmd_parms *cmd, ruby_dir_config *conf, char *arg
     return NULL;
 }
 
-const char *ruby_cmd_add_path(cmd_parms *cmd, void *dummy, char *arg)
+const char *ruby_cmd_add_path(cmd_parms *cmd, ruby_dir_config *dconf, char *arg)
 {
-    ruby_server_config *conf = get_server_config(cmd->server);
+    ruby_server_config *sconf;
 
-    if (ruby_running()) {
-	ruby_add_path(arg);
+    if (cmd->path == NULL) {
+	if (ruby_running()) {
+	    ruby_add_path(arg);
+	}
+	else {
+	    sconf = get_server_config(cmd->server);
+	    *(char **) ap_push_array(sconf->load_path) = arg;
+	}
     }
     else {
-	*(char **) ap_push_array(conf->load_path) = arg;
+	if (dconf->load_path == NULL)
+	    dconf->load_path = ap_make_array(cmd->pool, 1, sizeof(char*));
+	*(char **) ap_push_array(dconf->load_path) = arg;
     }
     return NULL;
 }
