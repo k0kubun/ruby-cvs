@@ -5,6 +5,62 @@
 
 RUBICON_VERSION = "V0.2"
 
+# -------------------------------------------------------------
+#
+# Operating system classification. We use classes for this, as 
+# we get lots of flexibility with comparisons.
+#
+# Use with
+#
+#   Unix.or_varient do ... end        # operating system is some Unix variant
+#
+#   Linux.only do .... end            # operating system is Linux
+#
+#   MsWin32.dont do .... end          # don't run under MsWin32
+
+class OS
+  def OS.or_variant
+    yield if $os <= self
+  end
+
+  def OS.only
+    yield if $os == self
+  end
+
+  def OS.dont
+    yield unless $os <= self
+  end
+end
+
+class Unix    < OS;      end
+class Linux   < Unix;    end
+class BSD     < Unix;    end
+class FreeBSD < BSD;     end
+
+class Windows < OS;      end
+class Cygwin  < Windows; end
+class MsWin32 < Windows; end
+
+$os = case RUBY_PLATFORM
+      when /linux/   then  Linux
+      when /bsd/     then BSD
+      when /cygwin/  then Cygwin
+      when /mswin32/ then MsWin32
+      else OS
+      end
+
+#
+# Find the name of the interpreter.
+# 
+
+require "rbconfig.rb"
+$interpreter = File.join(Config::CONFIG["bindir"], 
+			 Config::CONFIG["RUBY_INSTALL_NAME"])
+
+Windows.or_variant { $interpreter.tr! '/', '\\' }
+
+
+######################################################################
 #
 # This is tacky, but... We need to be able tofind the executable
 # files in the util subdirectory. However, we can be initiated by
@@ -28,7 +84,7 @@ raise "Cannot find 'util' directory" unless defined?(UTIL)
 CHECKSTAT = File.join(UTIL, "checkstat")
 TEST_TOUCH = File.join(UTIL, "test_touch")
 
-if RUBY_PLATFORM =~ /mswin32/
+MsWin32.only do
   CHECKSTAT << ".exe"
   TEST_TOUCH << ".exe"
 end
@@ -71,34 +127,6 @@ end
 $rubyVersion = VersionNumber.new(VERSION)
 
 
-# -------------------------------------------------------------
-#
-# Operating system classification. We use classes for this, as 
-# we get lots of flexibility with comparisons.
-#
-# Use with
-#
-#   if $os <= Unix           # operating system is some Unix variant
-#
-#   if $os == Linux          # operating system is Linux
-
-class OS;                end
-class Unix    < OS;      end
-class Linux   < Unix;    end
-class BSD     < Unix;    end
-class FreeBSD < BSD;     end
-
-class Windows < OS;      end
-class Cygwin  < Windows; end
-class MsWin32 < Windows; end
-
-$os = case RUBY_PLATFORM
-      when /linux/   then  Linux
-      when /bsd/     then BSD
-      when /cygwin/  then Cygwin
-      when /mswin32/ then MsWin32
-      else OS
-      end
 
 #
 # This is the main Rubicon module, implemented as a module to

@@ -42,25 +42,33 @@ class TestFile__Stat < FileInfoTest
   end
 
   def test_blockdev?
-    try(:blockdev?, "/dev/tty", false) if $os <= Unix
     try(:blockdev?, ".",        false)
-    try(:blockdev?, "/dev/fd0", true) if $os == Linux
+    Unix.or_variant do
+      try(:blockdev?, "/dev/tty", false)
+      Linux.only do
+	try(:blockdev?, "/dev/fd0", true)
+      end
+    end
   end
 
-  def test_blocks
-    file = "_test/_size"
-    File.open(file, "w") { |f| }
-    assert_equal(0, File.stat(file).blocks)
-    File.open(file, "w") { |f| f.syswrite 'a'}
-    assert(File.stat(file).blocks > 0)
-    assert(File.stat(file).blocks < 16)
+  MsWin32.dont do
+    def test_blocks
+      file = "_test/_size"
+      File.open(file, "w") { |f| }
+      assert_equal(0, File.stat(file).blocks)
+      File.open(file, "w") { |f| f.syswrite 'a'}
+      assert(File.stat(file).blocks > 0)
+      assert(File.stat(file).blocks < 16)
+    end
   end
 
   def test_chardev?
-    try(:chardev?, "/dev/tty", true)
     try(:chardev?, ".",        false)
-    if $os == Linux
-      try(:chardev?, "/dev/fd0", false)
+    Unix.only do
+      try(:chardev?, "/dev/tty", true)
+      Linux.only do
+	try(:chardev?, "/dev/fd0", false)
+      end
     end
   end
 
@@ -98,29 +106,37 @@ class TestFile__Stat < FileInfoTest
 
   def test_ftype
     Dir.chdir("_test")
-    File.symlink("_file1", "_file3") # may fail
+    MsWin32.dont do
+      File.symlink("_file1", "_file3") # may fail
+    end
 
     tests = {
       "../_test"          => "directory",
       "_file1"            => "file",
       "/dev/tty"          => "characterSpecial",
       "/tmp/.X11-unix/X0" => "socket",
-      "_file3"            => "file",   # try uses stat
     }
 
-    if $os == Linux
-      tests["/dev/fd0"] = "blockSpecial"
+    MsWin32.dont do
+      tests["_file3"]     =  "file"
+    end
+
+    Linux.only do
+      tests["/dev/fd0"]   = "blockSpecial"
       system("mkfifo _fifo") # may fail
-      tests["_fifo"]    = "fifo" 
+      tests["_fifo"]      = "fifo" 
     end
 
     tests.each do |file, type|
       try(:ftype, file, type)
     end
-    assert_equal("link", File.lstat("_file3").ftype)
+
+    MsWin32.dont do
+      assert_equal("link", File.lstat("_file3").ftype)
+    end
   end
 
-  if $os == Linux
+  Linux.only do
     def test_gid
       assert_equal(Process.gid, @s1.gid)
     end
@@ -129,7 +145,9 @@ class TestFile__Stat < FileInfoTest
       try(:grpowned?, @file1,        true)
       try(:grpowned?, "/etc/passwd", false)
     end
-  else
+  end
+
+  Linux.dont do
     def test_gid
       skipping "Behavior unknown (feel free up update!)"
     end
@@ -148,7 +166,7 @@ class TestFile__Stat < FileInfoTest
   end
 
   def test_mode
-    base = $os == Cygwin ? 0444 : 0
+    base = $os <= Windows ? 0444 : 0
 
     Dir.chdir("_test")
     begin
@@ -158,7 +176,7 @@ class TestFile__Stat < FileInfoTest
 	assert_equal(0,           f.chmod(0400))
 	assert_equal(base | 0400, f.stat.mode & 0777)
 	assert_equal(0,           f.chmod(0644))
-	assert_equal(base |0644,  f.stat.mode & 0777)
+	assert_equal(base | 0644, f.stat.mode & 0777)
       end
     ensure
       Dir.chdir("..")
@@ -184,11 +202,17 @@ class TestFile__Stat < FileInfoTest
   end
 
   def test_pipe?
-    try(:pipe?, "/dev/tty", false) if $os <= Unix
+    Unix.or_variant do
+      try(:pipe?, "/dev/tty", false)
+    end
+
     try(:pipe?, ".",        false)
-    IO.popen("-") { |p|
-      assert_equal(true, (p ? p : $stdout).stat.pipe?)
-    }
+    
+    MsWin32.dont do
+      IO.popen("-") do |p|
+	assert_equal(true, (p ? p : $stdout).stat.pipe?)
+      end
+    end
   end
 
   def test_rdev
@@ -205,7 +229,7 @@ class TestFile__Stat < FileInfoTest
 #    assert_fail("untested")
   end
 
-  if $os <= Unix
+  Unix.or_variant do
     
     def test_setgid?
       try(:setgid?, @file1, false)
@@ -239,7 +263,7 @@ class TestFile__Stat < FileInfoTest
     try(:socket?, "/tmp/.X11-unix/X0", true)
   end
 
-  if $os <= Unix
+  Unix.or_variant do
     def test_sticky?
       Dir.chdir("_test")
       m = File.stat(".").mode
@@ -255,14 +279,16 @@ class TestFile__Stat < FileInfoTest
     end
   end
 
-  def test_symlink?
-    Dir.chdir("_test")
-    File.symlink("_file1", "_symlink")
-    try(:symlink?, ".",        false)
-    try(:symlink?, "/dev/tty", false)
-    try(:symlink?, "_file1",   false)
-    try(:symlink?, "_symlink", false)  # try uses stat
-    assert(File.lstat("_symlink").symlink?)
+  MsWin32.dont do
+    def test_symlink?
+      Dir.chdir("_test")
+      File.symlink("_file1", "_symlink")
+      try(:symlink?, ".",        false)
+      try(:symlink?, "/dev/tty", false)
+      try(:symlink?, "_file1",   false)
+      try(:symlink?, "_symlink", false)  # try uses stat
+      assert(File.lstat("_symlink").symlink?)
+    end
   end
 
   def test_uid

@@ -1,7 +1,10 @@
 $: << File.dirname($0) << File.join(File.dirname($0), "..")
 require 'rubicon'
 require 'stat'
-require 'socket'
+
+if $os != MsWin32
+  require 'socket'
+end
 
 
 class TestFile < Rubicon::TestCase
@@ -80,7 +83,12 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_expand_path
-    base = `pwd`.chomp
+    if $os == MsWin32
+      base = `cd`.chomp.tr '\\', '/'
+    else
+      base = `pwd`.chomp
+    end
+
     assert_equal(base,                 File.expand_path(''))
     assert_equal(File.join(base, 'a'), File.expand_path('a'))
     assert_equal(File.join(base, 'a'), File.expand_path('a', nil)) # V0.1.1
@@ -132,19 +140,26 @@ class TestFile < Rubicon::TestCase
 
   def test_s_ftype
     Dir.chdir("_test")
-    File.symlink("_file1", "_file3") # may fail
-    sock = UNIXServer.open("_sock")
+    sock = nil
+
+    MsWin32.dont do
+      sock = UNIXServer.open("_sock")
+      File.symlink("_file1", "_file3") # may fail
+   end
 
     begin
       tests = {
         "../_test" => "directory",
         "_file1"   => "file",
         "/dev/tty" => "characterSpecial",
-        "_sock"    => "socket",
-        "_file3"   => "link",
       }
 
-      if $os == Linux
+      MsWin32.dont do
+        tests["_file3"] = "link"
+	tests["_sock"]  = "socket"
+      end
+
+      Linux.only do
         tests["/dev/"+`readlink /dev/fd0 || echo fd0`.chomp] = "blockSpecial"
 	system("mkfifo _fifo") # may fail
 	tests["_fifo"] = "fifo"
@@ -158,7 +173,7 @@ class TestFile < Rubicon::TestCase
         end
       }
     ensure
-      sock.close if sock
+      sock.close if sock 
     end
   end
 
@@ -190,15 +205,18 @@ class TestFile < Rubicon::TestCase
     end
   end
 
-  def test_s_lstat
-    Dir.chdir("_test")
-    File.symlink("_file1", "_file3") # may fail
-
-    assert_equal(0, File.stat("_file3").size)
-    assert(0 < File.lstat("_file3").size)
-
-    assert_equal(0, File.stat("_file1").size)
-    assert_equal(0,  File.lstat("_file1").size)
+  MsWin32.dont do
+    def test_s_lstat
+      
+      Dir.chdir("_test")
+      File.symlink("_file1", "_file3") # may fail
+      
+      assert_equal(0, File.stat("_file3").size)
+      assert(0 < File.lstat("_file3").size)
+      
+      assert_equal(0, File.stat("_file1").size)
+      assert_equal(0,  File.lstat("_file1").size)
+    end
   end
 
   def test_s_mtime
@@ -310,10 +328,12 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_s_readlink
-    Dir.chdir("_test")
-    File.symlink("_file1", "_file3") # may fail
-    assert_equal("_file1", File.readlink("_file3"))
-    assert_exception(Errno::EINVAL) { File.readlink("_file1") }
+    MsWin32.dont do 
+      Dir.chdir("_test")
+      File.symlink("_file1", "_file3") # may fail
+      assert_equal("_file1", File.readlink("_file3"))
+      assert_exception(Errno::EINVAL) { File.readlink("_file1") }
+    end
   end
 
   def test_s_rename
@@ -353,10 +373,12 @@ class TestFile < Rubicon::TestCase
 
 
   def test_s_symlink
-    Dir.chdir("_test")
-    File.symlink("_file1", "_file3") # may fail
-    assert(File.symlink?("_file3"))
-    assert(!File.symlink?("_file1"))
+    MsWin32.dont do 
+      Dir.chdir("_test")
+      File.symlink("_file1", "_file3") # may fail
+      assert(File.symlink?("_file3"))
+      assert(!File.symlink?("_file1"))
+    end
   end
 
   def test_s_truncate
@@ -449,53 +471,61 @@ class TestFile < Rubicon::TestCase
   end
 
   def test_flock
-    Dir.chdir("_test")
+    MsWin32.dont do
 
-    # parent forks, then waits for a SIGUSR1 from child. Child locks file
-    # and signals parent, then sleeps
-    # When parent gets signal, confirms file si locked, kills child,
-    # and confirms its unlocked
-
-    pid = fork
-    if pid
-      File.open("_file1") { |f|
-        trap("USR1") {
-          assert_equal(false, f.flock(File::LOCK_EX | File::LOCK_NB))
-          Process.kill "KILL", pid
-          Process.waitpid(pid, 0)
-          assert_equal(0, f.flock(File::LOCK_EX | File::LOCK_NB))
-          return
-        }
-        sleep 10
-        assert_fail("Never got signalled")
-      }
-    else
-      File.open("_file1") { |f|
-        assert_equal(0, f.flock(File::LOCK_EX))
-        Process.kill "USR1", Process.ppid
-        sleep 10
-        assert_fail "Parent never killed us"
-      }
+      Dir.chdir("_test")
+      
+      # parent forks, then waits for a SIGUSR1 from child. Child locks file
+      # and signals parent, then sleeps
+      # When parent gets signal, confirms file si locked, kills child,
+      # and confirms its unlocked
+      
+      pid = fork
+      if pid
+	File.open("_file1") { |f|
+	  trap("USR1") {
+	    assert_equal(false, f.flock(File::LOCK_EX | File::LOCK_NB))
+	    Process.kill "KILL", pid
+	    Process.waitpid(pid, 0)
+	    assert_equal(0, f.flock(File::LOCK_EX | File::LOCK_NB))
+	    return
+	  }
+	  sleep 10
+	  assert_fail("Never got signalled")
+	}
+      else
+	File.open("_file1") { |f|
+	  assert_equal(0, f.flock(File::LOCK_EX))
+	  Process.kill "USR1", Process.ppid
+	  sleep 10
+	  assert_fail "Parent never killed us"
+	}
+      end
     end
   end
 
   def test_lstat
-    Dir.chdir("_test")
-    begin
-      File.symlink("_file1", "_file3") # may fail
-      
-      f1 = File.open("_file1")
-      f3 = File.open("_file3")
-      
-      assert_equal(0, f3.stat.size)
-      assert(0 < f3.lstat.size)
-      
-      assert_equal(0, f1.stat.size)
-      assert_equal(0, f1.lstat.size)
-      f1.close
-      f3.close
-    ensure
-      Dir.chdir("..")
+    MsWin32.dont do
+      Dir.chdir("_test")
+
+      begin
+	File.symlink("_file1", "_file3") # may fail
+	f1 = File.open("_file1")
+	begin
+	  f3 = File.open("_file3")
+	  
+	  assert_equal(0, f3.stat.size)
+	  assert(0 < f3.lstat.size)
+	  
+	  assert_equal(0, f1.stat.size)
+	  assert_equal(0, f1.lstat.size)
+	f3.close
+	ensure
+	  f1.close
+	end
+      ensure
+	Dir.chdir("..")
+      end
     end
   end
 

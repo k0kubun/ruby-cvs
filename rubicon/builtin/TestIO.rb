@@ -12,26 +12,24 @@ class TestIO < Rubicon::TestCase
     setupTestDir
     @file  = "_test/_10lines"
     @file1 = "_test/_99lines"
-    begin    
-      
-      File.open(@file, "w") { |f|
-        10.times { |i| f.printf "%02d: This is a line\n", i }
-      }
-      File.open(@file1, "w") { |f|
-        99.times { |i| f.printf "Line %02d\n", i }
-      }
-    rescue Exception
-      puts $!
-      exit!
-    end
 
+    File.open(@file, "w") do |f|
+      10.times { |i| f.printf "%02d: This is a line\n", i }
+    end
+    File.open(@file1, "w") do |f|
+      99.times { |i| f.printf "Line %02d\n", i }
+    end
   end
 
   def teardown
     File.delete(@file) if File.exist?(@file)
     teardownTestDir
   end
-  
+
+  def stdin_copy_pipe
+    IO.popen("#$interpreter -e '$stdout.sync=true;while gets;puts $_;end'", "r+")
+  end
+
   # ---------------------------------------------------------------
 
   def test_s_foreach
@@ -126,8 +124,19 @@ class TestIO < Rubicon::TestCase
   end
 
   def test_s_popen
+
+    if $os <= Windows
+      cmd = "type"
+      fname = @file.tr '/', '\\'
+    else
+      cmd = "cat"
+      fname = @file
+    end
+
+
     # READ
-    p = IO.popen("cat #@file")
+
+    p = IO.popen("#{cmd} #{fname}")
     begin
       count = 0
       p.each do |line|
@@ -141,7 +150,7 @@ class TestIO < Rubicon::TestCase
     end
 
     # READ with block
-    res = IO.popen("cat #@file") do |p|
+    res = IO.popen("#{cmd} #{fname}") do |p|
       count = 0
       p.each do |line|
         num = line[0..1].to_i
@@ -153,8 +162,12 @@ class TestIO < Rubicon::TestCase
     assert_nil(res)
     p.close
 
+    MsWin32.only do
+      assert(false, "popen is leaving subprocesses, so can't run test")
+    end
+
     # WRITE
-    p = IO.popen("cat >#@file", "w")
+    p = IO.popen("#$interpreter -e 'puts readlines' >#{fname}", "w")
     begin
       5.times { |i| p.printf "Line %d\n", i }
     ensure
@@ -169,60 +182,64 @@ class TestIO < Rubicon::TestCase
     end
     assert_equal(5, count)
     
-    # Spawn an interpreter
-    parent = $$
-    p = IO.popen("-")
-    if p
-      begin
-        assert_equal(parent, $$)
-        assert_equal("Hello\n", p.gets)
-      ensure
-        p.close
+    MsWin32.dont do
+      # Spawn an interpreter
+      parent = $$
+      p = IO.popen("-")
+      if p
+	begin
+	  assert_equal(parent, $$)
+	  assert_equal("Hello\n", p.gets)
+	ensure
+	  p.close
+	end
+      else
+	assert_equal(parent, Process.ppid)
+	puts "Hello"
+	exit
       end
-    else
-      assert_equal(parent, Process.ppid)
-      puts "Hello"
-      exit
     end
   end
-
-  def test_s_popen_spawn
-    # Spawn an interpreter - WRITE
-    parent = $$
-    pipe = IO.popen("-", "w")
-
-    if pipe
-      begin
-        assert_equal(parent, $$)
-        pipe.puts "12"
-        Process.wait
-        assert_equal(12, $?>>8)
-      ensure
-        pipe.close
+	
+  MsWin32.dont do
+    def test_s_popen_spawn
+      # Spawn an interpreter - WRITE
+      parent = $$
+      pipe = IO.popen("-", "w")
+      
+      if pipe
+	begin
+	  assert_equal(parent, $$)
+	  pipe.puts "12"
+	  Process.wait
+	  assert_equal(12, $?>>8)
+	ensure
+	  pipe.close
+	end
+      else
+	buff = $stdin.gets
+	exit buff.to_i
       end
-    else
-      buff = $stdin.gets
-      exit buff.to_i
-    end
-
-    # Spawn an interpreter - READWRITE
-    parent = $$
-    p = IO.popen("-", "w+")
-    
-    if p
-      begin
-        assert_equal(parent, $$)
-        p.puts "Hello\n"
-        assert_equal("Goodbye\n", p.gets)
-        Process.wait
-      ensure
-        p.close
+      
+      # Spawn an interpreter - READWRITE
+      parent = $$
+      p = IO.popen("-", "w+")
+      
+      if p
+	begin
+	  assert_equal(parent, $$)
+	  p.puts "Hello\n"
+	  assert_equal("Goodbye\n", p.gets)
+	  Process.wait
+	ensure
+	  p.close
+	end
+      else
+	puts "Goodbye" if $stdin.gets == "Hello\n"
+	exit
       end
-    else
-      puts "Goodbye" if $stdin.gets == "Hello\n"
-      exit
     end
-  end
+  end    
 
   def test_s_readlines
     assert_exception(Errno::ENOENT) { IO.readlines('gumby') }
@@ -320,19 +337,24 @@ class TestIO < Rubicon::TestCase
   end
 
   def test_close_read
-    pipe = IO.popen("/bin/sh", "r+")
+    pipe = stdin_copy_pipe
     begin
-      pipe.puts "echo Hello"
+      pipe.puts "Hello"
       assert_equal("Hello\n", pipe.gets)
       pipe.close_read
       assert_exception(IOError) { pipe.gets }
     ensure
-      pipe.close
+      pipe.close_write
     end
   end
 
   def test_close_write
-    pipe = IO.popen("/bin/cat", "r+")
+    MsWin32.only do
+      fail("SEGVs under Win32")
+    end
+
+    pipe = stdin_copy_pipe
+
     pipe.puts "Hello"
     assert_equal("Hello\n", pipe.gets)
     pipe.close_write
@@ -346,7 +368,7 @@ class TestIO < Rubicon::TestCase
     f.close
     assert(f.closed?)
 
-    pipe = IO.popen("/bin/cat", "r+")
+    pipe = stdin_copy_pipe
     assert(!pipe.closed?)
     pipe.close_read
     assert(!pipe.closed?)
@@ -463,15 +485,17 @@ class TestIO < Rubicon::TestCase
     assert_equal(2, $stderr.fileno)
   end
 
-  def test_flush
-    read, write = IO.pipe
-    write.sync = false
-    write.print "hello"
+  MsWin32.dont do
+    def test_flush
+      read, write = IO.pipe
+      write.sync = false
+      write.print "hello"
     assert_nil(select([read], nil,  [read], .1))
-    write.flush
-    assert_equal([[read],[],[]], select([read], nil,  [read], .1))
-    read.close
-    write.close
+      write.flush
+      assert_equal([[read],[],[]], select([read], nil,  [read], .1))
+      read.close
+      write.close
+    end
   end
 
   def test_getc
@@ -538,7 +562,12 @@ class TestIO < Rubicon::TestCase
   # see tty?
   def test_isatty
     File.open(@file) { |f|  assert(!f.isatty) }
-    File.open("/dev/tty") { |f| assert(f.isatty) }
+    MsWin32.only do 
+      File.open("con") { |f| assert(f.isatty) }
+    end
+    MsWin32.dont do
+      File.open("/dev/tty") { |f| assert(f.isatty) }
+    end
   end
 
   def test_lineno
@@ -580,15 +609,10 @@ class TestIO < Rubicon::TestCase
 
   def test_pid
     assert_nil($stdin.pid)
-    pipe = IO.popen("-")
-    if pipe
-      pid = pipe.gets
-      assert_equal(pid.to_i, pipe.pid)
-      pipe.close
-    else
-      puts $$
-      exit
-    end
+    pipe = IO.popen("#$interpreter -e 'p $$'", "r")
+    pid = pipe.gets
+    assert_equal(pid.to_i, pipe.pid)
+    pipe.close
   end
 
   def test_pos
@@ -643,12 +667,12 @@ class TestIO < Rubicon::TestCase
   end
 
   def test_putc
-    File.open(@file, "w") do |file|
+    File.open(@file, "wb") do |file|
       file.putc "A"
       0.upto(255) { |ch| file.putc ch }
     end
 
-    File.open(@file) do |file|
+    File.open(@file, "rb") do |file|
       assert_equal(?A, file.getc)
       0.upto(255) { |ch| assert_equal(ch, file.getc) }
     end
@@ -858,16 +882,19 @@ class TestIO < Rubicon::TestCase
     assert($stderr.sync)
   end
 
-  def test_sync=
-    read, write = IO.pipe
-    write.sync = false
-    write.print "hello"
-    assert_nil(select([read], nil,  [read], .1))
-    write.sync = true
-    write.print "there"
-    assert_equal([[read],[],[]], select([read], nil,  [read], .1))
-    read.close
-    write.close
+  
+  def test_sync=()
+    MsWin32.dont do
+      read, write = IO.pipe
+      write.sync = false
+      write.print "hello"
+      assert_nil(select([read], nil,  [read], .1))
+      write.sync = true
+      write.print "there"
+      assert_equal([[read],[],[]], select([read], nil,  [read], .1))
+      read.close
+      write.close
+    end
   end
 
   def test_sysread
@@ -916,7 +943,12 @@ class TestIO < Rubicon::TestCase
   # see isatty
   def test_tty?
     File.open(@file) { |f|  assert(!f.tty?) }
-    File.open("/dev/tty") { |f| assert(f.tty?) }
+    MsWin32.only do 
+      File.open("con") { |f| assert(f.tty?) }
+    end
+    MsWin32.dont do
+      File.open("/dev/tty") { |f| assert(f.tty?) }
+    end
   end
 
   def test_ungetc
