@@ -28,7 +28,7 @@ class TestIO < Rubicon::TestCase
 
   MsWin32.dont do
     def stdin_copy_pipe
-      IO.popen("#$interpreter -e '$stdout.sync=true;while gets;puts $_;end'", "r")
+      IO.popen("#$interpreter -e '$stdout.sync=true;while gets;puts $_;end'", "r+")
     end
   end
 
