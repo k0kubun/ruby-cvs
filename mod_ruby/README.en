@@ -32,6 +32,14 @@ Installation
 
        AddHandler ruby-script .rb
 
+     or
+
+       Alias /ruby/ /usr/lib/cgi-bin/
+       <Location /ruby/>
+       SetHandler ruby-script
+       Options ExecCGI
+       </Location>
+
   6) Restart Apache.
 
 

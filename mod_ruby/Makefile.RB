@@ -8,9 +8,41 @@ ENV["PATH"] += ":/sbin:/usr/sbin:/usr/local/sbin:\
 
 $LIBRUBYARG = CONFIG["LIBRUBYARG"]
 if $LIBRUBYARG =~ /\.a$/
+  $shared = false
   $LIBRUBYARG = $hdrdir + "/" + $LIBRUBYARG
 else
+  $shared = true
   $LIBRUBYARG.gsub!(/-L\./, "-L#{CONFIG['prefix']}/lib")
+end
+
+if PLATFORM =~ /-aix/
+  $DLDFLAGS = "-Wl,-bE:mod_ruby.imp -Wl,-bI:httpd.exp -Wl,-bM:SRE -Wl,-bnoentry -lc"
+  if $shared
+    $LIBRUBYARG = CONFIG["libdir"] + "/" + CONFIG["LIBRUBY_SO"]
+    $LIBRUBYARG.sub!(/\.so\.[.0-9]*$/, '.so')
+  else
+    $DLDFLAGS = "-Wl,-bE:$(topdir)/ruby.imp " + $DLDFLAGS
+  end
+  if CONFIG["DLDFLAGS"] !~ /-Wl,/
+    $DLDFLAGS.gsub!(/-Wl,/, '')
+  end
+  ifile = open("mod_ruby.imp", "w")
+  begin
+    ifile.write <<EOIF
+#!
+ruby_module
+EOIF
+  ensure
+    ifile.close
+  end
+  print <<EOM
+To build mod_ruby on the AIX platform, you need to have the apache
+export file `httpd.exp' in the current directory.
+Please copy <apache-src-directory>/support/httpd.exp to the current
+directory before making `mod_ruby.so'.
+EOM
+else
+  $DLDFLAGS = CONFIG["DLDFLAGS"]
 end
 
 $APACHE_CFLAGS = `apxs -q CFLAGS`

@@ -203,6 +203,7 @@ static void ruby_startup(server_rec *s, pool *p)
     ruby_init_apachelib();
 
     rb_define_global_const("MOD_RUBY", STRING_LITERAL(MOD_RUBY_STRING_VERSION));
+
     origenviron = environ;
     ap_table_set(conf->env, "PATH", getenv("PATH"));
     ap_table_set(conf->env, "RUBYLIB", getenv("RUBYLIB"));
@@ -567,7 +568,7 @@ static VALUE write_client_block0(struct wcb_arg *arg)
     return Qnil;
 }
 
-static int write_client_block(request_rec *r)
+static int write_client_block(request_rec *r, VALUE *thread)
 {
     struct wcb_arg arg;
     int state;
@@ -597,7 +598,7 @@ static int write_client_block(request_rec *r)
     }
     arg.r = r;
     arg.fp = file;
-    rb_thread_create(write_client_block0, &arg);
+    *thread = rb_thread_create(write_client_block0, &arg);
     return 0;
 }
 
@@ -618,6 +619,17 @@ static VALUE do_timeout(struct to_arg *arg)
     return Qnil;
 }
 
+static VALUE thread_kill(VALUE thread)
+{
+    rb_funcall(thread, rb_intern("exit"), 0);
+    return Qnil;
+}
+
+static VALUE thread_join(VALUE thread)
+{
+    return rb_funcall(thread, rb_intern("join"), 0);
+}
+
 static VALUE load_ruby_script(request_rec *r)
 {
     ruby_server_config *sconf =
@@ -635,7 +647,7 @@ static VALUE load_ruby_script(request_rec *r)
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);
     ruby_errinfo = Qnil;
     rb_load_protect(rb_str_new2(r->filename), 1, &state);
-    rb_funcall(timeout_thread, rb_intern("exit"), 0);
+    rb_protect(thread_kill, timeout_thread, NULL);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
 	ruby_error_print(r, state, data->sync);
@@ -684,7 +696,7 @@ static VALUE load_eruby_script(request_rec *r)
     ap_send_http_header(r);
     script = eruby_load(r->filename, 1, &state);
     if (!NIL_P(script)) unlink(RSTRING(script)->ptr);
-    rb_funcall(timeout_thread, rb_intern("exit"), 0);
+    rb_protect(thread_kill, timeout_thread, NULL);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
 	ruby_error_print(r, state, data->sync);
@@ -696,16 +708,12 @@ static VALUE load_eruby_script(request_rec *r)
     return Qnil;
 }
 
-static VALUE thread_join(VALUE thread)
-{
-    return rb_funcall(thread, rb_intern("join"), 0);
-}
-
 static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
-    VALUE thread;
+    VALUE wcb_thread = Qnil;
+    VALUE load_thread;
     ruby_dir_config *dconf = NULL;
-    int retval, state;
+    int retval;
     const char *kcode_orig = NULL;
 
     (void) ap_acquire_mutex(mod_ruby_mutex);
@@ -728,7 +736,7 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 	return retval;
 
     if (ap_should_client_block(r)) {
-	if (write_client_block(r) == -1)
+	if (write_client_block(r, &wcb_thread) == -1)
 	    return SERVER_ERROR;
     }
 
@@ -737,8 +745,10 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
     exit_status = -1;
 
     ap_soft_timeout("load ruby script", r);
-    thread = rb_thread_create(load, r);
-    rb_protect(thread_join, thread, &state);
+    load_thread = rb_thread_create(load, r);
+    rb_protect(thread_join, load_thread, NULL);
+    if (wcb_thread != Qnil)
+	rb_protect(thread_kill, wcb_thread, NULL);
     ap_kill_timeout(r);
 
     if (kcode_orig) rb_set_kcode(kcode_orig);

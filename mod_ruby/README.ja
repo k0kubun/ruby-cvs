@@ -33,6 +33,14 @@ mod_rubyとは?
 
        AddHandler ruby-script .rb
 
+     あるいは
+
+       Alias /ruby/ /usr/lib/cgi-bin/
+       <Location /ruby/>
+       SetHandler ruby-script
+       Options ExecCGI
+       </Location>
+
   6) Apacheを再起動してください。
 
 

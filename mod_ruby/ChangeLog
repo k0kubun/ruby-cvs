@@ -1,3 +1,13 @@
+Wed Jul 14 11:00:04 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* mod_ruby.c (thread_kill): new function.
+
+	* mod_ruby.c (ruby_handler0): kill wcb_thread on exit.
+
+Tue Jul 13 17:03:51 1999  Katsuyuki Komatsu <komatsu@sarion.co.jp>
+
+	* Makefile.RB: hack for AIX.
+
 Fri Jul  9 19:24:38 1999  Shugo Maeda  <shugo@netlab.co.jp>
 
 	* Makefile.RB: add XLDFLAGS.
