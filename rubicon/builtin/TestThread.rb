@@ -171,12 +171,12 @@ class TestThread < Rubicon::TestCase
   end
 
   def test_priority=
-    assert_fail("unimplemented")
     c1 = 0
     c2 = 0
     a = Thread.new { loop { c1 += 1 }}
     b = Thread.new { loop { c2 += 1 }}
-    b.priority = 99999
+    a.priority = -2
+    b.priority = -1
     sleep 1 
     assert (c2 > c1)
     a.kill

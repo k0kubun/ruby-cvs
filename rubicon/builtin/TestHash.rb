@@ -3,6 +3,22 @@ require '../rubicon'
 
 class TestHash < Rubicon::TestCase
 
+  def test_s_aref
+    h = Hash["a" => 100, "b" => 200]
+    assert_equal(100, h['a'])
+    assert_equal(200, h['b'])
+    assert_nil(h['c'])
+
+    h = Hash.[]("a" => 100, "b" => 200)
+    assert_equal(100, h['a'])
+    assert_equal(200, h['b'])
+    assert_nil(h['c'])
+  end
+
+  def test_s_new
+    assert_fail("untested")
+  end
+
   def test_AREF # '[]'
     assert_fail("untested")
   end
@@ -168,14 +184,6 @@ class TestHash < Rubicon::TestCase
   end
 
   def test_values
-    assert_fail("untested")
-  end
-
-  def test_s_aref
-    assert_fail("untested")
-  end
-
-  def test_s_new
     assert_fail("untested")
   end
 

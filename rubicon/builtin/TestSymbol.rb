@@ -10,9 +10,9 @@ module Test
 end
 
 def Fred
+$f3 = :Fred
 end
 
-$f3 = :Fred
 
 class TestSymbol < Rubicon::TestCase
 
