@@ -1,3 +1,7 @@
+Thu Sep  5 13:29:00 2002  GOTOU Yuuzou <gotoyuzo@notwork.org>
+
+	* request.c: handle apr_time_t correctly.
+
 Thu Aug 29 17:38:22 2002  Tietew <tietew@tietew.net>
 
 	* lib/auto-reload.rb (require): avoid endless recursion.

@@ -527,7 +527,11 @@ static VALUE request_request_time(VALUE self)
     request_data *data;
 
     data = get_request_data(self);
+#ifdef APACHE2
+    return rb_time_new(apr_time_sec(data->request->request_time), 0);
+#else
     return rb_time_new(data->request->request_time, 0);
+#endif
 }
 
 static VALUE request_header_only(VALUE self)
@@ -730,9 +734,9 @@ static VALUE request_finfo(VALUE self)
 	    st->st_uid = data->request->finfo.user;
 	    st->st_gid = data->request->finfo.group;
 	    st->st_size = data->request->finfo.size;
-	    st->st_atime = data->request->finfo.atime;
-	    st->st_mtime = data->request->finfo.mtime;
-	    st->st_ctime = data->request->finfo.ctime;
+	    st->st_atime = apr_time_sec(data->request->finfo.atime);
+	    st->st_mtime = apr_time_sec(data->request->finfo.mtime);
+	    st->st_ctime = apr_time_sec(data->request->finfo.ctime);
 	}
 #else /* Apache 1.x */
 	*st = data->request->finfo;
