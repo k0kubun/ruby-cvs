@@ -1,3 +1,11 @@
+Fri Apr 20 13:04:28 2001  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.c (request_finfo): new method Apache::Request#finfo.
+
+	* mod_ruby.c (load_eruby_script): supports eruby-0.9.0.
+
+	* ruby/apache/eruby.rb: new handler Apache::ERuby.
+
 Thu Apr 19 15:09:58 2001  Shugo Maeda <shugo@modruby.net>
 
 	* ruby/apache/ruby.rb: new handler Apache::Ruby.

@@ -11,18 +11,15 @@ the Free Software Foundation; either version 2 of the License, or
 
 == Overview
 
-mod_rd2html converts RD to HTML.
+Apache::RD2HTML converts RD to HTML.
 
 == Requirements
 
-* ruby 1.6.x or later.
-* mod_ruby 0.8.0 or later.
 * RDtool 0.6.7 or later.
 
 == Example of httpd.conf
 
-  RubyAddPath /usr/lib/apache/1.3/ruby
-  RubyRequire apache/ruby
+  RubyRequire apache/rd2html
   Alias /ruby-lib-doc/ /usr/lib/ruby/1.6/
   <Location /ruby-lib-doc>
   Options Indexes

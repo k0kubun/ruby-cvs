@@ -215,7 +215,7 @@ void ruby_add_path(const char *path)
     rb_ary_push(default_load_path, rb_str_new2(path));
 }
 
-#if RUBY_VERSION_CODE >= 164
+#if MODULE_MAGIC_NUMBER >= MMN_130 && RUBY_VERSION_CODE >= 164
 static void mod_ruby_dso_unload(void *data)
 {
     extern VALUE ruby_dln_librefs;
@@ -808,14 +808,20 @@ static int ruby_script_handler(request_rec *r)
 static VALUE load_eruby_script(void *arg)
 {
     request_rec *r = (request_rec *) arg;
-    VALUE script;
     int state;
     VALUE ret;
 
     eruby_noheader = 0;
     eruby_charset = eruby_default_charset;
-    script = eruby_load(r->filename, 1, &state);
-    if (!NIL_P(script)) unlink(STR2CSTR(script));
+#if defined(ERUBY_VERSION_CODE) && ERUBY_VERSION_CODE >= 90
+    eruby_load(r->filename, 1, &state);
+#else
+    {
+	VALUE script;
+	script = eruby_load(r->filename, 1, &state);
+	if (!NIL_P(script)) unlink(STR2CSTR(script));
+    }
+#endif
     rb_exec_end_proc();
     if (state) {
 	if (state == TAG_RAISE &&

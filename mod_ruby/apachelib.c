@@ -445,6 +445,7 @@ typedef struct request_data {
     VALUE err_headers_out;
     VALUE subprocess_env;
     VALUE notes;
+    VALUE finfo;
     int send_http_header;
     long pos;
 } request_data;
@@ -477,6 +478,7 @@ static void request_mark(request_data *data)
     rb_gc_mark(data->err_headers_out);
     rb_gc_mark(data->subprocess_env);
     rb_gc_mark(data->notes);
+    rb_gc_mark(data->finfo);
 }
 
 VALUE ruby_request_new(request_rec *r)
@@ -495,6 +497,7 @@ VALUE ruby_request_new(request_rec *r)
     data->err_headers_out = Qnil;
     data->subprocess_env = Qnil;
     data->notes = Qnil;
+    data->finfo = Qnil;
     data->send_http_header = 0;
     data->pos = 0;
 
@@ -860,6 +863,21 @@ static VALUE request_notes(VALUE self)
 	data->notes = table_new(rb_cApacheTable, data->request->notes);
     }
     return data->notes;
+}
+
+static VALUE request_finfo(VALUE self)
+{
+    VALUE cStat, obj;
+    request_data *data;
+    struct stat *st;
+
+    Data_Get_Struct(self, request_data, data);
+    if (NIL_P(data->finfo)) {
+	cStat = rb_const_get(rb_cFile, rb_intern("Stat"));
+	data->finfo = Data_Make_Struct(cStat, struct stat, NULL, free, st);
+	*st = data->request->finfo;
+    }
+    return data->finfo;
 }
 
 static VALUE request_aref(VALUE self, VALUE vkey)
@@ -1310,6 +1328,7 @@ void ruby_init_apachelib()
     rb_define_method(rb_cApacheRequest, "subprocess_env",
 		     request_subprocess_env, 0);
     rb_define_method(rb_cApacheRequest, "notes", request_notes, 0);
+    rb_define_method(rb_cApacheRequest, "finfo", request_finfo, 0);
     rb_define_method(rb_cApacheRequest, "[]", request_aref, 1);
     rb_define_method(rb_cApacheRequest, "[]=", request_aset, 2);
     rb_define_method(rb_cApacheRequest, "each_header", request_each_header, 0);

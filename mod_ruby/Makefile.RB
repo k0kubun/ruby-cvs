@@ -142,8 +142,17 @@ XLDFLAGS = #{$XLDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
 DLDFLAGS = #{$DLDFLAGS}
 INSTALL_DLLIB = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
+INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
+INSTALL_DIR = $(RUBY) -r ftools -e 'File.makedirs(*ARGV)'
 LIBRUBYARG = #{$LIBRUBYARG}
 LIBERUBYARG = #{$LIBERUBYARG}
+
+DESTDIR = 
+
+libdir = $(DESTDIR)#{$libdir}
+libapachedir = $(libdir)/apache
+
+APACHE_LIBEXECDIR = $(DESTDIR)#{$APACHE_LIBEXECDIR}
 
 TARGET = mod_ruby.so
 
@@ -155,14 +164,19 @@ OBJS = mod_ruby.o ruby_config.o apachelib.o
 all: $(TARGET)
 
 install: $(TARGET)
-	$(INSTALL_DLLIB) $(TARGET) #{$APACHE_LIBEXECDIR}
+	@-$(INSTALL_DIR) $(APACHE_LIBEXECDIR)
+	@-$(INSTALL_DIR) $(libapachedir)
+	@-$(INSTALL_DLLIB) $(TARGET) $(APACHE_LIBEXECDIR)
+	@-$(INSTALL_DATA) ruby/apache/ruby.rb $(libapachedir)
+	@-$(INSTALL_DATA) ruby/apache/eruby.rb $(libapachedir)
+	@-$(INSTALL_DATA) ruby/apache/rd2html.rb $(libapachedir)
 
 clean:
 	rm -f $(TARGET) $(OBJS)
 
 distclean: clean
 	rm -f mod_ruby.imp Makefile
-	rm -f *~ */*~
+	find . -name '*~' | xargs rm -f
 
 $(TARGET): $(OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) \
