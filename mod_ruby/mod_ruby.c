@@ -55,6 +55,7 @@ static char **origenviron;
 extern VALUE ruby_errinfo;
 extern VALUE rb_defout;
 extern VALUE rb_stdin;
+static VALUE rb_origstdin;
 
 #ifdef MULTITHREAD
 static mutex *mod_ruby_mutex = NULL;
@@ -181,6 +182,11 @@ static VALUE f_exit(int argc, VALUE *argv, VALUE obj)
     return Qnil;		/* not reached */
 }
 
+static VALUE io_clone(VALUE io)
+{
+    return rb_funcall(io, rb_intern("clone"), 0);
+}
+
 static void ruby_startup(server_rec *s, pool *p)
 {
     ruby_server_config *conf =
@@ -190,6 +196,7 @@ static void ruby_startup(server_rec *s, pool *p)
     char **list;
     char *rubylib;
     int i;
+    int state;
 
 #if MODULE_MAGIC_NUMBER >= 19980507
     ap_add_version_component(MOD_RUBY_STRING_VERSION);
@@ -222,6 +229,12 @@ static void ruby_startup(server_rec *s, pool *p)
 		    list[i]);
 	    exit(1);
 	}
+    }
+
+    rb_origstdin = rb_protect(io_clone, (VALUE) rb_stdin, &state);
+    if (state) {
+	fprintf(stderr, "Can't close $stdin, exiting...\n");
+	exit(1);
     }
 
     ruby_is_running = 1;
@@ -647,11 +660,12 @@ static VALUE load_eruby_script(request_rec *r)
 
 static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 {
-    VALUE wcb_thread = Qnil;
+    volatile VALUE wcb_thread = Qnil;
     VALUE load_thread;
     ruby_dir_config *dconf = NULL;
     int retval;
     const char *kcode_orig = NULL;
+    int state;
 
     (void) ap_acquire_mutex(mod_ruby_mutex);
 
@@ -674,6 +688,11 @@ static int ruby_handler0(VALUE (*load)(request_rec*), request_rec *r)
 
     if (ap_should_client_block(r)) {
 	if (write_client_block(r, &wcb_thread) == -1)
+	    return SERVER_ERROR;
+    }
+    else {
+	rb_protect(stdin_reopen, (VALUE) rb_origstdin, &state);
+	if (state)
 	    return SERVER_ERROR;
     }
 
