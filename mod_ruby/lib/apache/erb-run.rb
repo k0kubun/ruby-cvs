@@ -92,9 +92,11 @@ module Apache
 	return NOT_FOUND
       end
 
-      code = compile(r.filename)
+      filename = r.filename.dup
+      filename.untaint
+      code = compile(filename)
       prerun(r)
-      run(code, r.filename)
+      run(code, filename)
       postrun(r)
 
       return OK

@@ -60,8 +60,10 @@ module Apache
     include Singleton
 
     def handler(r)
+      filename = r.filename.dup
+      filename.untaint
       begin
-	open(r.filename) do |f|
+	open(filename) do |f|
 	  tree = RD::RDTree.new(f)
 	  visitor = RD::RD2HTMLVisitor.new
 	  r.content_type = "text/html"

@@ -65,7 +65,7 @@ static VALUE table_get(VALUE self, VALUE name)
     Data_Get_Struct(self, table, tbl);
     res = ap_table_get(tbl, key);
     if (res)
-	return rb_str_new2(res);
+	return rb_tainted_str_new2(res);
     else
 	return Qnil;
 }
@@ -135,7 +135,7 @@ static VALUE table_addn(VALUE self, VALUE name, VALUE val)
 
 static VALUE table_each(VALUE self)
 {
-    VALUE assoc;
+    VALUE key, val, assoc;
     table *tbl;
     array_header *hdrs_arr;
     table_entry *hdrs;
@@ -147,8 +147,9 @@ static VALUE table_each(VALUE self)
     for (i = 0; i < hdrs_arr->nelts; i++) {
 	if (hdrs[i].key == NULL)
 	    continue;
-	assoc = rb_assoc_new(rb_str_new2(hdrs[i].key),
-			     hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+	key = rb_tainted_str_new2(hdrs[i].key);
+	val = hdrs[i].val ? rb_tainted_str_new2(hdrs[i].val) : Qnil;
+	assoc = rb_assoc_new(key, val);
 	rb_yield(assoc);
     }
     return Qnil;
@@ -167,7 +168,7 @@ static VALUE table_each_key(VALUE self)
     for (i = 0; i < hdrs_arr->nelts; i++) {
 	if (hdrs[i].key == NULL)
 	    continue;
-	rb_yield(rb_str_new2(hdrs[i].key));
+	rb_yield(rb_tainted_str_new2(hdrs[i].key));
     }
     return Qnil;
 }
@@ -185,7 +186,7 @@ static VALUE table_each_value(VALUE self)
     for (i = 0; i < hdrs_arr->nelts; i++) {
 	if (hdrs[i].key == NULL)
 	    continue;
-	rb_yield(hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+	rb_yield(hdrs[i].val ? rb_tainted_str_new2(hdrs[i].val) : Qnil);
     }
     return Qnil;
 }
@@ -202,7 +203,7 @@ static VALUE restricted_table_get(VALUE self, VALUE name)
     Data_Get_Struct(self, table, tbl);
     res = ap_table_get(tbl, key);
     if (res)
-	return rb_str_new2(res);
+	return rb_tainted_str_new2(res);
     else
 	return Qnil;
 }
@@ -224,8 +225,8 @@ static VALUE restricted_table_each(VALUE self)
 	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
 	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
 	    continue;
-	assoc = rb_assoc_new(rb_str_new2(hdrs[i].key),
-			     hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+	assoc = rb_assoc_new(rb_tainted_str_new2(hdrs[i].key),
+			     hdrs[i].val ? rb_tainted_str_new2(hdrs[i].val) : Qnil);
 	rb_yield(assoc);
     }
     return Qnil;
@@ -247,7 +248,7 @@ static VALUE restricted_table_each_key(VALUE self)
 	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
 	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
 	    continue;
-	rb_yield(rb_str_new2(hdrs[i].key));
+	rb_yield(rb_tainted_str_new2(hdrs[i].key));
     }
     return Qnil;
 }
@@ -268,7 +269,7 @@ static VALUE restricted_table_each_value(VALUE self)
 	if (strcasecmp(hdrs[i].key, "authorization") == 0 ||
 	    strcasecmp(hdrs[i].key, "proxy-authorization") == 0)
 	    continue;
-	rb_yield(hdrs[i].val ? rb_str_new2(hdrs[i].val) : Qnil);
+	rb_yield(hdrs[i].val ? rb_tainted_str_new2(hdrs[i].val) : Qnil);
     }
     return Qnil;
 }

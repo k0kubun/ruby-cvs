@@ -70,7 +70,7 @@ static VALUE array_aref(VALUE self, VALUE idx)
     else if (n >= arr->nelts) {
 	rb_raise(rb_eIndexError, "index %d out of array", n);
     }
-    return rb_str_new2(((char **) arr->elts)[n]);
+    return rb_tainted_str_new2(((char **) arr->elts)[n]);
 }
 
 static VALUE array_aset(VALUE self, VALUE idx, VALUE val)
@@ -100,7 +100,7 @@ static VALUE array_each(VALUE self)
 
     Data_Get_Struct(self, array_header, arr);
     for (i = 0; i < arr->nelts; i++) {
-	rb_yield(rb_str_new2(((char **) arr->elts)[i]));
+	rb_yield(rb_tainted_str_new2(((char **) arr->elts)[i]));
     }
     return Qnil;
 }

@@ -59,8 +59,10 @@ module Apache
 	return FORBIDDEN
       end
       r.setup_cgi_env
-      Apache.chdir_file(r.filename)
-      load(r.filename, true)
+      filename = r.filename.dup
+      filename.untaint
+      Apache.chdir_file(filename)
+      load(filename, true)
       return OK
     end
   end

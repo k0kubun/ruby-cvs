@@ -1,3 +1,21 @@
+Wed Jan 16 14:02:51 2002  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.h (CSTR2OBJ): use rb_tainted_str_new2().
+
+	* array_header.c: ditto.
+
+	* table.c: ditto.
+
+	* server.c: ditto.
+
+	* lib/apache/ruby-run.rb: use untaint.
+
+	* lib/apache/eruby-run.rb: ditto.
+
+	* lib/apache/erb-run.rb: ditto.
+
+	* lib/apache/rd2html.rb: ditto.
+
 Mon Jan  7 18:08:09 2002  U.Nakamura <usa@osb.att.ne.jp>
 
 	* Makefile.in (install-ruby): lib/$$file -> $(srcdir)/lib/$$file.

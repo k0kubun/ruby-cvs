@@ -71,7 +71,7 @@ void rb_apache_request_flush(VALUE request);
 void rb_apache_request_set_error(VALUE request, VALUE error, VALUE exception);
 
 #define STRING_LITERAL(s) rb_str_new(s, sizeof(s) - 1)
-#define CSTR2OBJ(s) ((s) ? rb_str_new2(s) : Qnil)
+#define CSTR2OBJ(s) ((s) ? rb_tainted_str_new2(s) : Qnil)
 #define INT2BOOL(n) ((n) ? Qtrue : Qfalse)
 
 #define DEFINE_ATTR_READER(fname, type, member, convert) \

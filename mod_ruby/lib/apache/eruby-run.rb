@@ -65,9 +65,11 @@ module Apache
 	return NOT_FOUND
       end
 
-      code = compile(r.filename)
+      filename = r.filename.dup
+      filename.untaint
+      code = compile(filename)
       prerun(r)
-      run(code, r.filename)
+      run(code, filename)
       postrun(r)
 
       return OK
@@ -110,9 +112,7 @@ module Apache
 	if cgi = ERuby.cgi
 	  cgi.header("charset" => ERuby.charset)
 	else
-	  unless r.content_type
-	    r.content_type = format("text/html; charset=%s", ERuby.charset)
-	  end
+	  r.content_type = format("text/html; charset=%s", ERuby.charset)
 	  r.send_http_header
 	end
       end

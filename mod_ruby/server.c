@@ -139,7 +139,12 @@ static VALUE server_document_root(VALUE self)
     Data_Get_Struct(self, server_rec, server);
     conf = (core_server_config *)
 	ap_get_module_config(server->module_config, &core_module);
-    return conf->ap_document_root ? rb_str_new2(conf->ap_document_root) : Qnil;
+    if (conf->ap_document_root) {
+	return rb_tainted_str_new2(conf->ap_document_root);
+    }
+    else {
+	return Qnil;
+    }
 }
 
 void rb_init_apache_server()
