@@ -18,12 +18,15 @@ end
 if PLATFORM =~ /-aix/
   $DLDFLAGS = "-Wl,-bE:mod_ruby.imp -Wl,-bI:httpd.exp -Wl,-bM:SRE -Wl,-bnoentry -lc"
   if $shared
-    $LIBRUBYARG = CONFIG["libdir"] + "/" + CONFIG["LIBRUBY_SO"]
+    $LIBRUBYARG = "-Wl," + CONFIG["libdir"] + "/" + CONFIG["LIBRUBY_SO"]
     $LIBRUBYARG.sub!(/\.so\.[.0-9]*$/, '.so')
+    $XLDFLAGS = ""
   else
-    $DLDFLAGS = "-Wl,-bE:$(topdir)/ruby.imp " + $DLDFLAGS
+    $XLDFLAGS = "-Wl,-bE:#{$topdir}/ruby.imp"
   end
   if CONFIG["DLDFLAGS"] !~ /-Wl,/
+    $LIBRUBYARG.gsub!(/-Wl,/, '')
+    $XLDFLAGS.gsub!(/-Wl,/, '')
     $DLDFLAGS.gsub!(/-Wl,/, '')
   end
   ifile = open("mod_ruby.imp", "w")
@@ -42,6 +45,7 @@ Please copy <apache-src-directory>/support/httpd.exp to the current
 directory before making `mod_ruby.so'.
 EOM
 else
+  $XLDFLAGS = CONFIG["XLDFLAGS"]
   $DLDFLAGS = CONFIG["DLDFLAGS"]
 end
 
@@ -64,9 +68,9 @@ CC = #{CONFIG["CC"]}
 CFLAGS = #{CONFIG["CCDLFLAGS"]} -I#{$hdrdir} -I#{$APACHE_INCLUDEDIR} \\
 	 #{$CFLAGS}
 LIBS = #{CONFIG["LIBS"]}
-XLDFLAGS = #{CONFIG["XLDFLAGS"]}
+XLDFLAGS = #$XLDFLAGS
 LDSHARED = #{CONFIG["LDSHARED"]}
-DLDFLAGS = #{CONFIG["DLDFLAGS"]}
+DLDFLAGS = #$DLDFLAGS
 INSTALL_DLLIB = ruby -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
 
 RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
@@ -86,7 +90,7 @@ clean:
 	rm -f $(TARGET) $(OBJS) *~
 
 distclean: clean
-	rm -f Makefile
+	rm -f mod_ruby.imp Makefile
 
 $(TARGET): $(OBJS)
 	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)
