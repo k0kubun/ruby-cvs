@@ -3,24 +3,30 @@ require '../rubicon'
 
 class TestTrueClass < Rubicon::TestCase
 
+  def test_00sanity
+    assert_equal(true,TRUE)
+  end
+
   def test_AND # '&'
-    assert_fail("untested")
+    truth_table(true.method("&"), false, true)
   end
 
   def test_OR # '|'
-    assert_fail("untested")
+    truth_table(true.method("|"), true, true)
   end
 
   def test_XOR # '^'
-    assert_fail("untested")
+    truth_table(true.method("^"), true, false)
   end
 
   def test_to_s
-    assert_fail("untested")
+    assert_equal("true", true.to_s)
+    assert_equal("true", TRUE.to_s)
   end
 
   def test_type
-    assert_fail("untested")
+    assert_equal(TrueClass, true.type)
+    assert_equal(TrueClass, TRUE.type)
   end
 
 end
