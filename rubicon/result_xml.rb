@@ -1,7 +1,13 @@
 # Accumulate a running set of results, and report them at the end
 
+#
+# This is a temporary hack - we have made changes to xmarshal
+# to allow rubicon to run without having to have xmlparser 
+# installed
+#
+
 XMARSHAL_DUMP_ONLY = true
-require "xmarshal"
+require "rubicon_xmarshal"
   
 class ResultDisplay
 
