@@ -1,4 +1,4 @@
-README  2002/03/13
+README  2002/03/25
 
 OniGuruma (regular expression library)
 
@@ -41,7 +41,14 @@ Install
      (* uninstall:  make uninstall)
 
 
-Differences with GNU regex(version 0.12)
+License
+
+   When this software is partly used or it is distributed, this of Ruby
+   follows the license of Ruby.
+   It follows the BSD license in the case of the one except for it.
+
+
+Differences with japanized GNU regex(version 0.12) of Ruby
 
    + has a original native API. (Thread safe?  I hope so.)
    + has modified GNU regex API.
@@ -58,6 +65,10 @@ Differences with GNU regex(version 0.12)
      (ex. [\xa1\xa2], [\xa1\xa7-\xa4\xa1])
    + Effect range of isolated option is to next ')'.
      ex. (?:(?i)a|b) is interpreted as (?:(?i:a|b)), not (?:(?i:a)|b).
+   + Isolated option is not transparent to previous pattern.
+     ex. a(?i)* is a syntax error pattern.
+   + allowed incompleted left brace as a usual char.
+     ex. /{/, /({)/, /a{2,3/ etc...
    + Negative POSIX bracket [:^xxxx:] is supported.
    + POSIX bracket [:ascii:] is added.
 
@@ -67,12 +78,11 @@ Differences with GNU regex(version 0.12)
 
 ToDo
 
-   + serialize integer in bytecode. (switch at compile time)
-   + script program for test and benchmark.
+   + benchmark script.
 
    ? get tail string optimizing info. ex. /X((.*).)+X/
      (add backward link to NCONS)
-   ? reduce null-check range in compile time.
+   ? reduce null-check range at bytecode compile time.
    ? add a new stack type for anystar(.*) matching process.
      [STK_ANYCHAR_STAR, address, str-low, str-now]
   ?? POSIX compatible API.
@@ -82,11 +92,46 @@ ToDo
 
 Problem
 
+   + Ignore case option is not effect to an octal or hexadecimal 
+     numbered char, but it becomes effective if it appears in the char class.
+     This doesn't have consistency, though they are the specifications
+     which are the same as GNU regex of Ruby.
+
+      /\x61/i.match("A")     # => nil
+      /[\x61]/i.match("A")   # => match
+
    + AC_PROG_INSTALL in configure.in  is not used.
      (Why configure script can't find /usr/bin/install in my box?)
 
 
 History
+
+2002/03/25: [spec] if encoding is utf-8, combination of singlebyte - 
+                   multibyte code range in char class is allowed.
+2002/03/25: the description of the license condition is added to README.
+2002/03/23: [bug]  should set all bits of reg->mem_stats,
+                   if REG_OPTION_FIND_LONGEST or REG_OPTION_NOT_EMPTY.
+2002/03/23: [new]  add a new option REG_OPTION_NOT_EMPTY.
+2002/03/20: [spec] allow incompleted left brace as a usual char.
+                   ex. /{/, /({)/, /a{2,3/ etc...
+2002/03/20: [impl] serialize integer in bytecode.
+                   (switch by UNALIGNED_WORD_ACCESS macro in regex.c)
+2002/03/20: [impl] change re_mbcinit() for REG_RUBY_M17N.
+2002/03/19: [impl] word alignment of char class multi-byte code ranges.
+2002/03/19: [impl] replace OP_EXACTMB4N with OP_EXACTMB3N.
+2002/03/19: [bug]  OP_CCLASS_MB_NOT process in matchAt() is wrong.
+2002/03/19: [new]  add re_mbctab[] for Ruby extension library compatibility.
+2002/03/19: [spec] allow nested repeat operator, if operator is {n,m} type.
+2002/03/19: [new]  add REG_IS_PATTERN_ERROR(ecode) in regex.h
+2002/03/18: [spec] /[a-b-c]/ should be error.
+2002/03/18: [bug]  /[\w-a]/ should be error.        (thanks Guy Decoux)
+2002/03/18: [bug]  /[\]/ should be error.           (thanks Guy Decoux)
+2002/03/18: [bug]  /()*/ etc.. should not be error. (thanks Guy Decoux)
+2002/03/18: [spec] /a{1}*/ should not be error.     (thanks Guy Decoux)
+2002/03/18: [bug]  ab{2}{3} was interpreded to (?:a(?:b{2})){3}
+                   (thanks Guy Decoux)
+2002/03/18: [bug]  abort /(?i)*a/ etc...            (thanks Guy Decoux)
+2002/03/18: [bug]  abort /a|*/,/a|{1}/ etc...       (thanks Guy Decoux)
 
 2002/03/13: Version 1.2
 
