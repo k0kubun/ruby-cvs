@@ -3,7 +3,7 @@
 # goodfriday.rb: Written by Tadayoshi Funaba 1998, 2000
 # $Id$
 
-require 'date2'
+require 'date'
 
 def easter(y)
   g = (y % 19) + 1
