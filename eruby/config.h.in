@@ -1,0 +1,3 @@
+/* Generated automatically by configure.rb. */
+
+#define ERUBY_DEFAULT_CHARSET @DEFAULT_CHARSET@
