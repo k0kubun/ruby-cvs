@@ -2,6 +2,24 @@
  * $Id$
  * Copyright (C) 2000  ZetaBITS, Inc.
  * Copyright (C) 2000  Information-technology Promotion Agency, Japan
+ * Copyright (C) 2000  Shugo Maeda <shugo@modruby.net>
+ *
+ * This file is part of eruby.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+ * USA.
  */
 
 #include <stdio.h>
@@ -579,6 +597,11 @@ VALUE eruby_compiler_compile_file(VALUE self, VALUE file)
     return eruby_compile(compiler);
 }
 
+static VALUE file_open(char *filename)
+{
+    return rb_file_open(filename, "r");
+}
+
 typedef struct compile_arg {
     VALUE compiler;
     VALUE input;
@@ -589,33 +612,53 @@ static VALUE eruby_compile_file(compile_arg_t *arg)
     return eruby_compiler_compile_file(arg->compiler, arg->input);
 }
 
+typedef struct eval_arg {
+    VALUE src;
+    VALUE filename;
+} eval_arg_t;
+
+static VALUE eval_string(eval_arg_t *arg)
+{
+    return rb_funcall(Qnil, rb_intern("eval"), 3, arg->src, Qnil, arg->filename);
+}
+
 VALUE eruby_load(char *filename, int wrap, int *state)
 {
+    char src[BUFSIZ];
     VALUE compiler;
     VALUE code;
     VALUE f;
-    compile_arg_t arg;
+    compile_arg_t carg;
+    eval_arg_t earg;
     int status;
 
     if (strcmp(filename, "-") == 0) {
 	f = rb_stdin;
     }
     else {
-	f = rb_file_open(filename, "r");
+	f = rb_protect(file_open, (VALUE) filename, &status);
+	if (status) {
+	    if (state) *state = status;
+	    return Qnil;
+	}
     }
     eruby_noheader = 0;
     eruby_charset = eruby_default_charset;
     compiler = eruby_compiler_new();
-    arg.compiler = compiler;
-    arg.input = f;
-    code = rb_protect(eruby_compile_file, (VALUE) &arg, &status);
-    if (state) *state = status;
-    if (status)	return Qnil;
+    carg.compiler = compiler;
+    carg.input = f;
+    code = rb_protect(eruby_compile_file, (VALUE) &carg, &status);
+    if (status)	{
+	if (state) *state = status;
+	return Qnil;
+    }
     if (wrap) {
 	rb_eval_string_wrap(STR2CSTR(code), &status);
     }
     else {
-	rb_eval_string_protect(STR2CSTR(code), &status);
+	earg.src = code;
+	earg.filename = rb_str_new2(filename);
+	rb_protect(eval_string, (VALUE) &earg, &status);
     }
     if (state) *state = status;
     if (f != rb_stdin)
@@ -675,7 +718,7 @@ static VALUE eruby_import(VALUE self, VALUE filename)
     compiler = eruby_compiler_new();
     file = rb_file_open(STR2CSTR(filename), "r");
     code = eruby_compiler_compile_file(compiler, file);
-    rb_eval_string(STR2CSTR(code));
+    rb_funcall(Qnil, rb_intern("eval"), 3, code, Qnil, filename);
     return Qnil;
 }
 

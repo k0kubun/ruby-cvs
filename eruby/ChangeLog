@@ -1,3 +1,23 @@
+Mon Jun  4 14:19:54 2001  Shugo Maeda <shugo@modruby.net>
+
+	* examples/e2r.rb: new file.
+
+	* examples/test.rhtml: new file.
+
+	* examples/foo.rhtml: new file.
+
+	* COPYING: new file.
+
+	* GPL: new file.
+
+	* LGPL: new file.
+
+	* eruby_lib.c (eruby_import): use Kernel#eval for backtrace.
+
+Sun Jun  3 20:39:58 2001  Shugo Maeda <shugo@modruby.net>
+
+	* eruby_lib.c (eruby_load): use Kernel#eval for backtrace.
+
 Fri Jun  1 17:05:35 2001  Shugo Maeda <shugo@modruby.net>
 
 	* eruby_lib.c (lex_str_gets): allow empty strings.
