@@ -71,6 +71,8 @@ module Apache
       Apache.chdir_file(filename)
       begin
 	load(filename, true)
+      rescue SystemExit
+	raise($!)
       rescue Exception
         r.content_type = "text/html"
 	r.send_http_header

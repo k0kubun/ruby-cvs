@@ -109,6 +109,8 @@ module Apache
 	file.print(code)
 	file.close
 	load(file.path, true)
+      rescue SystemExit
+	raise($!)
       rescue Exception
 	$>.replace('')
 	  
