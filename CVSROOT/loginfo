@@ -27,4 +27,4 @@
 
 ^CVSROOT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb $CVSROOT $USER %s cvs-admin@ruby-lang.org ruby-lang.org localhost ruby-cvs
 
-DEFAULT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb $CVSROOT $USER %s knu@ruby-lang.org,ruby-comitters@cvs.ruby-lang.org ruby-lang.org localhost ruby-cvs
+DEFAULT /usr/bin/ruby $CVSROOT/CVSROOT/loginfo.rb $CVSROOT $USER %s cvs-admin@ruby-lang.org ruby-lang.org localhost ruby-cvs
