@@ -13,15 +13,26 @@ class TestProc < Rubicon::TestCase
   end
 
   def test_arity
-    [ [Proc.new {          }, -1],
-      [Proc.new { ||       },  0],
-      [Proc.new { |x|      }, -1],
+    tests = [
+      [Proc.new {          }, -1],
       [Proc.new { |x,y|    },  2],
       [Proc.new { |x,y,z|  },  3],
       [Proc.new { |*z|     }, -1],
       [Proc.new { |x,*z|   }, -2],
       [Proc.new { |x,y,*z| }, -3],
-    ].each do |proc, expected_arity|
+    ]
+
+    if $rubyVersion <= "1.6.1"
+      tests << 
+        [Proc.new { ||       },  -1] <<
+        [Proc.new { |x|      },  -2]
+    else
+      tests <<
+        [Proc.new { ||       },  0] <<
+        [Proc.new { |x|      }, -1]
+    end
+
+    tests.each do |proc, expected_arity|
       assert_equal(expected_arity, proc.arity)
     end
   end

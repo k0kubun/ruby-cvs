@@ -632,13 +632,13 @@ class TestString < Rubicon::TestCase
   end
 
   def test_reverse!
-    a="beta"
+    a = "beta"
     b = a.dup
     assert_equal("ateb", a.reverse!)
     assert_equal("ateb", a)
     assert_equal("beta", b)
     assert_equal("madamImadam", "madamImadam".reverse!)
-    a="madamImadam"
+    a = "madamImadam"
     assert_equal("madamImadam", a.reverse!)  # ??
     assert_equal("madamImadam", a)
   end

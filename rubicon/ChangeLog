@@ -1,3 +1,9 @@
+2001-02-03  Dave Thomas  <Dave@Thomases.com>
+
+	* builtin/TestProc.rb: #arity values changes at 1.6.2
+
+	* builtin/TestArray.rb: Behavior of sort! changes at 1.7
+
 2001-01-18  Dave Thomas  <Dave@Thomases.com>
 
 	* language/TestFloats.rb: Add Aleksi's new tests (thanks).

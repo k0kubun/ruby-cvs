@@ -874,9 +874,14 @@ class TestArray < Rubicon::TestCase
 
     a.fill(1)
     assert_equal([1, 1, 1, 1], a.sort!)
-    
-    assert_equal([1], [1].sort!)
-    assert_equal([], [].sort!)
+
+    if $rubyVersion < "1.7"
+      assert_nil([1].sort!)
+      assert_nil([].sort!)
+    else
+      assert_equal([1], [1].sort!)
+      assert_equal([], [].sort!)
+    end
   end
 
   def test_to_a

@@ -32,7 +32,12 @@ class TestKernel < Rubicon::TestCase
   def test___id__
     # naive test - no 2 ids the same
     objs = []
-    ObjectSpace.each_object { |obj| objs << obj.__id__ }
+    ObjectSpace.each_object do |obj|
+      begin
+        objs << obj.__id__ 
+      rescue NotImplementedError
+      end
+    end
 
     # See if this is faster than using uniq
     objs.sort!
@@ -207,7 +212,12 @@ class TestKernel < Rubicon::TestCase
 
   def test_id
     objs = []
-    ObjectSpace.each_object { |obj| objs << obj.id }
+    ObjectSpace.each_object do |obj|
+      begin
+        objs << obj.id 
+      rescue NotImplementedError
+      end
+    end
     s1 = objs.size
     assert_equal(s1, objs.uniq.size)
 
