@@ -92,10 +92,6 @@ begin
       $includedir = arg
     when "--mandir"
       $mandir = arg
-    when "--archdir"
-      $archdir = arg
-    when "--sitearch"
-      $sitearchdir = arg
     when "--default-charset"
       $DEFAULT_CHARSET = arg
     when "--enable-shared"
@@ -126,7 +122,8 @@ config["exec_prefix"] = $exec_prefix
 
 config["bindir"] = $bindir
 config["libdir"] = $libdir
-config["rubylibdir"] = $rubylibdir
+config["rubylibdir"] = $rubylibdir ||
+  $libdir + "/ruby/" + CONFIG["MAJOR"] + "." + CONFIG["MINOR"]
 config["archdir"] = $archdir
 config["sitedir"] = $sitedir
 config["sitelibdir"] = $sitelibdir
@@ -146,6 +143,16 @@ config["LIBS"] = CONFIG["LIBS"]
 config["XLDFLAGS"] = $XLDFLAGS
 config["DLDFLAGS"] = $DLDFLAGS
 config["LDSHARED"] = CONFIG["LDSHARED"]
+
+config["MAJOR"], config["MINOR"], config["TEENY"] =
+  open(File.join(config["srcdir"], "eruby.h")).grep(/ERUBY_VERSION/)[0].scan(/(\d+).(\d+).(\d+)/)[0]
+config["MAJOR_MINOR"] = (config["MAJOR"].to_i * 10 + config["MINOR"].to_i).to_s
+
+config["OBJEXT"] = $OBJEXT
+config["EXEEXT"] = CONFIG["EXEEXT"]
+config["DLEXT"] = CONFIG["DLEXT"]
+
+config["DEFAULT_CHARSET"] = $DEFAULT_CHARSET
 
 begin
   config["LIBRUBYARG"] = Config.expand(CONFIG["LIBRUBYARG"])
@@ -234,16 +241,6 @@ if PLATFORM =~ /-mswin32/
     config["LD"] = "env LIB='$(subst /,\\\\,$(libdir));$(LIB)' $(CC)"
   end
 end
-
-config["MAJOR"], config["MINOR"], config["TEENY"] =
-  open(File.join(config["srcdir"], "eruby.h")).grep(/ERUBY_VERSION/)[0].scan(/(\d+).(\d+).(\d+)/)[0]
-config["MAJOR_MINOR"] = (config["MAJOR"].to_i * 10 + config["MINOR"].to_i).to_s
-
-config["OBJEXT"] = $OBJEXT
-config["EXEEXT"] = CONFIG["EXEEXT"]
-config["DLEXT"] = CONFIG["DLEXT"]
-
-config["DEFAULT_CHARSET"] = $DEFAULT_CHARSET
 
 if CONFIG["DLEXT"] != $OBJEXT
   config["MKDLLIB"] = ""

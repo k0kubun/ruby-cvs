@@ -1,3 +1,7 @@
+Fri May 18 16:44:24 2001  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.RB: removed.
+
 Fri May 18 14:57:58 2001  Shugo Maeda <shugo@modruby.net>
 
 	* configure.rb: support new version of mkmf.

@@ -1,3 +1,7 @@
+Fri May 18 16:45:46 2001  Shugo Maeda <shugo@modruby.net>
+
+	* Makefile.RB: removed.
+
 Fri May 18 16:18:20 2001  Shugo Maeda <shugo@modruby.net>
 
 	* ruby/apache/eruby.rb: do not require "cgi/session".
