@@ -1,3 +1,8 @@
+2002-03-26  Nobuyoshi Nakada  <nobu.nakada@nifty.ne.jp>
+
+	* builtin/TestIO.rb (TestIO::test_gets_para): IO#gets in paragraph
+	  mode.
+
 2002-03-21  Dave Thomas  <Dave@Thomases.com>
 
 	* builtin/TestDir.rb: Get working under Win2k, based on a patch

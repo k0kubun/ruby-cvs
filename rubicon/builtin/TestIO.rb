@@ -550,6 +550,17 @@ class TestIO < Rubicon::TestCase
     assert_equal(41, count)
   end
 
+  def test_gets_para
+    File.open(@file, "w") do |file|
+      file.print "foo\n"*4096, "\n"*4096, "bar"*4096, "\n"*4096, "zot\n"*1024
+    end
+    File.open(@file) do |file|
+      assert_equal("foo\n"*4096+"\n", file.gets(""))
+      assert_equal("bar"*4096+"\n\n", file.gets(""))
+      assert_equal("zot\n"*1024, file.gets(""))
+    end
+  end
+
   def test_ioctl
     skipping("Platform dependent")
   end
