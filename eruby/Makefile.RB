@@ -172,6 +172,7 @@ RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
 RUBY = $(RUBY_INSTALL_NAME)
 
 DESTDIR = 
+
 prefix = $(DESTDIR)#{prefix}
 bindir = $(DESTDIR)#{prefixed("bindir")}
 libdir = $(DESTDIR)#{prefixed("libdir")}
@@ -192,7 +193,7 @@ LDSHARED = #{CONFIG["LDSHARED"]}
 INSTALL_PROGRAM = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0755, true'
 INSTALL_DLLIB = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
 INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
-INSTALL_DIR = $(RUBY) -r ftools -e 'File::makedirs(*ARGV)'
+INSTALL_DIR = $(RUBY) -r ftools -e 'File.makedirs(*ARGV)'
 LIBRUBYARG = #{$LIBRUBYARG}
 
 RM = ruby -e "ARGV.each {|f|File.unlink(f) rescue Errno}"
