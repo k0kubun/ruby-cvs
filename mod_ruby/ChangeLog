@@ -1,3 +1,7 @@
+Tue Oct 30 14:56:22 2001  Neil Conway <nconway@klamath.dyndns.org>
+
+	* connection.c (connection_aborted): new method.
+
 Wed Oct 17 15:03:34 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.4 released.

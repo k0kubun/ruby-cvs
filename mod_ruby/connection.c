@@ -46,6 +46,7 @@ VALUE rb_apache_connection_new(conn_rec *conn)
     return Data_Wrap_Struct(rb_cApacheConnection, NULL, NULL, conn);
 }
 
+DEFINE_BOOL_ATTR_READER(connection_aborted, conn_rec, aborted);
 DEFINE_STRING_ATTR_READER(connection_remote_ip, conn_rec, remote_ip);
 DEFINE_STRING_ATTR_READER(connection_remote_host, conn_rec, remote_host);
 DEFINE_STRING_ATTR_READER(connection_remote_logname, conn_rec, remote_logname);
@@ -58,6 +59,8 @@ void rb_init_apache_connection()
 {
     rb_cApacheConnection = rb_define_class_under(rb_mApache, "Connection", rb_cObject);
     rb_undef_method(CLASS_OF(rb_cApacheConnection), "new");
+    rb_define_method(rb_cApacheConnection, "aborted?",
+                     connection_aborted, 0);
     rb_define_method(rb_cApacheConnection, "remote_ip",
 		     connection_remote_ip, 0);
     rb_define_method(rb_cApacheConnection, "remote_host",
