@@ -240,10 +240,12 @@ class TestDir < Rubicon::TestCase
         Dir.mkdir("_test")
       rescue
         raise RUNIT::AssertionFailedError
+      ensure
+        d.close
       end
     end
   end
-
+  
 end
 
 Rubicon::handleTests(TestDir) if $0 == __FILE__
