@@ -248,7 +248,7 @@ class TestFloat < Rubicon::TestCase
   end
 
   def test_to_i
-    assert_instance_of(Fixnum, 1.23.to_)
+    assert_instance_of(Fixnum, 1.23.to_i)
     assert_equal(1,   1.4.to_i)
     assert_equal(1,   1.9.to_i)
     assert_equal(-1, -1.4.to_i)

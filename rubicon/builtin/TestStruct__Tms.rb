@@ -3,9 +3,26 @@ require '../rubicon'
 
 class TestStruct__Tms < Rubicon::TestCase
 
-  def test_00init
-    # Make a child process.
-    `ruby -e 'a = 0; 10000.times {|i| a += Math.sin(1/(i+1)) }'`
+  def sillyCalculation(n)
+    a = 0.0; n.times {|i| a += Math.sin(1/(i+1)) }
+  end
+
+  def burntime
+    # burn up user CPU
+    sillyCalculation(20000)
+    # and system CPU
+    200.times {
+      fork { sillyCalculation(100) }
+      Process.wait
+    }
+  end
+
+  def setup
+    # Make a child process. Run the process in both the child
+    # and the parent to get decent times. RUn in parallel so
+    # those with MP boxes get home slightly faster
+    burntime
+    puts Time.times.to_a
   end
 
   def test_cstime

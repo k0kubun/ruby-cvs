@@ -111,13 +111,13 @@ class TestModule < Rubicon::TestCase
   end
 
   def test_LT # '<'
-    assert(User <= Mixin)
-    assert(!(Mixin <= Mixin))
-    assert(!(Mixin <= User))
+    assert(User < Mixin)
+    assert(!(Mixin < Mixin))
+    assert(!(Mixin < User))
 
-    assert(String <= Object)
-    assert(!(String <= String))
-    assert(!(Object <= String))
+    assert(String < Object)
+    assert(!(String < String))
+    assert(!(Object < String))
   end
 
   def test_VERY_EQUAL # '==='
@@ -139,9 +139,9 @@ class TestModule < Rubicon::TestCase
   end
 
   def test_class_eval
-    User.class_eval("CLASS_EVAL = 1")
-    assert_equal(1, User::CLASS_EVAL)
-    assert(User.constants.include?("CLASS_EVAL"))
+    Other.class_eval("CLASS_EVAL = 1")
+    assert_equal(1, Other::CLASS_EVAL)
+    assert(Other.constants.include?("CLASS_EVAL"))
   end
 
   def test_const_defined?
@@ -163,7 +163,7 @@ class TestModule < Rubicon::TestCase
     assert_equal(99, Other::WOMBAT)
     save = $-v
     $-v = false
-    Other.const_set("WOMBAT", "Hi")
+    eval 'Other.const_set("WOMBAT", "Hi")'
     assert_equal("Hi", Other::WOMBAT)
     $-v = save
   end
@@ -207,8 +207,8 @@ class TestModule < Rubicon::TestCase
 
   def test_name
     assert_equal("Fixnum", Fixnum.name)
-    assert_equal("Mixin",  Mixin.name)
-    assert_equal("User",   User.name)
+    assert_equal("TestModule::Mixin",  Mixin.name)
+    assert_equal("TestModule::User",   User.name)
   end
 
   def test_private_class_method
@@ -240,11 +240,8 @@ class TestModule < Rubicon::TestCase
   end
 
   def test_public_instance_methods
-    assert_fail("untested")
-  end
-
-  def test_to_s
-    assert_fail("untested")
+    assert_equal(["aClass"],  AClass.public_instance_methods)
+    assert_equal(["bClass1"], BClass.public_instance_methods)
   end
 
   def test_s_constants

@@ -104,7 +104,7 @@ class TestDir < Rubicon::TestCase
     assert_equal(0, Dir.chdir("_lower1"))
     assert_equal(0, Dir.chdir(".."))
     assert_equal(0, Dir.mkdir("_lower2", 0777))
-    $stderr.puts "Anyone think of a way to test permissions?"
+    skipping "Anyone think of a way to test permissions?"
     assert_equal(0, Dir.delete("_lower1"))
     assert_equal(0, Dir.delete("_lower2"))
   end
