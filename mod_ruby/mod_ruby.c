@@ -54,7 +54,6 @@
 #ifdef USE_ERUBY
 #include "eruby.h"
 #endif
-#include "config.h"
 
 #ifndef WIN32
 extern char **environ;
@@ -648,13 +647,13 @@ static int run_safely(int safe_level, int timeout,
     rsarg.timeout = timeout;
     rsarg.func = func;
     rsarg.arg = arg;
-#if defined(HAVE_SETITIMER) && !defined(__CYGWIN__)
+#if defined(HAVE_SETITIMER)
     rb_thread_start_timer();
 #endif
     thread = rb_thread_create(run_safely_0, &rsarg);
     ret = protect_funcall(thread, rb_intern("value"), &state, 0);
     rb_protect(kill_threads, Qnil, NULL);
-#if defined(HAVE_SETITIMER) && !defined(__CYGWIN__)
+#if defined(HAVE_SETITIMER)
     rb_thread_stop_timer();
 #endif
     if (retval)

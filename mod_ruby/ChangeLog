@@ -1,3 +1,7 @@
+Tue May 29 10:14:39 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c: don't include config.h.
+
 Mon May 28 17:34:39 2001  Shugo Maeda <shugo@modruby.net>
 
 	* mod_ruby.c: hack for cygwin.
