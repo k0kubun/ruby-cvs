@@ -1,3 +1,12 @@
+Thu Aug 31 11:48:43 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* Makefile.RB: new option --enable-eruby, --eruby-includes,
+	--eruby-libraries.
+
+	* eruby.h: removed.
+
+	* eruby.c: removed.
+
 Fri Aug 25 16:39:05 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* version 0.1.9 released.

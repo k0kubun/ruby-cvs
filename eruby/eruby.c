@@ -14,6 +14,7 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+#include <signal.h>
 
 #include "eruby.h"
 #include "config.h"
@@ -544,8 +545,14 @@ VALUE eruby_compile_file(char *filename)
 VALUE eruby_load(char *filename, int wrap, int *state)
 {
     VALUE scriptname;
+    void (*sigint)(int);
+    void (*sigquit)(int);
 
+    sigint = signal(SIGINT, SIG_DFL);
+    sigquit = signal(SIGQUIT, SIG_DFL);
     scriptname = rb_protect(eruby_compile_file, (VALUE) filename, state);
+    signal(SIGINT, sigint);
+    signal(SIGQUIT, sigquit);
     if (*state)	return Qnil;
     rb_load_protect(scriptname, wrap, state);
     return scriptname;

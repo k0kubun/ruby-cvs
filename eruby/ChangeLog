@@ -1,4 +1,8 @@
-Wed Aug 30 17:47:54 2000  Shugo Maeda <shugo@netlab.co.jp>
+Thu Aug 31 11:47:16 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* Makefile.RB: new option --enable-shared.
+
+Wed Aug 30 17:47:54 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* eruby_main.c (main): split main() to init(), proc_args(), run().
 
@@ -8,7 +12,7 @@ Wed Aug 30 17:47:54 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* eruby.c (eruby_parse_options): bug fix.
 
-Mon Aug 28 17:29:17 2000  Shugo Maeda <shugo@netlab.co.jp>
+Mon Aug 28 17:29:17 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* eruby.c (eruby_compile_file): use O_EXCL for security reason.
 

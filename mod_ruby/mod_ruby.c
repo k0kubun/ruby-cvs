@@ -46,7 +46,9 @@
 #include "mod_ruby.h"
 #include "ruby_config.h"
 #include "apachelib.h"
+#ifdef USE_ERUBY
 #include "eruby.h"
+#endif
 #include "config.h"
 
 extern char **environ;
@@ -81,12 +83,16 @@ static const command_rec ruby_cmds[] =
 };
 
 static int ruby_handler(request_rec*);
+#ifdef USE_ERUBY
 static int eruby_handler(request_rec*);
+#endif
 
 static const handler_rec ruby_handlers[] =
 {
     {"ruby-script", ruby_handler},
+#ifdef USE_ERUBY
     {ERUBY_MIME_TYPE, eruby_handler},
+#endif
     {NULL}
 };
 
@@ -210,7 +216,9 @@ static void ruby_startup(server_rec *s, pool *p)
     rb_define_global_function("p", f_p, -1);
     rb_define_global_function("exit", f_exit, -1);
     ruby_init_apachelib();
+#ifdef USE_ERUBY
     eruby_init();
+#endif
 
     rb_define_global_const("MOD_RUBY",
 			   STRING_LITERAL(MOD_RUBY_STRING_VERSION));
@@ -607,6 +615,7 @@ static VALUE load_ruby_script(request_rec *r)
     return Qnil;
 }
 
+#ifdef USE_ERUBY
 static VALUE load_eruby_script(request_rec *r)
 {
     ruby_server_config *sconf =
@@ -654,6 +663,7 @@ static VALUE load_eruby_script(request_rec *r)
     rb_defout = orig_defout;
     return Qnil;
 }
+#endif
 
 static VALUE open_null(VALUE arg)
 {
@@ -734,10 +744,12 @@ static int ruby_handler(request_rec *r)
     return ruby_handler0(load_ruby_script, r);
 }
 
+#ifdef USE_ERUBY
 static int eruby_handler(request_rec *r)
 {
     return ruby_handler0(load_eruby_script, r);
 }
+#endif
 
 /*
  * Local variables:

@@ -4,21 +4,16 @@ require "mkmf"
 require "getoptlong"
 
 $APXS = "apxs"
-$DEFAULT_CHARSET = case $KCODE
-		   when /^e/i
-		     "EUC-JP"
-		   when /^s/i
-		     "SHIFT_JIS"
-		   when /^u/i
-		     "UTF-8"
-		   else
-		     "US-ASCII"
-		   end
+$ENABLE_ERUBY = false
+$ERUBY_INCLUDES = nil
+$ERUBY_LIBRARIES = nil
 
 parser = GetoptLong.new
 parser.set_options(['--help', GetoptLong::NO_ARGUMENT],
 		   ['--apxs', GetoptLong::OPTIONAL_ARGUMENT],
-		   ['--default-charset', GetoptLong::OPTIONAL_ARGUMENT])
+		   ['--enable-eruby', GetoptLong::OPTIONAL_ARGUMENT],
+		   ['--eruby-includes', GetoptLong::OPTIONAL_ARGUMENT],
+		   ['--eruby-libraries', GetoptLong::OPTIONAL_ARGUMENT])
 
 def usage
   $stderr.printf <<EOS, $0
@@ -26,7 +21,9 @@ usage: %s [options]
 
   --help                        print this message
   --apxs=APXS                   path to apxs command
-  --default-charset=CHARSET     default charset value
+  --enable-eruby                enable eruby support
+  --eruby-includes=DIR		eruby include files are in DIR
+  --eruby-libraries=DIR		eruby library files are in DIR
 EOS
 end
 
@@ -35,8 +32,12 @@ begin
     case name
     when "--apxs"
       $APXS = arg
-    when "--default-charset"
-      $DEFAULT_CHARSET = arg
+    when "--enable-eruby"
+      $ENABLE_ERUBY = true
+    when "--eruby-includes"
+      $ERUBY_INCLUDES = arg
+    when "--eruby-libraries"
+      $ERUBY_LIBRARIES = arg
     when "--help"
       usage
       exit(1)
@@ -60,7 +61,8 @@ else
   $LIBRUBYARG.gsub!(/-L\./, "-L#{CONFIG['prefix']}/lib")
 end
 
-if PLATFORM =~ /-aix/
+case PLATFORM
+when /-aix/
   $DLDFLAGS = "-Wl,-bE:mod_ruby.imp -Wl,-bI:httpd.exp -Wl,-bM:SRE -Wl,-bnoentry -lc"
   if $shared
     $LIBRUBYARG = "-Wl," + CONFIG["libdir"] + "/" + CONFIG["LIBRUBY_SO"]
@@ -89,6 +91,7 @@ export file `httpd.exp' in the current directory.
 Please copy <apache-src-directory>/support/httpd.exp to the current
 directory before making `mod_ruby.so'.
 EOM
+#'
 else
   $XLDFLAGS = CONFIG["XLDFLAGS"]
   $DLDFLAGS = CONFIG["DLDFLAGS"]
@@ -103,25 +106,43 @@ end
 $APACHE_INCLUDEDIR = `#{$APXS} -q INCLUDEDIR`
 $APACHE_LIBEXECDIR = `#{$APXS} -q LIBEXECDIR`
 
+$ERUBY_CFLAGS = ""
+$LIBERUBYARG = ""
+if $ENABLE_ERUBY
+  if $ERUBY_INCLUDES
+    $ERUBY_CFLAGS = "-DUSE_ERUBY -I#{$ERUBY_INCLUDES}"
+  else
+    $ERUBY_CFLAGS = "-DUSE_ERUBY"
+  end
+  if $ERUBY_LIBRARIES
+    $LIBERUBYARG = "-L#{$ERUBY_LIBRARIES} -leruby"
+  else
+    $LIBERUBYARG = "-leruby"
+  end
+end
+
 mfile = open("Makefile", "w")
 begin
   mfile.write <<EOMF
 # Generated automatically by Makefile.RB.
 
 CC = #{CONFIG["CC"]}
+RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
+RUBY = $(RUBY_INSTALL_NAME)
 
 CFLAGS = #{CONFIG["CCDLFLAGS"]} -I#{$hdrdir} -I#{$APACHE_INCLUDEDIR} \\
-	 #{$CFLAGS}
+  #{$ERUBY_CFLAGS} #{$CFLAGS}
 LIBS = #{CONFIG["LIBS"]}
-XLDFLAGS = #$XLDFLAGS
+XLDFLAGS = #{$XLDFLAGS}
 LDSHARED = #{CONFIG["LDSHARED"]}
-DLDFLAGS = #$DLDFLAGS
-INSTALL_DLLIB = ruby -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
+DLDFLAGS = #{$DLDFLAGS}
+INSTALL_DLLIB = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0555, true'
+LIBRUBYARG = #{$LIBRUBYARG}
+LIBERUBYARG = #{$LIBERUBYARG}
 
-RUBY_INSTALL_NAME = #{CONFIG["RUBY_INSTALL_NAME"]}
-LIBRUBYARG = #$LIBRUBYARG
-OBJS = mod_ruby.o ruby_config.o apachelib.o eruby.o
 TARGET = mod_ruby.so
+
+OBJS = mod_ruby.o ruby_config.o apachelib.o
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -135,29 +156,18 @@ clean:
 	rm -f $(TARGET) $(OBJS) *~
 
 distclean: clean
-	rm -f config.h mod_ruby.imp Makefile
+	rm -f mod_ruby.imp Makefile
 
 $(TARGET): $(OBJS)
-	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) $(LIBRUBYARG) $(LIBS)
+	$(LDSHARED) $(DLDFLAGS) $(XLDFLAGS) -o $(TARGET) $(OBJS) \
+		$(LIBERUBYARG) $(LIBRUBYARG) $(LIBS)
 
-mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h eruby.h config.h
+mod_ruby.o: mod_ruby.c mod_ruby.h ruby_config.h apachelib.h
 ruby_config.o: ruby_config.c mod_ruby.h ruby_config.h
 apachelib.o: apachelib.c apachelib.h
-eruby.o: eruby.c eruby.h config.h
 EOMF
 ensure
   mfile.close
-end
-
-cfile = open("config.h", "w")
-begin
-  cfile.write <<EOCF
-/* Generated automatically by Makefile.RB. */
-
-#define ERUBY_DEFAULT_CHARSET "#{$DEFAULT_CHARSET}"
-EOCF
-ensure
-  cfile.close
 end
 
 # Local variables:
