@@ -26,12 +26,15 @@ includedir = $(prefix)/include
 
 subdirs = 
 
-libname = libregex.a
-libobjs = regex.o
-headers = regex.h
-patchfiles = *.patch
-distfiles = README COPYING Makefile.in configure.in config.h.in configure \
-	    $(headers) regex.c onigtest.rb $(patchfiles)
+libname     = libregex.a
+headers     = regex.h regint.h
+libobjs     = regcomp.o regexec.o reggnu.o
+libsources  = regcomp.c regexec.c reggnu.c
+sources     = regex.c $(libsources)
+rubysources = regex.c regcomp.c regexec.c reggnu.c
+patchfiles  = *.patch
+distfiles   = README COPYING Makefile.in configure.in config.h.in configure \
+	      $(headers) $(sources) $(patchfiles) onigtest.rb
 
 makeargs = $(MFLAGS) CPPFLAGS='$(CPPFLAGS)' CFLAGS='$(CFLAGS)' CC='$(CC)'
 
@@ -51,18 +54,20 @@ $(libname): $(libobjs)
 	$(AR) $(ARFLAGS) $(libname) $(libobjs)
 	$(RANLIB) $(libname)
 
-regex.o: regex.c $(headers)
+regcomp.o: regcomp.c $(headers)
+regexec.o: regexec.c $(headers)
+reggnu.o:  reggnu.c  $(headers)
 
 install: all
 	test -d $(libdir) || mkdir $(libdir)
 	test -d $(includedir) || mkdir $(includedir)
 	$(INSTALL) $(libname) $(libdir)/$(libname)
 	$(RANLIB)  $(libdir)/$(libname)
-	$(INSTALL) $(srcdir)/$(headers) $(includedir)/$(headers)
+	$(INSTALL) $(srcdir)/regex.h  $(includedir)/regex.h
 
 uninstall:
 	-rm -f $(libdir)/$(libname)
-	-rm -f $(includedir)/$(headers)
+	-rm -f $(includedir)/regex.h
 
 clean:
 	rm -f *.o $(libname)
@@ -83,7 +88,7 @@ cpruby:
 	cp -p $(rubydir)/regex.c $(rubydir)/regex.c.orig
 	cp -p $(rubydir)/regex.h $(rubydir)/regex.h.orig
 	cp -p $(rubydir)/re.c    $(rubydir)/re.c.orig
-	cp -p regex.c regex.h $(rubydir)
+	cp -p $(rubysources) $(headers) $(rubydir)
 
 
 configure: configure.in

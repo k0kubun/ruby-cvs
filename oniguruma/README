@@ -1,4 +1,4 @@
-README  2002/04/16
+README  2002/04/24
 
 OniGuruma (regular expression library)
 
@@ -15,7 +15,8 @@ Install
 
   a. Install into Ruby
 
-     1. Copy regex.h and regex.c into ruby source directory.
+     1. Copy regex.h, regint.h regcomp.c, regexec.c, reggnu.c and regex.c 
+        into ruby source directory.
      2. Apply a patch file to re.c.
 
         re.c.166.patch for Ruby 1.6.6 or 1.6.7
@@ -76,13 +77,11 @@ Differences with Japanized GNU regex(version 0.12) of Ruby
    + Negative POSIX bracket [:^xxxx:] is supported.
    + POSIX bracket [:ascii:] is added.
 
-   + OniGuruma Extension  (*** It is invalid with Ruby in default. ***)
-     * \k(single-byte word char), \K(multi-byte char). [experimental]
-
 
 ToDo
 
    + POSIX compatible API.
+   + C library test program.
    + check invalid wide char value in WC2MB, WC2MB_FIRST on Ruby M17N.
    + benchmark script.
 
@@ -114,6 +113,12 @@ Problem
 
 History
 
+2002/04/24: [spec] USE_ONIGURUMA_EXTENSION is disabled in default.
+2002/04/24: [new]  add searching time option: REG_OPTION_NOTBOL/NOTEOL.
+                   add searching time option argument to regex_search() and
+                   regex_match(). (prepare for POSIX API)
+2002/04/20: [impl] divide regex.c file into regcomp.c, regexec.c, reggnu.c
+                   and regint.h.
 2002/04/09: [impl] move IS_MULTILINE() to outside of loop in OP_ANYCHAR_STAR.
 2002/04/08: [impl] don't use OP_REPEAT operator for '??'.
 2002/04/06: [impl] reduce redundant nested repeat operators(?,*,+,??,*?,+?).
