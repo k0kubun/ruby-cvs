@@ -1,3 +1,11 @@
+Wed Apr  5 17:11:15 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* version 0.1.7 released.
+
+Fri Mar 31 18:51:20 2000  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby.c (eruby_compile): bug fix.
+
 Thu Mar 30 17:07:30 2000  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.1.6 released.
