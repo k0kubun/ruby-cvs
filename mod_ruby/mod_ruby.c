@@ -437,10 +437,21 @@ int ruby_running()
     return ruby_is_running;
 }
 
+static void init_loadpath()
+{
+    int i;
+
+    rb_load_path = rb_ary_new();
+    for (i = 0; i < RARRAY(default_load_path)->len; i++) {
+	rb_ary_push(rb_load_path, rb_str_dup(RARRAY(default_load_path)->ptr[i]));
+    }
+}
+
 int ruby_require(char *filename)
 {
     int state;
 
+    init_loadpath();
     rb_protect((VALUE (*)(VALUE)) rb_require, (VALUE) filename, &state);
     return state;
 }

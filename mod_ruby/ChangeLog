@@ -1,3 +1,11 @@
+Mon Aug 13 11:25:13 2001  Shugo Maeda <shugo@modruby.net>
+
+	* version 0.9.2 released.
+
+Sun Aug 12 18:19:51 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (ruby_require): initialize $:.
+
 Mon Aug  6 14:38:39 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.9.1 released.
