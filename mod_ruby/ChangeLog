@@ -1,3 +1,10 @@
+Sat May 26 04:11:21 2001  Shugo Maeda <shugo@modruby.net>
+
+	* install-rb: new file.
+
+	* Makefile.in: change owner and group of $(APACHE_SRCDIR)/
+	src/modules/ruby/*.
+
 Fri May 25 19:15:39 2001  Shugo Maeda <shugo@modruby.net>
 
 	* Makefile.in: static Apache module support..

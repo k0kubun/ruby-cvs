@@ -140,6 +140,59 @@ def AC_MSG_ERROR(msg)
   exit(1)
 end
 
+def AC_CONFIG_AUX_DIR_DEFAULT
+  AC_CONFIG_AUX_DIRS($srcdir, "#{$srcdir}/..",  "#{$srcdir}/../..")
+end
+
+def AC_CONFIG_AUX_DIRS(*dirs)
+  for dir in dirs
+    for prog in [ "install-rb", "install.rb" ]
+      file = File.join(dir, prog)
+      if File.file?(file); then
+	$ac_aux_dir = dir
+	$ac_install_rb = "#{file} -c"
+	return
+      end
+    end
+  end
+end
+
+def AC_PROG_INSTALL
+  AC_MSG_CHECKING("for a BSD compatible install")
+  $ac_cv_path_install = callcc { |c|
+    for dir in ENV["PATH"].split(/:/)
+      for prog in [ "ginstall", "scoinst", "install" ]
+	file = File.join(dir, prog)
+	if File.file?(file)
+	  if prog == "install" &&
+	      `#{file} 2>&1` =~ /dspmsg/
+	    # AIX install.  It has an incompatible calling convention.
+	  else
+	    c.call("#{file} -c")
+	  end
+	end
+      end
+    end
+    unless $ac_install_rb
+      AC_CONFIG_AUX_DIR_DEFAULT()
+    end
+    $ac_install_rb
+  }
+  $INSTALL = $ac_cv_path_install
+  AC_MSG_RESULT($INSTALL)
+  $INSTALL_PROGRAM ||= "$(INSTALL)"
+  $INSTALL_SCRIPT ||= "$(INSTALL)"
+  $INSTALL_DATA ||= "$(INSTALL) -m 644"
+  $INSTALL_DLLIB ||= "$(INSTALL) -m 555"
+  $INSTALL_DIR ||= "$(INSTALL) -d"
+  AC_SUBST("INSTALL")
+  AC_SUBST("INSTALL_PROGRAM")
+  AC_SUBST("INSTALL_SCRIPT")
+  AC_SUBST("INSTALL_DATA")
+  AC_SUBST("INSTALL_DLLIB")
+  AC_SUBST("INSTALL_DIR")
+end
+
 $stdout.sync = true
 
 drive = File::PATH_SEPARATOR == ';' ? /\A\w:/ : /\A/
@@ -301,6 +354,8 @@ AC_SUBST("DLEXT")
 
 AC_SUBST("LIBRUBYARG")
 
+AC_PROG_INSTALL()
+
 AC_MSG_CHECKING("Ruby version")
 AC_MSG_RESULT(RUBY_VERSION)
 if RUBY_VERSION < "1.6"
@@ -315,13 +370,16 @@ AC_WITH("apache") { |withval|
   if withval == "yes"
     AC_MSG_ERROR("You need to specify a directory with --with-apache")
   end
-  unless File.file?("#{withval}/src/include/httpd.h")
+  $APACHE_SRCDIR = File.expand_path(withval)
+  unless File.file?("#{$APACHE_SRCDIR}/src/include/httpd.h")
     AC_MSG_ERROR("Unable to locate #{withval}/src/include/httpd.h")
   end
-  $APACHE_SRCDIR = withval
-  $APACHE_INCLUDES = "-I#{withval}/src/include -I#{withval}/src/os/unix"
+  $APACHE_INCLUDES = "-I#{$APACHE_SRCDIR}/src/include -I#{$APACHE_SRCDIR}/src/os/unix"
   $TARGET = "libruby.a"
-  $install = "install-static"
+  $INSTALL_TARGET = "install-static"
+  st = File.stat($APACHE_SRCDIR)
+  $APACHE_SRC_OWNER = st.uid
+  $APACHE_SRC_GROUP = st.gid
   AC_MSG_RESULT("yes")
 }.if_not_given {
   AC_MSG_RESULT("no")
@@ -346,14 +404,16 @@ if $APXS
   $APACHE_INCLUDES = "-I" + `#{$APXS} -q INCLUDEDIR`
   $APACHE_LIBEXECDIR = `#{$APXS} -q LIBEXECDIR`
   $TARGET = "mod_ruby.so"
-  $install = "install-shared"
+  $INSTALL_TARGET = "install-shared"
 end
 
 AC_SUBST("TARGET")
-AC_SUBST("install")
+AC_SUBST("INSTALL_TARGET")
 AC_SUBST("APACHE_SRCDIR")
 AC_SUBST("APACHE_INCLUDES")
 AC_SUBST("APACHE_LIBEXECDIR")
+AC_SUBST("APACHE_SRC_OWNER")
+AC_SUBST("APACHE_SRC_GROUP")
 
 case PLATFORM
 when /-aix/
