@@ -4,11 +4,15 @@ require '../rubicon'
 class TestFixnum < Rubicon::TestCase
 
   def test_UMINUS
-    assert_fail("untested")
+    [ -99, -1, 0, +1 , +99].each { |n| assert_equal(0, -n + n) }
   end
 
   def test_AND # '&'
-    assert_fail("untested")
+    n1 = 0b0101
+    n2 = 0b1100
+    assert_equal(0,      n1 & 0)
+    assert_equal(0b0100, n1 & n2)
+    assert_equal(n1,     n1 & -1)
   end
 
   def test_AREF # '[]'
@@ -60,7 +64,11 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_OR # '|'
-    assert_fail("untested")
+    n1 = 0b0101
+    n2 = 0b1100
+    assert_equal(n1,     n1 | 0)
+    assert_equal(0b1101, n1 | n2)
+    assert_equal(-1,     n1 | -1)
   end
 
   def test_PLUS # '+'
@@ -72,7 +80,11 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_REV # '~'
-    assert_fail("untested")
+    n1 = -1
+    n2 = 0b1100
+    assert_equal(0, ~n1)
+    assert_equal(-2, ~1)
+    assert_equal(n2, ~(~n2))
   end
 
   def test_RSHIFT # '>>'
@@ -80,7 +92,11 @@ class TestFixnum < Rubicon::TestCase
   end
 
   def test_XOR # '^'
-    assert_fail("untested")
+    n1 = 0b0101
+    n2 = 0b1100
+    assert_equal(0b1001, n1 ^ n2)
+    assert_equal(n1,     n1 ^ 0)
+    assert_equal(~n1,    n1 ^ -1)
   end
 
   def test_abs

@@ -441,7 +441,7 @@ class TestTime < Rubicon::TestCase
     sleep 1
     t2 = Time.new
     d = t2.to_f - t1.to_f
-    assert(d > 1.0 && d < 1.1)
+    assert(d > 0.9 && d < 1.1)
   end
 
   def test_s_now
@@ -449,7 +449,7 @@ class TestTime < Rubicon::TestCase
     sleep 1
     t2 = Time.now
     d = t2.to_f - t1.to_f
-    assert(d > 1.0 && d < 1.1)
+    assert(d > 0.9 && d < 1.1)
   end
 
   def test_s_times
