@@ -80,7 +80,7 @@ $os = case RUBY_PLATFORM
       when /cygwin/  then Cygwin
       when /mswin32/ then MsWin32
       when /mingw32/ then MinGW
-      when /Java/    then JRuby
+      when /java/    then JRuby
       else OS
       end
 

@@ -172,7 +172,7 @@ module Rubicon
     end
 
     def teardown
-      if $os != MsWin32
+      if $os != MsWin32 && $os != JRuby
 	begin
 	  loop { Process.wait; $stderr.puts "\n\nCHILD REAPED\n\n" }
 	rescue Errno::ECHILD

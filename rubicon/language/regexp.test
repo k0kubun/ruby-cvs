@@ -3,7 +3,7 @@ $	abc	y
 $	abc	y	#{$&}	
 $	abc	y	#{$&}-	-
 $	b	y	-	-
-$*	 	c	-	invalid regular expression; there's no previous pattern, to which '*' would define cardinality at 2: /$*/
+$*	 	c	-	invalid regular expression; there's no previous pattern, to which '*' would define cardinality at 2: /$*/|target of repeat operator is invalid: /$*/
 $a	$a	n	-	-
 $b	b	n	-	-	
 $b	b	n	-	-
