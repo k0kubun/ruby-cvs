@@ -5,6 +5,8 @@
 	runit).
 
 2001-10-25  Nobu Nakad <nobu.nokada@softhome.net>
+	* language/TestFlip.rb: Added. Test .. and ... operators
+
 	* AllTests.rb: Invoking without arguments, run testsuits under
 	rubicon's directory, not current directory.
 
