@@ -1,3 +1,8 @@
+2002-03-10  Yukihiro Matsumoto  <matz@ruby-lang.org>
+
+	* builtin/TestEnumerable.rb (TestEnumerable::test_each_with_index): 
+	  2 tests removed: each_with_index returns self in the latest CVS.
+
 2002-03-08  Yukihiro Matsumoto  <matz@ruby-lang.org>
 
 	* builtin/TestKernel.rb (TestKernel::test_extend): should handle

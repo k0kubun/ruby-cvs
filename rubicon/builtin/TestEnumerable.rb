@@ -38,11 +38,11 @@ class TestEnumerable < Rubicon::TestCase
 
   def test_each_with_index
     res = []
-    assert_nil([].each_with_index {|a,i| res << [a,i]})
+    [].each_with_index {|a,i| res << [a,i]}
     assert_equal([], res)
 
     res = []
-    assert_nil(@a.each_with_index {|a,i| res << [a,i]})
+    @a.each_with_index {|a,i| res << [a,i]}
     assert_equal([[2,0],[4,1],[6,2],[8,3],[10,4]], res)
   end
 
