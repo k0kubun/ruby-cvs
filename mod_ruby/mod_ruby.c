@@ -61,9 +61,13 @@ static char **origenviron;
 #endif /* WIN32 */
 
 EXTERN VALUE ruby_errinfo;
-EXTERN VALUE rb_defout;
 EXTERN VALUE rb_stdin;
 EXTERN VALUE rb_stdout;
+EXTERN VALUE rb_defout;
+
+static VALUE orig_stdin;
+static VALUE orig_stdout;
+static VALUE orig_defout;
 
 EXTERN VALUE rb_load_path;
 static VALUE default_load_path;
@@ -476,6 +480,10 @@ static void ruby_startup(server_rec *s, pool *p)
 	origenviron = environ;
 #endif /* WIN32 */
 
+	orig_stdin = rb_stdin;
+	orig_stdout = rb_stdout;
+	orig_defout = rb_defout;
+
 	ruby_init_loadpath();
 	default_load_path = rb_load_path;
 	rb_global_variable(&default_load_path);
@@ -698,6 +706,7 @@ static void per_request_init(request_rec *r)
 	rb_set_kcode(dconf->kcode);
     if (NIL_P(rb_request))
 	rb_request = rb_apache_request_new(r);
+    rb_stdin = rb_stdout = rb_defout = rb_request;
 }
 
 static VALUE exec_end_proc(VALUE arg)
@@ -706,9 +715,16 @@ static VALUE exec_end_proc(VALUE arg)
     return Qnil;
 }
 
-static void per_request_cleanup()
+static void per_request_cleanup(int flush)
 {
     rb_protect(exec_end_proc, Qnil, NULL);
+    if (flush)
+	rb_apache_request_flush(rb_request);
+
+    ruby_errinfo = Qnil;
+    rb_stdin = orig_stdin;
+    rb_stdout = orig_stdout;
+    rb_defout = orig_defout;
     rb_set_kcode(default_kcode);
 }
 
@@ -724,7 +740,6 @@ static VALUE ruby_handler_0(void *arg)
     request_rec *r = ha->r;
     char *handler = ha->handler;
     ID mid = ha->mid;
-    int retval;
     VALUE ret;
     int state;
 
@@ -740,16 +755,15 @@ static VALUE ruby_handler_0(void *arg)
 	    return INT2NUM(SERVER_ERROR);
 	}
     }
-    if (TYPE(ret) != T_FIXNUM &&
-	TYPE(ret) != T_BIGNUM) {
+    if (FIXNUM_P(ret)) {
+	return ret;
+    }
+    else {
 	ap_log_error(APLOG_MARK, APLOG_ERR | APLOG_NOERRNO, r->server,
 		     "mod_ruby: %s.%s: handler should return Integer",
 		     handler, rb_id2name(mid));
 	return INT2NUM(SERVER_ERROR);
     }
-    rb_apache_request_flush(rb_request);
-    retval = NUM2INT(ret);
-    return INT2NUM(retval);
 }
 
 static int ruby_handler(request_rec *r,
@@ -793,7 +807,7 @@ static int ruby_handler(request_rec *r,
 	if (retval != DECLINED && (!run_all || retval != OK))
 	    break;
     }
-    per_request_cleanup();
+    per_request_cleanup(retval == OK);
     return retval;
 }
 
@@ -920,7 +934,6 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
     ruby_dir_config *dconf = get_dir_config(r);
     int safe_level = dconf->safe_level;
     VALUE ret;
-    VALUE orig_stdin, orig_stdout, orig_defout;
     int retval;
 
     if (r->finfo.st_mode == 0)
@@ -930,12 +943,6 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
 
     per_request_init(r);
     rb_setup_cgi_env(r);
-    orig_stdin = rb_stdin;
-    orig_stdout = rb_stdout;
-    orig_defout = rb_defout;
-    rb_stdin = rb_request;
-    rb_stdout = rb_request;
-    rb_defout = rb_request;
     if (r->filename)
 	ap_chdir_file(r->filename);
 
@@ -948,10 +955,7 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
     }
     ap_kill_timeout(r);
 
-    rb_stdin = orig_stdin;
-    rb_stdout = orig_stdout;
-    rb_defout = orig_defout;
-    per_request_cleanup();
+    per_request_cleanup(retval == OK);
 
     return retval;
 }
@@ -977,7 +981,6 @@ static VALUE load_ruby_script(void *arg)
     else {
 	ret = INT2NUM(OK);
     }
-    rb_apache_request_flush(rb_request);
     return ret;
 }
 
@@ -1029,7 +1032,6 @@ static VALUE load_eruby_script(void *arg)
 	ap_set_content_length(r, len);
 	rb_apache_request_send_http_header(rb_request);
     }
-    rb_apache_request_flush(rb_request);
     return ret;
 }
 

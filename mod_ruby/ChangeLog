@@ -1,3 +1,18 @@
+Fri Jun 29 16:05:06 2001  Shugo Maeda <shugo@modruby.net>
+
+	* mod_ruby.c (per_request_init): set rb_stdin, rb_stdout,
+	rb_defout to rb_request.
+
+	* mod_ruby.c (per_request_cleanup): flush rb_request.
+
+	* request.c (request_output_buffer): new method.
+
+	* lib/apache/cgi-support.rb: removed.
+
+	* lib/apache/eruby-run.rb: use tempfile.
+
+	* lib/apache/erb-run.rb: ditto.
+
 Thu Jun 28 16:09:47 2001  Shugo Maeda <shugo@modruby.net>
 
 	* version 0.8.5 released.

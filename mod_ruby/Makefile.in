@@ -62,8 +62,7 @@ TEENY = @TEENY@
 VERSION = $(MAJOR).$(MINOR).$(TEENY)
 TAG = release_$(MAJOR)_$(MINOR)_$(TEENY)
 
-RUBYLIBS	= apache/cgi-support.rb \
-		  apache/ruby-run.rb \
+RUBYLIBS	= apache/ruby-run.rb \
 		  apache/eruby-run.rb \
 		  apache/erb-run.rb \
 		  apache/rd2html.rb \

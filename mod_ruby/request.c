@@ -116,6 +116,14 @@ long rb_apache_request_length(VALUE self)
     return RSTRING(data->outbuf)->len;
 }
 
+static VALUE request_output_buffer(VALUE self)
+{
+    request_data *data;
+
+    Data_Get_Struct(self, request_data, data);
+    return data->outbuf;
+}
+
 static VALUE request_replace(int argc, VALUE *argv, VALUE self)
 {
     request_data *data;
@@ -982,6 +990,10 @@ void rb_init_apache_request()
     rb_cApacheRequest = rb_define_class_under(rb_mApache, "Request", rb_cObject);
     rb_include_module(rb_cApacheRequest, rb_mEnumerable);
     rb_undef_method(CLASS_OF(rb_cApacheRequest), "new");
+    rb_define_method(rb_cApacheRequest, "inspect", rb_any_to_s, 0);
+    rb_define_method(rb_cApacheRequest, "to_s", request_output_buffer, 0);
+    rb_define_method(rb_cApacheRequest, "output_buffer",
+		     request_output_buffer, 0);
     rb_define_method(rb_cApacheRequest, "replace", request_replace, -1);
     rb_define_method(rb_cApacheRequest, "cancel", request_cancel, 0);
     rb_define_method(rb_cApacheRequest, "write", request_write, 1);
