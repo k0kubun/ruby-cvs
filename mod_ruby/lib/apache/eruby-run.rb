@@ -36,9 +36,9 @@ Apache::ERubyRun handles eRuby files.
 =end
 
 require "singleton"
-require "apache/cgi-support"
-
+require "tempfile"
 require "eruby"
+require "apache/cgi-support"
 
 module ERuby
   @@cgi = nil
@@ -68,7 +68,14 @@ module Apache
 	@compiler.sourcefile = r.filename
 	code = @compiler.compile_file(f)
 	emulate_cgi(r) do
-	  eval(code, TOPLEVEL_BINDING, r.filename)
+	  file = Tempfile.new(File.basename(r.filename) + ".")
+	  begin
+	    file.print(code)
+	    file.close
+	    load(file.path, true)
+	  ensure
+	    file.close(true)
+	  end
 	  unless ERuby.noheader
 	    if cgi = ERuby.cgi
 	      cgi.header("charset" => ERuby.charset)

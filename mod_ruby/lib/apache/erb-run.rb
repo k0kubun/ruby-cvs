@@ -36,9 +36,9 @@ Apache::ERbRun handles eRuby files by ERb.
 =end
 
 require "singleton"
-require "apache/cgi-support"
-
+require "tempfile"
 require "erb/compile"
+require "apache/cgi-support"
 
 # eruby emulation
 if !defined?(ERuby)
@@ -84,9 +84,15 @@ module Apache
 	ERuby.charset = ERuby.default_charset
 	src = f.read
 	code = @compiler.compile(src)
-	code.untaint
 	emulate_cgi(r) do
-	  eval(code, TOPLEVEL_BINDING, r.filename)
+	  file = Tempfile.new(File.basename(r.filename) + ".")
+	  begin
+	    file.print(code)
+	    file.close
+	    load(file.path, true)
+	  ensure
+	    file.close(true)
+	  end
 	  unless ERuby.noheader
 	    r.content_type = format("text/html; charset=%s", ERuby.charset)
 	    r.send_http_header
