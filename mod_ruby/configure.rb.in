@@ -84,7 +84,7 @@ AC_SUBST("APACHE_LIBEXECDIR")
 AC_SUBST("APACHE_SRC_UID")
 AC_SUBST("APACHE_SRC_GID")
 
-case PLATFORM
+case RUBY_PLATFORM
 when /-aix/
   $DLDFLAGS = "-Wl,-bE:mod_ruby.imp -Wl,-bI:httpd.exp -Wl,-bM:SRE -Wl,-bnoentry -lc"
   open("mod_ruby.imp", "w") do |ifile|
@@ -100,6 +100,10 @@ Please copy <apache-src-directory>/support/httpd.exp to the current
 directory before making `mod_ruby.so'.
 EOF
 #'
+when /cygwin/
+  if $INSTALL_TARGET == "install-shared"
+    $LIBS += ' ' + File.join($APACHE_LIBEXECDIR, "cyghttpd.dll")
+  end
 end
 
 AC_MSG_CHECKING("for eruby")
