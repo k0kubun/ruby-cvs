@@ -214,7 +214,7 @@ module Rubicon
     # Issue a system and abort on error
     #
     def sys(cmd)
-      assert(system(cmd), cmd)
+      assert(system(cmd), cmd + ": #{$? >> 8}")
       assert_equal(0, $?, "cmd: #{$?}")
     end
 
@@ -284,22 +284,25 @@ module Rubicon
       @files = %w(. .. _file1 _file2)
     end
     
+    def deldir(name)
+      File.chmod(0755, name)
+      Dir.chdir(name)
+      Dir.foreach(".") do |f|
+        next if f == '.' || f == '..'
+        if File.lstat(f).directory?
+          deldir(f) 
+        else
+          File.chmod(0644, f) rescue true
+          File.delete(f)
+        end 
+      end
+      Dir.chdir("..")
+      Dir.rmdir(name)
+    end
+
     def teardownTestDir
       Dir.chdir(@start)
-      if (File.exists?("_test"))
-        Dir.chdir("_test")
-        Dir.foreach(".") { |f|
-	  File.chmod(0644, f) rescue true
-          begin
-            File.delete(f)
-          rescue
-            Dir.delete(f) rescue puts $!
-          end unless f[0] == ?.
-        }
-        Dir.chdir("..")
-	File.chmod(0644, "_test")
-        Dir.rmdir("_test")
-      end
+      deldir("_test") if (File.exists?("_test"))
     end
 
   end
