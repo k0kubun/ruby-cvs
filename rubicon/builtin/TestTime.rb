@@ -144,9 +144,13 @@ class TestTime < Rubicon::TestCase
 
   def test__dump
   end
+  def os_specific_epoch
+    $os == MsWin32 ? "Thu Jan 01 00:00:00 1970" : "Thu Jan  1 00:00:00 1970"
+  end
 
   def test_asctime
-    assert_equals(Time.at(0).gmtime.asctime, "Thu Jan  1 00:00:00 1970")
+    expected = os_specific_epoch
+    assert_equals(Time.at(0).gmtime.asctime, expected)
   end
 
   def test_clone
@@ -166,7 +170,8 @@ class TestTime < Rubicon::TestCase
   end
 
   def test_ctime
-    assert_equals(Time.at(0).gmtime.asctime, "Thu Jan  1 00:00:00 1970")
+    expected = os_specific_epoch
+    assert_equals(Time.at(0).gmtime.ctime, expected)
   end
 
   def test_day
