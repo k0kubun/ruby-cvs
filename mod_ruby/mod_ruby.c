@@ -745,15 +745,26 @@ static VALUE exec_end_proc(VALUE arg)
     return Qnil;
 }
 
-static void per_request_cleanup(int flush)
+static void per_request_cleanup(request_rec *r, int flush)
 {
+    VALUE reqobj;
+
     rb_protect(exec_end_proc, Qnil, NULL);
-    if (flush)
-	rb_apache_request_flush(rb_request);
-    rb_request = Qnil;
-    rb_stdin = orig_stdin;
-    rb_stdout = orig_stdout;
-    rb_defout = orig_defout;
+    if (flush) {
+	reqobj = rb_get_request_object(r);
+	if (reqobj != Qnil)
+	    rb_apache_request_flush(rb_request);
+    }
+    if (r->main) {
+	rb_request = rb_get_request_object(r->main);
+	rb_stdin = rb_stdout = rb_defout = rb_request;
+    }
+    else {
+	rb_request = Qnil;
+	rb_stdin = orig_stdin;
+	rb_stdout = orig_stdout;
+	rb_defout = orig_defout;
+    }
     rb_set_kcode(default_kcode);
 }
 
@@ -837,7 +848,7 @@ static int ruby_handler(request_rec *r,
 	if (retval != DECLINED && (!run_all || retval != OK))
 	    break;
     }
-    per_request_cleanup(flush && retval == OK);
+    per_request_cleanup(r, flush && retval == OK);
     return retval;
 }
 
@@ -984,7 +995,7 @@ static int script_handler(VALUE (*func)(void*), request_rec *r)
     }
     ap_kill_timeout(r);
 
-    per_request_cleanup(retval == OK);
+    per_request_cleanup(r, retval == OK);
 
     return retval;
 }

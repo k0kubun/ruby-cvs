@@ -84,6 +84,7 @@ static VALUE fname(VALUE self, VALUE val) \
 
 static void request_mark(request_data *data)
 {
+    if (data == NULL) return;
     rb_gc_mark(data->outbuf);
     rb_gc_mark(data->connection);
     rb_gc_mark(data->server);

@@ -1,3 +1,14 @@
+Fri Oct 12 17:48:57 2001  Shugo Maeda <shugo@modruby.net>
+
+	* apachelib.h (DEFINE_ATTR_READER): raise exception if data == NULL.
+
+	* apachelib.h (DEFINE_ATTR_WRITER): ditto.
+
+	* mod_ruby.c (per_request_cleanup): set r->main to rb_request if r
+	is a sub_request.
+
+	* request.c (request_mark): return immediately if data == NULL.
+
 Fri Oct 12 12:35:12 2001  Miles Egan <miles@pixar.com>
 
 	* configure.rb.in: chomp output of apxs.

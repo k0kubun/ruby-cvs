@@ -79,6 +79,8 @@ static VALUE fname(VALUE self) \
 { \
     type *data; \
     Data_Get_Struct(self, type, data); \
+    if (data == NULL) \
+	rb_raise(rb_eArgError, "destroyed object"); \
     return convert(data->member); \
 }
 
@@ -87,6 +89,8 @@ static VALUE fname(VALUE self, VALUE val) \
 { \
     type *data; \
     Data_Get_Struct(self, type, data); \
+    if (data == NULL) \
+	rb_raise(rb_eArgError, "destroyed object"); \
     data->member = convert(val); \
     return val; \
 }
