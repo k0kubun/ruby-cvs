@@ -47,7 +47,7 @@
 #include "rubysig.h"      /* for DEFER_INTS, ENABLE_INTS */
 #define THREAD_ATOMIC_START     DEFER_INTS
 #define THREAD_ATOMIC_END       ENABLE_INTS
-#define USE_WARNING_STRANGE_NESTED_REPEAT_OPERATOR
+#define USE_WARNING_REDUNDANT_NESTED_REPEAT_OPERATOR
 #else
 #define THREAD_ATOMIC_START
 #define THREAD_ATOMIC_END
@@ -3039,9 +3039,94 @@ is_valid_qualifier_target(Node* node)
   return 1;
 }
 
-#define IS_POPULAR_QUALIFIER(qf) \
- (((qf)->lower == 0 && ((qf)->upper == 1 || IS_REPEAT_INFINITE((qf)->upper))) ||\
-  ((qf)->lower == 1 && IS_REPEAT_INFINITE((qf)->upper))) 
+/* ?:0, *:1, +:2, ??:3, *?:4, +?:5 */
+static int popular_qualifier_num(QualifierNode* qf)
+{
+  if (qf->greedy) {
+    if (qf->lower == 0) {
+      if (qf->upper == 1) return 0;
+      else if (IS_REPEAT_INFINITE(qf->upper)) return 1;
+    }
+    else if (qf->lower == 1) {
+      if (IS_REPEAT_INFINITE(qf->upper)) return 2;
+    }
+  }
+  else {
+    if (qf->lower == 0) {
+      if (qf->upper == 1) return 3;
+      else if (IS_REPEAT_INFINITE(qf->upper)) return 4;
+    }
+    else if (qf->lower == 1) {
+      if (IS_REPEAT_INFINITE(qf->upper)) return 5;
+    }
+  }
+  return -1;
+}
+
+static void reduce_nested_qualifier(Node* pnode, Node* cnode)
+{
+#define NQ_ASIS    0   /* as is     */
+#define NQ_DEL     1   /* delete parent */
+#define NQ_A       2   /* to '*'    */
+#define NQ_AQ      3   /* to '*?'   */
+#define NQ_QQ      4   /* to '??'   */
+#define NQ_P_QQ    5   /* to '+)??' */
+#define NQ_PQ_Q    6   /* to '+?)?' */
+
+  static char reduces[][6] = {
+    {NQ_DEL,  NQ_A,    NQ_A,   NQ_QQ,   NQ_AQ,   NQ_ASIS}, /* '?'  */
+    {NQ_DEL,  NQ_DEL,  NQ_DEL, NQ_P_QQ, NQ_P_QQ, NQ_DEL},  /* '*'  */
+    {NQ_A,    NQ_A,    NQ_DEL, NQ_ASIS, NQ_P_QQ, NQ_DEL},  /* '+'  */
+    {NQ_DEL,  NQ_AQ,   NQ_AQ,  NQ_DEL,  NQ_AQ,   NQ_AQ},   /* '??' */
+    {NQ_DEL,  NQ_DEL,  NQ_DEL, NQ_DEL,  NQ_DEL,  NQ_DEL},  /* '*?' */
+    {NQ_ASIS, NQ_PQ_Q, NQ_DEL, NQ_AQ,   NQ_AQ,   NQ_DEL}   /* '+?' */
+  };
+
+  int pnum, cnum;
+  QualifierNode *p, *c;
+
+  p = &(NQUALIFIER(pnode));
+  c = &(NQUALIFIER(cnode));
+  pnum = popular_qualifier_num(p);
+  cnum = popular_qualifier_num(c);
+
+  switch(reduces[cnum][pnum]) {
+  case NQ_DEL:
+    *p = *c;
+    break;
+  case NQ_A:
+    p->target = c->target;
+    p->lower  = 0;  p->upper = REPEAT_INFINITE;  p->greedy = 1;
+    break;
+  case NQ_AQ:
+    p->target = c->target;
+    p->lower  = 0;  p->upper = REPEAT_INFINITE;  p->greedy = 0;
+    break;
+  case NQ_QQ:
+    p->target = c->target;
+    p->lower  = 0;  p->upper = 1;  p->greedy = 0;
+    break;
+  case NQ_P_QQ:
+    p->target = cnode;
+    p->lower  = 0;  p->upper = 1;  p->greedy = 0;
+    c->lower  = 1;  c->upper = REPEAT_INFINITE;  c->greedy = 1;
+    return ;
+    break;
+  case NQ_PQ_Q:
+    p->target = cnode;
+    p->lower  = 0;  p->upper = 1;  p->greedy = 1;
+    c->lower  = 1;  c->upper = REPEAT_INFINITE;  c->greedy = 0;
+    return ;
+    break;
+  case NQ_ASIS:
+    p->target = cnode;
+    return ;
+    break;
+  }
+
+  c->target = (Node* )0;
+  node_free(cnode);
+}
 
 static int
 scan_make_tree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
@@ -3090,38 +3175,49 @@ scan_make_tree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
 	break;
 
       case N_QUALIFIER:
-#ifdef USE_WARNING_STRANGE_NESTED_REPEAT_OPERATOR
-	{ /* check strange double repeat. */
+	{ /* check redundant double repeat. */
 	  /* verbose warn (?:.?)? etc... but not warn (.?)? etc... */
 	  QualifierNode* qnlast = &(NQUALIFIER(*last));
 
-	  if (qn->by_number == 0 && qnlast->by_number == 0 &&
-	      IS_POPULAR_QUALIFIER(qnlast)) {
+#ifdef USE_WARNING_REDUNDANT_NESTED_REPEAT_OPERATOR
+	  if (qn->by_number == 0 && qnlast->by_number == 0) {
 	    if (IS_REPEAT_INFINITE(qn->upper)) {
 	      if (qn->lower == 0) { /* '*' */
-		goto strange_nest;
-	      }
-	      else if (qn->lower == 1) { /* '+' */
 	      strange_nest:
 		{
 		  UChar *pat = k_strdup(env->pattern, env->pattern_end);
 		  rb_warning("redundant nested repeat operator %s", pat);
 		  xfree(pat);
-		  goto qualifier_exit;
+		  goto qualifier_warn_exit;
 		}
+	      }
+	      else if (qn->lower == 1) { /* '+' */
+		/* (?:a?)+? only allowed. */
+		if (qn->greedy || !(qnlast->upper == 1 && qnlast->greedy))
+		  goto strange_nest;
 	      }
 	    }
 	    else if (qn->upper == 1 && qn->lower == 0) {
 	      if (qn->greedy) { /* '?' */
-		if (qnlast->lower != 1) goto strange_nest;
+		if (!(qnlast->lower == 1 && qnlast->greedy == 0)) /* not '+?' */
+		  goto strange_nest;
 	      }
 	      else { /* '??' */
-		if (!qnlast->greedy || qnlast->upper == 1) goto strange_nest;
+		/* '(?:a+)?? only allowd. (?:a*)?? can be replaced to (?:a+)?? */
+		if (!(qnlast->greedy &&
+		      qnlast->lower == 1 && IS_REPEAT_INFINITE(qnlast->upper)))
+		  goto strange_nest;
 	      }
 	    }
 	  }
-	}
 #endif
+	qualifier_warn_exit:
+	  if (popular_qualifier_num(qnlast) >= 0 &&
+	      popular_qualifier_num(qn)     >= 0) {
+	    reduce_nested_qualifier(curr, *last);
+	    goto qualifier_exit;
+	  }
+	}
 	break;
 
       default:
@@ -3130,8 +3226,8 @@ scan_make_tree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
 	break;
       }
 
-    qualifier_exit:
       NQUALIFIER(curr).target = *last;
+    qualifier_exit:
       *last = curr;
       last_is_group = 0;
       break;
@@ -3947,6 +4043,9 @@ compile_length_qualifier_node(QualifierNode* qn, regex_t* reg)
     len = tlen * qn->lower;
     len += (SIZE_OP_PUSH + tlen) * (qn->upper - qn->lower);
   }
+  else if (!qn->greedy && qn->upper == 1 && qn->lower == 0) { /* '??' */
+    len = SIZE_OP_PUSH + SIZE_OP_JUMP + tlen;
+  }
   else {
     len = SIZE_OP_REPEAT_INC + SIZE_REPEATNUM * 2 + SIZE_MEMNUM
         + mod_tlen + SIZE_OPCODE + SIZE_RELADDR;
@@ -4064,6 +4163,14 @@ compile_qualifier_node(QualifierNode* qn, regex_t* reg)
       r = compile_tree(qn->target, reg);
       if (r) return r;
     }
+  }
+  else if (!qn->greedy && qn->upper == 1 && qn->lower == 0) { /* '??' */
+    r = add_opcode_rel_addr(reg, OP_PUSH, SIZE_OP_JUMP);
+    if (r) return r;
+    r = add_opcode_rel_addr(reg, OP_JUMP, tlen);
+    if (r) return r;
+    r = compile_tree(qn->target, reg);
+    if (r) return r;
   }
   else {
     r = compile_range_repeat_node(qn, mod_tlen, reg);
@@ -4672,6 +4779,20 @@ get_char_length_tree(Node* node, regex_t* reg, RegDistance* len)
     } while (r == 0 && IS_NOT_NULL(node = NCONS(node).right));
     break;
 
+  case N_ALT:
+    {
+      RegDistance tlen2;
+
+      r = get_char_length_tree(NCONS(node).left, reg, &tlen);
+      while (r == 0 && IS_NOT_NULL(node = NCONS(node).right)) {
+	r = get_char_length_tree(NCONS(node).left, reg, &tlen2);
+	if (r == 0 && tlen != tlen2)
+	  r = -1;
+      }
+      if (r == 0) *len = tlen;
+    }
+    break;
+
   case N_STRING:
   case N_STRING_RAW:
     {
@@ -4681,6 +4802,19 @@ get_char_length_tree(Node* node, regex_t* reg, RegDistance* len)
 	s += mblen(reg->code, *s);
 	(*len)++;
       }
+    }
+    break;
+
+  case N_QUALIFIER:
+    {
+      QualifierNode* qn = &(NQUALIFIER(node));
+      if (qn->lower == qn->upper) {
+	r = get_char_length_tree(qn->target, reg, &tlen);
+	if (r == 0)
+	  *len = distance_multiply(tlen, qn->lower);
+      }
+      else
+	r = -1;
     }
     break;
 
@@ -4714,11 +4848,7 @@ get_char_length_tree(Node* node, regex_t* reg, RegDistance* len)
       case EFFECT_STOP_BACKTRACK:
 	r = get_char_length_tree(en->target, reg, len);
 	break;
-
-      case EFFECT_PREC_READ:
-      case EFFECT_PREC_READ_NOT:
-      case EFFECT_LOOK_BEHIND:
-      case EFFECT_LOOK_BEHIND_NOT:
+      default:
 	break;
       }
     }
@@ -5015,7 +5145,7 @@ setup_tree(Node* node, regex_t* reg, int state)
 /* allowed node types in look-behind */
 #define ALLOWED_TYPE_IN_LB  \
   ( N_EMPTY | N_LIST | N_STRING | N_STRING_RAW | N_CCLASS | N_CTYPE | \
-    N_ANYCHAR | N_ANCHOR | N_EFFECT )
+    N_ANYCHAR | N_ANCHOR | N_EFFECT | N_QUALIFIER | N_ALT )
 
 #define ALLOWED_EFFECT_IN_LB       ( EFFECT_MEMORY | EFFECT_LOOK_BEHIND_NOT )
 #define ALLOWED_EFFECT_IN_LB_NOT   ( EFFECT_LOOK_BEHIND )
@@ -7451,21 +7581,36 @@ match_at(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
       break;
 
     case OP_ANYCHAR_STAR:  STAT_OP_IN(OP_ANYCHAR_STAR);
-      while (s < end) {
-	STACK_PUSH_ALT(p, s, sprev);
-	if (ismb(encode, *s)) {
-	  n = mblen(encode, *s);
-	  DATA_ENSURE(n);
-	  sprev = s;
-	  s += n;
-	}
-	else {
-	  if (! IS_MULTILINE(option)) {
+      if (! IS_MULTILINE(option)) {
+	while (s < end) {
+	  STACK_PUSH_ALT(p, s, sprev);
+	  if (ismb(encode, *s)) {
+	    n = mblen(encode, *s);
+	    DATA_ENSURE(n);
+	    sprev = s;
+	    s += n;
+	  }
+	  else {
 	    if (SBCMP(*s, NEWLINE))
 	      goto fail;
+	    sprev = s;
+	    s++;
 	  }
-	  sprev = s;
-	  s++;
+	}
+      }
+      else {
+	while (s < end) {
+	  STACK_PUSH_ALT(p, s, sprev);
+	  if (ismb(encode, *s)) {
+	    n = mblen(encode, *s);
+	    DATA_ENSURE(n);
+	    sprev = s;
+	    s += n;
+	  }
+	  else {
+	    sprev = s;
+	    s++;
+	  }
 	}
       }
       STAT_OP_OUT;
@@ -9489,7 +9634,7 @@ static OpInfoType OpInfo[] = {
   { OP_REPEAT,            "repeat",          ARG_SPECIAL },
   { OP_REPEAT_NG,         "repeat-ng",       ARG_SPECIAL },
   { OP_REPEAT_INC,        "repeat-inc",      ARG_MEMNUM  },
-  { OP_REPEAT_INC_NG,     "repeat-inx-ng",   ARG_MEMNUM  },
+  { OP_REPEAT_INC_NG,     "repeat-inc-ng",   ARG_MEMNUM  },
   { OP_NULL_CHECK_START,  "null-check-start",ARG_MEMNUM  },
   { OP_NULL_CHECK_END,    "null-check-end",  ARG_MEMNUM  },
   { OP_PUSH_POS,          "push-pos",        ARG_NON },
