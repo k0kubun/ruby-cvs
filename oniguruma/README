@@ -1,4 +1,4 @@
-README  2002/03/04
+README  2002/03/06
 
 Oni Guruma (regular expression library)
 
@@ -8,7 +8,7 @@ Copyright (C) 2002  K.Kosako (kosako@sofnec.co.jp)
 Install into Ruby
 
    1. Copy regex.h and regex.c into ruby source directory.
-   2. Apply patch file to re.c.
+   2. Apply a patch file to re.c.
       re.c.166.patch for Ruby 1.6.6
       re.c.172.patch for Ruby 1.7.2
    3. make clean
@@ -17,7 +17,7 @@ Install into Ruby
 
 Differences with GNU regex(version 0.12)
 
-   + has original native API. (Thread safe?  I hope so.)
+   + has a original native API. (Thread safe?  I hope so.)
    + has modified GNU regex API.
       - re_compile_fastmap() is removed. (no needs to call)
       - re_recompile_pattern() is added.
@@ -25,38 +25,51 @@ Differences with GNU regex(version 0.12)
       - error messages are different.
 
    + look-behind (?<=fixed-char-length-pattern) and
-                 (?<!fixed-char-length-pattern) is added.
-     (includes char-class and anchor (^$), but not includes
-      fixed number repeat(/(?<=a{7})/))
+                 (?<!fixed-char-length-pattern) are added.
+     (char-class, anychar(.) and anchor(^$ only) are allowed.)
    + Octal or hexadecimal number sequence can be treated as 
-     multibyte code in char-class. (ex. [\xa1\xa2])
+     a multibyte code char in char-class, if multibyte encoding is specified.
+     (ex. [\xa1\xa2], [\xa1\xa7-\xa4\xa1])
    + Effect range of isolated option is to next ')'.
      ex. (?:(?i)a|b) is interpreted as (?:(?i:a|b)), not (?:(?i:a)|b).
+   + Negative POSIX bracket [:^xxxx:] is supported.
    + POSIX bracket [:ascii:] is added.
 
 
 ToDo
 
    + expand repeated exact string. ex. /(?:aaa){10}/
+   + GNU Autoconf
+   + Add a new opcode for anystar(.*) and exact combination.
+     [anystar, exact, ...] -> [anystar-peek-next, exact, ...]
+   + Add a new stack type for anystar(.*) matching process.
+     [STK_ANYCHAR_STAR, address, str-low, str-now]
    + get tail exact string optimizing info. ex. /X((.*).)+X/
      (by adding backward link to NCONS ?)
-   + GNU autoconf
-   + Add new stack type for opcode OP_ANYCHAR_STAR(.*) matching process.
-     [STK_ANYCHAR_STAR, address, str-low, str-now]
    + script program for test and benchmark.
 
    ? reduce null-check range in compile time.
      (add new opcode OP_NULL_CHECK_END_JUMP ?)
+   ? add a new opcode for exact pattern in look-behind.
    ? merge re_alloc_pattern() with re_compile_pattern().
-   ? add new opcode for exact pattern in look-behind.
-  ?? convert function name style from CamelCase to underline separation.
-  ?? postponed regular subexpression (?p{Ruby code...})
+  ?? convert function name style from CamelCase to underline_separation.
+  ?? postponed regular subexpression. /(?p{Ruby code...})/
  ??? POSIX compatible API
 
  and I'm thankful to Akinori MUSHA.
 
 
 History
+
+2002/03/06: [bug]  if pattern has NULL(\000) char, infinite loop happens 
+                   in ScanMakeNode(). (beware of strchr(). thanks nobu)
+2002/03/06: [bug]  range argument of ForwardSearchRange() is wrong.
+                   ex. /\A.a/, /\G.a/ mismatched with "aa". (thanks nobu)
+2002/03/05: [new]  add RegexMatch() API. rename regexMatch() to matchAt().
+2002/03/05: [impl] change function definition style.
+2002/03/05: [impl] abolish use of macro symbol which name begin with underline.
+2002/03/04: [bug]  make up a break-statement in compileTree().
+                   (compile error on Mac OS X 10.1.3)
 
 2002/03/04: Version 1.1
 
@@ -82,3 +95,4 @@ History
 [new:  new feature]
 [spec: specification change]
 [impl: implementation change]
+[inst: changes for installation]
