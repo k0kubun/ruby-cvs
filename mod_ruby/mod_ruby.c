@@ -226,7 +226,9 @@ static void ruby_startup(server_rec *s, pool *p)
 	}
     }
 
+#if RUBY_VERSION_CODE >= 145
     rb_ary_push(rb_load_path, rb_str_new2("."));
+#endif
     orig_load_path = rb_load_path;
     rb_global_variable(&orig_load_path);
 
