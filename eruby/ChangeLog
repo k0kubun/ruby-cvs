@@ -1,3 +1,15 @@
+Mon Jun 11 13:03:01 2001  Shugo Maeda <shugo@modruby.net>
+
+	* eruby_main.c (print_http_headers): "\n" -> "\r\n".
+
+Sat Jun  9 18:51:47 2001  Shugo Maeda <shugo@modruby.net>
+
+	* configure.rb.in: check for gcc.
+
+	* eruby_lib.c (eruby_compiler_get_sourcefile): new method.
+
+	* eruby_lib.c (eruby_compiler_set_sourcefile): ditto.
+
 Fri Jun  8 17:40:37 2001  Shugo Maeda <shugo@modruby.net>
 
 	* Makefile.in: libruby.a support.

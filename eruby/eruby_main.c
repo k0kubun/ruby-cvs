@@ -280,12 +280,12 @@ static void print_http_headers()
 
     if ((tmp = getenv("SERVER_PROTOCOL")) == NULL)
         tmp = "HTTP/1.0";
-    printf("%s 200 OK\n", tmp);
+    printf("%s 200 OK\r\n", tmp);
     if ((tmp = getenv("SERVER_SOFTWARE")) == NULL)
 	tmp = "unknown-server/0.0";
-    printf("Server: %s\n", tmp);
-    printf("Date: %s\n", rfc1123_time(time(NULL)));
-    printf("Connection: close\n");
+    printf("Server: %s\r\n", tmp);
+    printf("Date: %s\r\n", rfc1123_time(time(NULL)));
+    printf("Connection: close\r\n");
 
     return;
 }
@@ -302,9 +302,9 @@ static void error_print(int state, int mode, VALUE code)
 	    imgdir = "UNKNOWN_IMG_DIR";
         if (mode == MODE_NPHCGI)
             print_http_headers();
-        printf("Content-Type: text/html\n");
-        printf("Content-Style-Type: text/css\n");
-        printf("\n");
+        printf("Content-Type: text/html\r\n");
+        printf("Content-Style-Type: text/css\r\n");
+        printf("\r\n");
 	printf("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\">\n");
 	printf("<html>\n");
 	printf("<head>\n");
@@ -423,7 +423,7 @@ static void give_img_logo(int mode)
 {
     if (mode == MODE_NPHCGI)
 	print_http_headers();
-    printf("Content-Type: image/png\n\n");
+    printf("Content-Type: image/png\r\n\r\n");
     fwrite(eruby_logo_data, eruby_logo_size, 1, stdout);
 }
 
@@ -508,9 +508,9 @@ static void run()
 	if (eruby_mode == MODE_NPHCGI)
 	    print_http_headers();
 
-	printf("Content-Type: text/html; charset=%s\n", ERUBY_CHARSET);
-	printf("Content-Length: %d\n", nout);
-	printf("\n");
+	printf("Content-Type: text/html; charset=%s\r\n", ERUBY_CHARSET);
+	printf("Content-Length: %d\r\n", nout);
+	printf("\r\n");
     }
     fwrite(out, nout, 1, stdout);
     fflush(stdout);
