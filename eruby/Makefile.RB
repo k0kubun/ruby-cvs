@@ -143,6 +143,7 @@ prefix = #{CONFIG["prefix"]}
 bindir = $(prefix)/bin
 libdir = $(prefix)/lib
 includedir = $(prefix)/include
+mandir = #{CONFIG["mandir"]}
 
 topdir = #{$topdir}
 hdrdir = #{$hdrdir}
@@ -158,6 +159,7 @@ INSTALL_DATA = $(RUBY) -r ftools -e 'File.install ARGV[0], ARGV[1], 0644, true'
 LIBRUBYARG = #{$LIBRUBYARG}
 
 TARGET = eruby#{CONFIG["EXEEXT"]}
+MANPAGE = eruby.1
 
 MAJOR = #{$MAJOR}
 MINOR = #{$MINOR}
@@ -176,7 +178,7 @@ OBJS = eruby_logo.#{$OBJEXT} eruby_main.#{$OBJEXT}
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
-all: $(LIBERUBY_A) $(TARGET)
+all: $(LIBERUBY_A) $(TARGET) $(MANPAGE)
 
 install: all
 	@-$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
@@ -190,6 +192,7 @@ install: all
 	fi
 	@-$(INSTALL_DATA) $(LIBERUBY_A) $(libdir)/$(LIBERUBY_A)
 	@-$(INSTALL_DATA) eruby.h $(includedir)/eruby.h
+	@-$(INSTALL_DATA) $(MANPAGE) $(mandir)/man1/$(MANPAGE)
 
 clean:
 	rm -f $(TARGET)
@@ -215,6 +218,11 @@ $(LIBERUBY_SO): $(ERUBY_OBJS)
 
 $(TARGET): $(OBJS) $(LIBERUBY)
 	$(CC) $(LDFLAGS) $(XLDFLAGS) $(OBJS) $(LIBERUBYARG) $(LIBRUBYARG) $(LIBS) -o $@
+
+$(MANPAGE): eruby.rd
+	rd2 -r rd/rd2man-lib $< > $@
+	$(RUBY) -i -pe 'gsub(/eruby\.rd/, "eruby")' $@
+	$(RUBY) -i -ne 'print if ~/.+/' $@
 
 eruby_logo.c: eruby_logo.png
 	./bin2c eruby_logo.png
