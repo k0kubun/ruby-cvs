@@ -14,7 +14,7 @@ class TestProc < Rubicon::TestCase
 
   def test_arity
     [ [Proc.new {          }, -1],
-      [Proc.new { ||       }, -1],
+      [Proc.new { ||       },  0],
       [Proc.new { |x|      }, -1],
       [Proc.new { |x,y|    },  2],
       [Proc.new { |x,y,z|  },  3],
