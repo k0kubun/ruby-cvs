@@ -5,11 +5,11 @@
   Copyright (C) 2002  K.Kosako (kosako@sofnec.co.jp)
 
 **********************************************************************/
-#ifndef _REGEX_H_
-#define _REGEX_H_
+#ifndef REGEX_H
+#define REGEX_H
 
-#define _ONIGURUMA_
-#define  ONIGURUMA_VERSION          110    /* 1.1 */
+#define ONIGURUMA
+#define ONIGURUMA_VERSION          110    /* 1.1 */
 
 /* config parameters */
 #ifndef RE_NREGS
@@ -89,7 +89,7 @@ extern RegCharEncoding RegDefaultCharCode;
 #define REGERR_TABLE_FOR_IGNORE_CASE_IS_NOT_SETTED           -20
 #define REGERR_DEFAULT_ENCODING_IS_NOT_SETTED                -21
 #define REGERR_SPECIFIED_ENCODING_CANT_CONVERT_TO_WIDE_CHAR  -22
-/* sytax error */
+/* syntax error */
 #define REGERR_END_PATTERN_AT_LEFT_BRACE                    -100
 #define REGERR_END_PATTERN_AT_LEFT_BRACKET                  -101
 #define REGERR_EMPTY_CHAR_CLASS                             -102
@@ -145,7 +145,7 @@ typedef unsigned char         UChar;
   ((regex)->state > 0 ? REG_STATE_SEARCHING : (regex)->state)
 
 typedef struct re_pattern_buffer {
-  /* common members in BBuf type */
+  /* common members in BBuf(bytes-buffer) type */
   unsigned char* p;         /* compiled pattern */
   unsigned int used;        /* used space for p */
   unsigned int alloc;       /* allocated space for p */
@@ -214,6 +214,8 @@ extern int   RegexReCompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
 		RegOptionType option, RegCharEncoding code, UChar* transtable);
 extern int   RegexSearch(regex_t* reg, UChar* str, UChar* end,
 			 UChar* start, UChar* range, RegRegion* region);
+extern int   RegexMatch(regex_t* reg, UChar* str, UChar* end, UChar* at,
+			RegRegion* region);
 extern RegRegion* RegexRegionNew(void);
 extern void  RegexRegionFree(RegRegion* region, int free_self);
 extern void  RegexRegionCopy(RegRegion* r1, RegRegion* r2);
@@ -230,6 +232,7 @@ extern int   RegexClone();
 extern void  RegexFree();
 extern int   RegexReCompile();
 extern int   RegexSearch();
+extern int   RegexMatch();
 extern RegRegion* RegexRegionNew();
 extern void  RegexRegionFree();
 extern void  RegexRegionCopy();
@@ -270,4 +273,4 @@ extern int   re_alloc_pattern();  /* added */
 
 #endif /* __STDC__ */
 
-#endif /* _REGEX_H_ */
+#endif /* REGEX_H */

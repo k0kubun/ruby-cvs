@@ -58,6 +58,10 @@
 #define xmemmove    memmove
 #define xalloca     alloca
 
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
+
 #if defined(HAVE_ALLOCA_H) && !defined(__GNUC__)
 #include <alloca.h>
 #endif
@@ -77,7 +81,8 @@
 
 #include "regex.h"
 
-extern char* RegexErrorCodeToStr(int code)
+extern char*
+RegexErrorCodeToStr(int code)
 {
   char *p;
 
@@ -200,7 +205,8 @@ typedef unsigned int   WCInt;
 
 #define INFINITE_DISTANCE  ~((RegDistance )0)
 
-static RegDistance DistanceAdd(RegDistance d1, RegDistance d2)
+static RegDistance
+DistanceAdd(RegDistance d1, RegDistance d2)
 {
   if (d1 == INFINITE_DISTANCE || d2 == INFINITE_DISTANCE)
     return INFINITE_DISTANCE;
@@ -210,7 +216,8 @@ static RegDistance DistanceAdd(RegDistance d1, RegDistance d2)
   }
 }
 
-static RegDistance DistanceMultiply(RegDistance d, int m)
+static RegDistance
+DistanceMultiply(RegDistance d, int m)
 {
   if (d < INFINITE_DISTANCE / m)
     return d * m;
@@ -218,7 +225,8 @@ static RegDistance DistanceMultiply(RegDistance d, int m)
     return INFINITE_DISTANCE;
 }
 
-static RegDistance DistanceDistance(RegDistance d1, RegDistance d2)
+static RegDistance
+DistanceDistance(RegDistance d1, RegDistance d2)
 {
   if (d1 == INFINITE_DISTANCE || d2 == INFINITE_DISTANCE)
     return INFINITE_DISTANCE;
@@ -343,16 +351,17 @@ typedef Bits*          BitSetRef;
   for (i = 0; i < BITSET_SIZE; i++) { (bs)[i] = 0; }\
 } while (0)
 
-#define _BS_ROOM(bs,pos)           (bs)[pos / BITS_IN_ROOM]
-#define _BS_BIT(pos)               (1 << (pos % BITS_IN_ROOM))
+#define BS_ROOM(bs,pos)            (bs)[pos / BITS_IN_ROOM]
+#define BS_BIT(pos)                (1 << (pos % BITS_IN_ROOM))
 
-#define BITSET_AT(bs, pos)         (_BS_ROOM(bs,pos) & _BS_BIT(pos))
-#define BITSET_SET_BIT(bs, pos)    _BS_ROOM(bs,pos) |= _BS_BIT(pos)
-#define BITSET_CLEAR_BIT(bs, pos)  _BS_ROOM(bs,pos) &= ~(_BS_BIT(pos))
+#define BITSET_AT(bs, pos)         (BS_ROOM(bs,pos) & BS_BIT(pos))
+#define BITSET_SET_BIT(bs, pos)     BS_ROOM(bs,pos) |= BS_BIT(pos)
+#define BITSET_CLEAR_BIT(bs, pos)   BS_ROOM(bs,pos) &= ~(BS_BIT(pos))
 
 #define SIZE_BITSET        sizeof(BitSet)
 
-static int BitSetIsEmpty(BitSetRef bs)
+static int
+BitSetIsEmpty(BitSetRef bs)
 {
   int i;
   for (i = 0; i < BITSET_SIZE; i++) {
@@ -361,7 +370,8 @@ static int BitSetIsEmpty(BitSetRef bs)
   return 1;
 }
 
-static int BitSetOnNum(BitSetRef bs)
+static int
+BitSetOnNum(BitSetRef bs)
 {
   int i, n;
 
@@ -380,7 +390,8 @@ typedef struct _BBuf {
   unsigned int alloc;
 } BBuf;
 
-static int BBufInit(BBuf* buf, int size)
+static int
+BBufInit(BBuf* buf, int size)
 {
   buf->p = (UChar* )xmalloc(size);
   if (IS_NULL(buf->p)) return(REGERR_MEMORY);
@@ -727,7 +738,8 @@ static const char SJIS_FOLLOW_TABLE[SINGLE_BYTE_SIZE] = {
   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0
 };
 
-static int MbMaxlen(RegCharEncoding code)
+static int
+MbMaxlen(RegCharEncoding code)
 {
   /* can't use switch statement, code isn't int type. */
        if (code == REGCODE_ASCII)  return 1;
@@ -775,7 +787,8 @@ static int MbMaxlen(RegCharEncoding code)
 
 #define IS_WORD_HEAD(code,c) (ismb(code,c) ? 1 : IS_SB_WORD(code,c))
 
-static WCInt mb2wc(UChar* p, UChar* end, RegCharEncoding code)
+static WCInt
+mb2wc(UChar* p, UChar* end, RegCharEncoding code)
 {
   int c, i, len;
   WCInt n;
@@ -817,8 +830,8 @@ static WCInt mb2wc(UChar* p, UChar* end, RegCharEncoding code)
 #endif /* not REG_RUBY_M17N */
 
 
-static UChar* GetLeftAdjustCharHead(RegCharEncoding code,
-				    UChar* start, UChar* s)
+static UChar*
+GetLeftAdjustCharHead(RegCharEncoding code, UChar* start, UChar* s)
 {
   UChar *p;
   int len;
@@ -866,8 +879,8 @@ static UChar* GetLeftAdjustCharHead(RegCharEncoding code,
 #endif  /* REG_RUBY_M17N */
 }
 
-static UChar* GetRightAdjustCharHead(RegCharEncoding code, UChar* start,
-				     UChar* s)
+static UChar*
+GetRightAdjustCharHead(RegCharEncoding code, UChar* start, UChar* s)
 {
   UChar* p = GetLeftAdjustCharHead(code, start, s);
 
@@ -877,8 +890,9 @@ static UChar* GetRightAdjustCharHead(RegCharEncoding code, UChar* start,
   return p;
 }
 
-static UChar* GetRightAdjustCharHeadWithPrev(RegCharEncoding code,
-				     UChar* start, UChar* s, UChar** prev)
+static UChar*
+GetRightAdjustCharHeadWithPrev(RegCharEncoding code,
+			       UChar* start, UChar* s, UChar** prev)
 {
   UChar* p = GetLeftAdjustCharHead(code, start, s);
 
@@ -892,7 +906,8 @@ static UChar* GetRightAdjustCharHeadWithPrev(RegCharEncoding code,
   return p;
 }
 
-static UChar* GetPrevCharHead(RegCharEncoding code, UChar* start, UChar* s)
+static UChar*
+GetPrevCharHead(RegCharEncoding code, UChar* start, UChar* s)
 {
   if (s <= start)
     return (UChar* )NULL;
@@ -900,8 +915,8 @@ static UChar* GetPrevCharHead(RegCharEncoding code, UChar* start, UChar* s)
   return GetLeftAdjustCharHead(code, start, s - 1);
 }
 
-static UChar* StepBackwardChar(RegCharEncoding code, UChar* start,
-			       UChar* s, int n)
+static UChar*
+StepBackwardChar(RegCharEncoding code, UChar* start, UChar* s, int n)
 {
   while (IS_NOT_NULL(s) && n-- > 0) {
     if (s <= start)
@@ -913,34 +928,35 @@ static UChar* StepBackwardChar(RegCharEncoding code, UChar* start,
 }
 
 /* used as function pointer value */
-static int IsCodeAscii(RegCharEncoding code, UChar c)
- { return IS_CODE_ASCII(code, c); }
-static int IsCodeGraph(RegCharEncoding code, UChar c)
- { return IS_CODE_GRAPH(code, c); }
-static int IsCodePrint(RegCharEncoding code, UChar c)
- { return IS_CODE_PRINT(code, c); }
-static int IsCodeAlnum(RegCharEncoding code, UChar c)
- { return IS_CODE_ALNUM(code, c); }
-static int IsCodeAlpha(RegCharEncoding code, UChar c)
- { return IS_CODE_ALPHA(code, c); }
-static int IsCodeLower(RegCharEncoding code, UChar c)
- { return IS_CODE_LOWER(code, c); }
-static int IsCodeUpper(RegCharEncoding code, UChar c)
- { return IS_CODE_UPPER(code, c); }
-static int IsCodeCntrl(RegCharEncoding code, UChar c)
- { return IS_CODE_CNTRL(code, c); }
-static int IsCodePunct(RegCharEncoding code, UChar c)
- { return IS_CODE_PUNCT(code, c); }
-static int IsCodeSpace(RegCharEncoding code, UChar c)
- { return IS_CODE_SPACE(code, c); }
-static int IsCodeBlank(RegCharEncoding code, UChar c)
- { return IS_CODE_BLANK(code, c); }
-static int IsCodeDigit(RegCharEncoding code, UChar c)
- { return IS_CODE_DIGIT(code, c); }
-static int IsCodeXdigit(RegCharEncoding code, UChar c)
- { return IS_CODE_XDIGIT(code, c); }
+static int
+IsCodeAscii(RegCharEncoding code, UChar c) { return IS_CODE_ASCII(code, c); }
+static int
+IsCodeGraph(RegCharEncoding code, UChar c) { return IS_CODE_GRAPH(code, c); }
+static int
+IsCodePrint(RegCharEncoding code, UChar c) { return IS_CODE_PRINT(code, c); }
+static int
+IsCodeAlnum(RegCharEncoding code, UChar c) { return IS_CODE_ALNUM(code, c); }
+static int
+IsCodeAlpha(RegCharEncoding code, UChar c) { return IS_CODE_ALPHA(code, c); }
+static int
+IsCodeLower(RegCharEncoding code, UChar c) { return IS_CODE_LOWER(code, c); }
+static int
+IsCodeUpper(RegCharEncoding code, UChar c) { return IS_CODE_UPPER(code, c); }
+static int
+IsCodeCntrl(RegCharEncoding code, UChar c) { return IS_CODE_CNTRL(code, c); }
+static int
+IsCodePunct(RegCharEncoding code, UChar c) { return IS_CODE_PUNCT(code, c); }
+static int
+IsCodeSpace(RegCharEncoding code, UChar c) { return IS_CODE_SPACE(code, c); }
+static int
+IsCodeBlank(RegCharEncoding code, UChar c) { return IS_CODE_BLANK(code, c); }
+static int
+IsCodeDigit(RegCharEncoding code, UChar c) { return IS_CODE_DIGIT(code, c); }
+static int
+IsCodeXdigit(RegCharEncoding code, UChar c) { return IS_CODE_XDIGIT(code, c); }
 
-static int Strncmp(UChar* s1, UChar* s2, int n)
+static int
+Strncmp(UChar* s1, UChar* s2, int n)
 {
   int x;
 
@@ -951,7 +967,8 @@ static int Strncmp(UChar* s1, UChar* s2, int n)
   return 0;
 }
 
-static void Strcpy(UChar* dest, UChar* src, UChar* end)
+static void
+Strcpy(UChar* dest, UChar* src, UChar* end)
 {
   int len = end - src;
   if (len > 0) {
@@ -960,7 +977,8 @@ static void Strcpy(UChar* dest, UChar* src, UChar* end)
   }
 }
 
-static UChar* Strdup(UChar* s, UChar* end)
+static UChar*
+Strdup(UChar* s, UChar* end)
 {
   int len = end - s;
 
@@ -974,7 +992,9 @@ static UChar* Strdup(UChar* s, UChar* end)
   else return NULL;
 }
 
-static UChar* Strcat(UChar* dest, UChar* dest_end, UChar* src, UChar* src_end)
+#if 0
+static UChar*
+Strcat(UChar* dest, UChar* dest_end, UChar* src, UChar* src_end)
 {
   int src_len = src_end - src;
 
@@ -990,9 +1010,10 @@ static UChar* Strcat(UChar* dest, UChar* dest_end, UChar* src, UChar* src_end)
     return dest;
   }
 }
+#endif
 
-static UChar* StrcatCapa(UChar* dest, UChar* dest_end,
-			 UChar* src, UChar* src_end, int capa)
+static UChar*
+StrcatCapa(UChar* dest, UChar* dest_end, UChar* src, UChar* src_end, int capa)
 {
   UChar* r;
 
@@ -1007,8 +1028,9 @@ static UChar* StrcatCapa(UChar* dest, UChar* dest_end,
 }
 
 /* dest on static area */
-static UChar* StrcatCapaFromStatic(UChar* dest, UChar* dest_end,
-				   UChar* src, UChar* src_end, int capa)
+static UChar*
+StrcatCapaFromStatic(UChar* dest, UChar* dest_end,
+		     UChar* src, UChar* src_end, int capa)
 {
   UChar* r;
 
@@ -1027,7 +1049,8 @@ typedef struct _FreeNode {
 static FreeNode* FreeNodeList = (FreeNode* )NULL;
 #endif
 
-static void NodeFree(Node* node)
+static void
+NodeFree(Node* node)
 {
   if (IS_NULL(node)) return ;
 
@@ -1079,7 +1102,8 @@ static void NodeFree(Node* node)
 #endif
 }
 
-static Node* NodeNew()
+static Node*
+NodeNew()
 {
   Node* node;
 
@@ -1095,7 +1119,8 @@ static Node* NodeNew()
   return node;
 }
 
-static Node* NodeNewEmpty()
+static Node*
+NodeNewEmpty()
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1103,7 +1128,8 @@ static Node* NodeNewEmpty()
   return node;
 }
 
-static Node* NodeNewCClass()
+static Node*
+NodeNewCClass()
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1114,7 +1140,8 @@ static Node* NodeNewCClass()
   return node;
 }
 
-static Node* NodeNewCType(int type)
+static Node*
+NodeNewCType(int type)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1123,7 +1150,8 @@ static Node* NodeNewCType(int type)
   return node;
 }
 
-static Node* NodeNewAnyChar()
+static Node*
+NodeNewAnyChar()
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1131,7 +1159,8 @@ static Node* NodeNewAnyChar()
   return node;
 }
 
-static Node* NodeNewList(Node* left, Node* right)
+static Node*
+NodeNewList(Node* left, Node* right)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1141,7 +1170,8 @@ static Node* NodeNewList(Node* left, Node* right)
   return node;
 }
 
-static Node* NodeNewAlt(Node* left, Node* right)
+static Node*
+NodeNewAlt(Node* left, Node* right)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1151,7 +1181,8 @@ static Node* NodeNewAlt(Node* left, Node* right)
   return node;
 }
 
-static Node* NodeNewAnchor(int type)
+static Node*
+NodeNewAnchor(int type)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1160,7 +1191,8 @@ static Node* NodeNewAnchor(int type)
   return node;
 }
 
-static Node* NodeNewBackref(int regnum)
+static Node*
+NodeNewBackref(int regnum)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1169,7 +1201,8 @@ static Node* NodeNewBackref(int regnum)
   return node;
 }
 
-static Node* NodeNewQualifier(int lower, int upper)
+static Node*
+NodeNewQualifier(int lower, int upper)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1183,7 +1216,8 @@ static Node* NodeNewQualifier(int lower, int upper)
   return node;
 }
 
-static Node* NodeNewOption(RegOptionType option)
+static Node*
+NodeNewOption(RegOptionType option)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1193,7 +1227,8 @@ static Node* NodeNewOption(RegOptionType option)
   return node;
 }
 
-static Node* NodeNewEffect(int type)
+static Node*
+NodeNewEffect(int type)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1204,7 +1239,8 @@ static Node* NodeNewEffect(int type)
   return node;
 }
 
-static int NodeStrCat(Node* node, UChar* s, UChar* end)
+static int
+NodeStrCat(Node* node, UChar* s, UChar* end)
 {
   int addlen = end - s;
 
@@ -1238,7 +1274,8 @@ static int NodeStrCat(Node* node, UChar* s, UChar* end)
   return 0;
 }
 
-static int NodeStrCatChar(Node* node, UChar c)
+static int
+NodeStrCatChar(Node* node, UChar c)
 {
   UChar s[1];
 
@@ -1246,7 +1283,8 @@ static int NodeStrCatChar(Node* node, UChar c)
   return NodeStrCat(node, s, s + 1);
 }
 
-static Node* NodeNewStr(UChar* s, UChar* end)
+static Node*
+NodeNewStr(UChar* s, UChar* end)
 {
   Node* node = NodeNew();
   CHECK_NULL_RETURN(node);
@@ -1262,14 +1300,16 @@ static Node* NodeNewStr(UChar* s, UChar* end)
   return node;
 }
 
-static Node* NodeNewStrRaw(UChar* s, UChar* end)
+static Node*
+NodeNewStrRaw(UChar* s, UChar* end)
 {
   Node* node = NodeNewStr(s, end);
   node->type = N_STRING_RAW;
   return node;
 }
 
-static Node* NodeNewStrChar(UChar c)
+static Node*
+NodeNewStrChar(UChar c)
 {
   UChar p[1];
 
@@ -1277,7 +1317,8 @@ static Node* NodeNewStrChar(UChar c)
   return NodeNewStr(p, p + 1);
 }
 
-static Node* NodeNewStrRawChar(UChar c)
+static Node*
+NodeNewStrRawChar(UChar c)
 {
   UChar p[1];
 
@@ -1285,7 +1326,8 @@ static Node* NodeNewStrRawChar(UChar c)
   return NodeNewStrRaw(p, p + 1);
 }
 
-static Node* StrNodeSplitLastChar(StrNode* sn, int type, RegCharEncoding code)
+static Node*
+StrNodeSplitLastChar(StrNode* sn, int type, RegCharEncoding code)
 {
   UChar *p;
   Node* n = (Node* )NULL;
@@ -1313,7 +1355,8 @@ typedef struct {
 } ScanEnv;
 
 
-static int scanUnsignedNumber(UChar** src, UChar* end)
+static int
+scanUnsignedNumber(UChar** src, UChar* end)
 {
   unsigned int num, val;
   int c;
@@ -1338,7 +1381,8 @@ static int scanUnsignedNumber(UChar** src, UChar* end)
   return num;
 }
 
-static int scanUnsignedHexadecimalNumber(UChar** src, UChar* end, int maxlen)
+static int
+scanUnsignedHexadecimalNumber(UChar** src, UChar* end, int maxlen)
 {
   int c;
   unsigned int num, val;
@@ -1363,7 +1407,8 @@ static int scanUnsignedHexadecimalNumber(UChar** src, UChar* end, int maxlen)
   return num;
 }
 
-static int scanUnsignedOctadecimalNumber(UChar** src, UChar* end, int maxlen)
+static int
+scanUnsignedOctadecimalNumber(UChar** src, UChar* end, int maxlen)
 {
   int c;
   unsigned int num, val;
@@ -1396,7 +1441,8 @@ static int scanUnsignedOctadecimalNumber(UChar** src, UChar* end, int maxlen)
 #define BBUF_WRITE_WCINT(bbuf,pos,wc) \
     BBUF_WRITE(bbuf, pos, &(wc), SIZE_WCINT)
 
-static int IsInWCRange(UChar* p, WCInt wc)
+static int
+IsInWCRange(UChar* p, WCInt wc)
 {
   WCInt n, *data;
   int low, high, x;
@@ -1420,8 +1466,8 @@ static int IsInWCRange(UChar* p, WCInt wc)
    [multi-byte-head-BitSet][n][from-1][to-1][from-2][to-2] ... [from-n][to-n]
    (all data size is WCInt)
  */
-static int addWCRange(BBuf** pbuf, WCInt from, WCInt to,
-		      UChar cfrom, UChar cto)
+static int
+addWCRange(BBuf** pbuf, WCInt from, WCInt to, UChar cfrom, UChar cto)
 {
 #define INIT_MULTI_BYTE_RANGE_SIZE  (SIZE_WCINT * 5)
 
@@ -1514,8 +1560,9 @@ static int addWCRange(BBuf** pbuf, WCInt from, WCInt to,
   return 0;
 }
 
-static int addMultiByteRange(BBuf** pbuf, RegCharEncoding code,
-		     UChar* from, UChar* from_end, UChar* to, UChar* to_end)
+static int
+addMultiByteRange(BBuf** pbuf, RegCharEncoding code,
+		  UChar* from, UChar* from_end, UChar* to, UChar* to_end)
 {
   int mb_maxlen;
   WCInt wc_from, wc_to;
@@ -1529,9 +1576,9 @@ static int addMultiByteRange(BBuf** pbuf, RegCharEncoding code,
   return addWCRange(pbuf, wc_from, wc_to, from[0], to[0]);
 }
 
-static int scanBackSlashMultiByteSequence(UChar** src, UChar* end,
-					  RegCharEncoding code,
-					  UChar* buf, int len)
+static int
+scanBackSlashMultiByteSequence(UChar** src, UChar* end,
+			       RegCharEncoding code, UChar* buf, int len)
 {
   int c, i, r = 0;
   UChar* p = *src;
@@ -1583,7 +1630,8 @@ static int scanBackSlashMultiByteSequence(UChar** src, UChar* end,
   return i;
 }
 
-static int scanRangeQualifier(UChar** src, UChar* end, int* lower, int* upper)
+static int
+scanRangeQualifier(UChar** src, UChar* end, int* lower, int* upper)
 {
   int low, up;
   int c;
@@ -1628,7 +1676,8 @@ static int scanRangeQualifier(UChar** src, UChar* end, int* lower, int* upper)
   return 0;
 }
 
-static int ConvBackSlashValue(int c)
+static int
+ConvBackSlashValue(int c)
 {
   switch (c) {
   case 'n':  return '\n';
@@ -1645,7 +1694,8 @@ static int ConvBackSlashValue(int c)
 
 
 /* \M-, \C-, \c, or \... */
-static int scanMetaControlBackslash(UChar** src, UChar* end)
+static int
+scanMetaControlBackslash(UChar** src, UChar* end)
 {
   int c;
   UChar* p = *src;
@@ -1694,7 +1744,8 @@ static int scanMetaControlBackslash(UChar** src, UChar* end)
   return c;
 }
 
-static int scanBackSlash(UChar** src, UChar* end, ScanEnv* env, Node** node)
+static int
+scanBackSlash(UChar** src, UChar* end, ScanEnv* env, Node** node)
 {
   int c, num;
   UChar* prev;
@@ -1846,8 +1897,9 @@ static int scanBackSlash(UChar** src, UChar* end, ScanEnv* env, Node** node)
   }\
 } while (0)
 
-static int scanBackSlashInCharClass(UChar** src, UChar* end,
-				    RegCharEncoding code, Node* node, int* num)
+static int
+scanBackSlashInCharClass(UChar** src, UChar* end,
+			 RegCharEncoding code, Node* node, int* num)
 {
   int c, r = 0;
   UChar* p = *src;
@@ -1929,8 +1981,9 @@ static int scanBackSlashInCharClass(UChar** src, UChar* end,
 }
 
 
-static void BitSetByPredFunc(BitSetRef bs, int (*pf)(RegCharEncoding, UChar),
-			     RegCharEncoding code, int not)
+static void
+BitSetByPredFunc(BitSetRef bs, int (*pf)(RegCharEncoding, UChar),
+		 RegCharEncoding code, int not)
 {
   int c;
 
@@ -1952,8 +2005,9 @@ typedef struct {
   short int len;
 } PosixBracketEntryType;
 
-static int scanPosixBracketCharClass(UChar** src, UChar* end,
-				     RegCharEncoding code, Node* node)
+static int
+scanPosixBracketCharClass(UChar** src, UChar* end,
+			  RegCharEncoding code, Node* node)
 {
 #define POSIX_BRACKET_CHECK_LIMIT_LENGTH  16
 
@@ -2021,8 +2075,8 @@ static int scanPosixBracketCharClass(UChar** src, UChar* end,
   return 0;
 }
 
-static int scanCharClass(UChar** src, UChar* end, RegCharEncoding code,
-			 Node* node)
+static int
+scanCharClass(UChar** src, UChar* end, RegCharEncoding code, Node* node)
 {
 #define SCC_BUF_LEN  8
 
@@ -2230,8 +2284,8 @@ static int scanCharClass(UChar** src, UChar* end, RegCharEncoding code,
 
 #define NOT_TERM         ((UChar )0)
 
-static int ScanMakeNode(UChar** src, UChar* end, UChar term, ScanEnv* env,
-			Node** rnode)
+static int
+ScanMakeNode(UChar** src, UChar* end, UChar term, ScanEnv* env,	Node** rnode)
 {
   int c, r;
   int lower, upper, type;
@@ -2350,16 +2404,17 @@ static int ScanMakeNode(UChar** src, UChar* end, UChar term, ScanEnv* env,
   normal_string:
     *src = p - 1;
     while (1) {
-      if (IS_EXTEND(env->option)) {
-	if (strchr("# \t\n\r\f", c)) {
+      if (c) {
+	if (IS_EXTEND(env->option)) {
+	  if (strchr("# \t\n\r\f", c)) {
+	    PUNFETCH;
+	    break;
+	  }
+	}
+	if (strchr("()|^$?+*{[.\\", c)) {
 	  PUNFETCH;
 	  break;
 	}
-      }
-
-      if (strchr("()|^$?+*{[.\\", c)) {
-	PUNFETCH;
-	break;
       }
 
       if (ismb(env->code, c)) {
@@ -2393,8 +2448,9 @@ static int ScanMakeTree(UChar** src, UChar* end, UChar term, ScanEnv* env,
 
 #define ONOFF(v,f,negative)    (negative) ? ((v) &= ~(f)) : ((v) |= (f))
 
-static int ScanMakeParen(UChar** src, UChar* end, UChar term, ScanEnv* env,
-			 Node** top, int *last_is_group)
+static int
+ScanMakeParen(UChar** src, UChar* end, UChar term, ScanEnv* env,
+	      Node** top, int *last_is_group)
 {
   Node *curr;
   RegOptionType option;
@@ -2556,8 +2612,8 @@ static int ScanMakeParen(UChar** src, UChar* end, UChar term, ScanEnv* env,
   return type;
 }
 
-static int ScanMakeTree(UChar** src, UChar* end, UChar term, ScanEnv* env,
-			Node** top)
+static int
+ScanMakeTree(UChar** src, UChar* end, UChar term, ScanEnv* env, Node** top)
 {
   int type;
   int last_is_group = 0;   /* "(?:...)" */
@@ -2670,7 +2726,8 @@ static int ScanMakeTree(UChar** src, UChar* end, UChar term, ScanEnv* env,
   return SC_END;
 }
 
-static int ParseMakeTree(Node** root, UChar* pattern, UChar* end, regex_t* reg)
+static int
+ParseMakeTree(Node** root, UChar* pattern, UChar* end, regex_t* reg)
 {
   int r;
   UChar* p;
@@ -2891,47 +2948,54 @@ typedef StackType*  StackPointerType;
     (op) == OP_EXACTMB4N || (op) == OP_EXACTMBN  || (op) == OP_EXACTN_IC)
 
 
-static int AddOpCode(regex_t* reg, int opcode)
+static int
+AddOpCode(regex_t* reg, int opcode)
 {
   BBUF_ADD1(reg, opcode);
   return 0;
 }
 
-static int AddRelAddr(regex_t* reg, int addr)
+static int
+AddRelAddr(regex_t* reg, int addr)
 {
   RelAddrType ra = (RelAddrType )addr;
   BBUF_ADD(reg, &ra, SIZE_RELADDR);
   return 0;
 }
 
-static int AddLength(regex_t* reg, int len)
+static int
+AddLength(regex_t* reg, int len)
 {
   LengthType l = (LengthType )len;
   BBUF_ADD(reg, &l, SIZE_LENGTH);
   return 0;
 }
 
-static int AddMemNum(regex_t* reg, int num)
+static int
+AddMemNum(regex_t* reg, int num)
 {
   MemNumType n = (MemNumType )num;
   BBUF_ADD(reg, &n, SIZE_MEMNUM);
   return 0;
 }
 
-static int AddRepeatNum(regex_t* reg, int num)
+static int
+AddRepeatNum(regex_t* reg, int num)
 {
   RepeatNumType n = (RepeatNumType )num;
   BBUF_ADD(reg, &n, SIZE_REPEATNUM);
   return 0;
 }
 
-static int AddOption(regex_t* reg, RegOptionType option)
+static int
+AddOption(regex_t* reg, RegOptionType option)
 {
   BBUF_ADD(reg, &option, SIZE_OPTION);
   return 0;
 }
 
-static int AddOpCodeRelAddr(regex_t* reg, int opcode, int addr)
+static int
+AddOpCodeRelAddr(regex_t* reg, int opcode, int addr)
 {
   int r;
 
@@ -2941,19 +3005,22 @@ static int AddOpCodeRelAddr(regex_t* reg, int opcode, int addr)
   return r;
 }
 
-static int AddBytes(regex_t* reg, UChar* bytes, int len)
+static int
+AddBytes(regex_t* reg, UChar* bytes, int len)
 {
   BBUF_ADD(reg, bytes, len);
   return 0;
 }
 
-static int AddBitSet(regex_t* reg, BitSetRef bs)
+static int
+AddBitSet(regex_t* reg, BitSetRef bs)
 {
   BBUF_ADD(reg, bs, SIZE_BITSET);
   return 0;
 }
 
-static int AddOpCodeOption(regex_t* reg, int opcode, RegOptionType option)
+static int
+AddOpCodeOption(regex_t* reg, int opcode, RegOptionType option)
 {
   int r;
 
@@ -2964,8 +3031,10 @@ static int AddOpCodeOption(regex_t* reg, int opcode, RegOptionType option)
 }
 
 static int compileLengthTree(Node* node, regex_t* reg);
+static int compileTree(Node* node, regex_t* reg);
 
-static int selectStrOpCode(int mb_len, int str_len, int ignore_case)
+static int
+selectStrOpCode(int mb_len, int str_len, int ignore_case)
 {
   int op;
 
@@ -3009,9 +3078,8 @@ static int selectStrOpCode(int mb_len, int str_len, int ignore_case)
   return op;
 }
 
-static int compileTree(Node* node, regex_t* reg);
-
-static int compileTreeEmptyCheck(Node* node, regex_t* reg, int empty)
+static int
+compileTreeEmptyCheck(Node* node, regex_t* reg, int empty)
 {
   int r;
   int saved_num_null_check = reg->num_null_check;
@@ -3035,7 +3103,8 @@ static int compileTreeEmptyCheck(Node* node, regex_t* reg, int empty)
   return r;
 }
 
-static int compileTreeNtimes(Node* node, int n, regex_t* reg)
+static int
+compileTreeNtimes(Node* node, int n, regex_t* reg)
 {
   int i, r;
 
@@ -3046,8 +3115,8 @@ static int compileTreeNtimes(Node* node, int n, regex_t* reg)
   return 0;
 }
 
-static int addCompileStringLength(UChar* s, int mb_len, int str_len,
-				  regex_t* reg)
+static int
+addCompileStringLength(UChar* s, int mb_len, int str_len, regex_t* reg)
 {
   int len;
   int op = selectStrOpCode(mb_len, str_len, IS_IGNORECASE(reg->options));
@@ -3063,7 +3132,8 @@ static int addCompileStringLength(UChar* s, int mb_len, int str_len,
   return len;
 }
 
-static int addCompileString(UChar* s, int mb_len, int str_len, regex_t* reg)
+static int
+addCompileString(UChar* s, int mb_len, int str_len, regex_t* reg)
 {
   int op = selectStrOpCode(mb_len, str_len, IS_IGNORECASE(reg->options));
   AddOpCode(reg, op);
@@ -3079,7 +3149,8 @@ static int addCompileString(UChar* s, int mb_len, int str_len, regex_t* reg)
 }
 
 
-static int compileLengthStringNode(StrNode* sn, regex_t* reg)
+static int
+compileLengthStringNode(StrNode* sn, regex_t* reg)
 {
   int rlen, r, len, prev_len, slen;
   RegCharEncoding code = reg->code;
@@ -3114,7 +3185,8 @@ static int compileLengthStringNode(StrNode* sn, regex_t* reg)
   return rlen;
 }
 
-static int compileLengthStringRawNode(StrNode* sn, regex_t* reg)
+static int
+compileLengthStringRawNode(StrNode* sn, regex_t* reg)
 {
   int len;
   RegOptionType option;
@@ -3129,7 +3201,8 @@ static int compileLengthStringRawNode(StrNode* sn, regex_t* reg)
   return len;
 }
 
-static int compileStringNode(StrNode* sn, regex_t* reg)
+static int
+compileStringNode(StrNode* sn, regex_t* reg)
 {
   int r, len, prev_len, slen;
   RegCharEncoding code = reg->code;
@@ -3161,7 +3234,8 @@ static int compileStringNode(StrNode* sn, regex_t* reg)
   return addCompileString(prev, prev_len, slen, reg);
 }
 
-static int compileStringRawNode(StrNode* sn, regex_t* reg)
+static int
+compileStringRawNode(StrNode* sn, regex_t* reg)
 {
   int r;
   RegOptionType option;
@@ -3176,13 +3250,15 @@ static int compileStringRawNode(StrNode* sn, regex_t* reg)
   return r;
 }
 
-static int addMultiByteCClassOffset(BBuf* mbuf, regex_t* reg, int offset)
+static int
+addMultiByteCClassOffset(BBuf* mbuf, regex_t* reg, int offset)
 {
   AddLength(reg, mbuf->used - offset);
   return AddBytes(reg, mbuf->p + offset, mbuf->used - offset);
 }
 
-static int compileLengthCClassNode(CClassNode* cc, regex_t* reg)
+static int
+compileLengthCClassNode(CClassNode* cc, regex_t* reg)
 {
   int len;
 
@@ -3202,7 +3278,8 @@ static int compileLengthCClassNode(CClassNode* cc, regex_t* reg)
   return len;
 }
 
-static int compileCClassNode(CClassNode* cc, regex_t* reg)
+static int
+compileCClassNode(CClassNode* cc, regex_t* reg)
 {
   int r;
 
@@ -3234,8 +3311,8 @@ static int compileCClassNode(CClassNode* cc, regex_t* reg)
   return r;
 }
 
-static int compileRangeRepeat(QualifierNode* qn, int target_len,
-			      regex_t* reg)
+static int
+compileRangeRepeat(QualifierNode* qn, int target_len, regex_t* reg)
 {
   int r;
   int saved_num_repeat = reg->num_repeat;
@@ -3263,7 +3340,8 @@ static int compileRangeRepeat(QualifierNode* qn, int target_len,
 
 #define QUALIFIER_EXPAND_LIMIT_SIZE   50
 
-static int compileLengthQualifierNode(QualifierNode* qn, regex_t* reg)
+static int
+compileLengthQualifierNode(QualifierNode* qn, regex_t* reg)
 {
   int len, mod_tlen;
   int infinite = IS_REPEAT_INFINITE(qn->upper);
@@ -3314,7 +3392,8 @@ static int compileLengthQualifierNode(QualifierNode* qn, regex_t* reg)
   return len;
 }
 
-static int compileQualifierNode(QualifierNode* qn, regex_t* reg)
+static int
+compileQualifierNode(QualifierNode* qn, regex_t* reg)
 {
   int i, r, mod_tlen;
   int infinite = IS_REPEAT_INFINITE(qn->upper);
@@ -3404,7 +3483,8 @@ static int compileQualifierNode(QualifierNode* qn, regex_t* reg)
   return r;
 }
 
-static int compileLengthOption(OptionNode* node, regex_t* reg)
+static int
+compileLengthOption(OptionNode* node, regex_t* reg)
 {
   int tlen;
   RegOptionType prev = reg->options;
@@ -3419,7 +3499,8 @@ static int compileLengthOption(OptionNode* node, regex_t* reg)
          + tlen + SIZE_OP_SET_OPTION;
 }
 
-static int compileOption(OptionNode* node, regex_t* reg)
+static int
+compileOption(OptionNode* node, regex_t* reg)
 {
   int r;
   RegOptionType prev = reg->options;
@@ -3443,7 +3524,8 @@ static int compileOption(OptionNode* node, regex_t* reg)
   return r;
 }
 
-static int compileLengthEffectNode(EffectNode* node, regex_t* reg)
+static int
+compileLengthEffectNode(EffectNode* node, regex_t* reg)
 {
   int len;
   int tlen = compileLengthTree(node->target, reg);
@@ -3479,7 +3561,8 @@ static int compileLengthEffectNode(EffectNode* node, regex_t* reg)
 
 static int getCharLengthTree(Node* node, regex_t* reg, RegDistance* len);
 
-static int compileEffectNode(EffectNode* node, regex_t* reg)
+static int
+compileEffectNode(EffectNode* node, regex_t* reg)
 {
   int r, len;
 
@@ -3561,7 +3644,8 @@ static int compileEffectNode(EffectNode* node, regex_t* reg)
   return r;
 }
 
-static int compileLengthTree(Node* node, regex_t* reg)
+static int
+compileLengthTree(Node* node, regex_t* reg)
 {
   int len, type, r;
 
@@ -3644,7 +3728,8 @@ static int compileLengthTree(Node* node, regex_t* reg)
   return r;
 }
 
-static int compileTree(Node* node, regex_t* reg)
+static int
+compileTree(Node* node, regex_t* reg)
 {
   int n, type, len, op, pos, r = 0;
 
@@ -3760,12 +3845,14 @@ static int compileTree(Node* node, regex_t* reg)
 #ifdef REG_DEBUG
     fprintf(stderr, "compileTree: undefined node type %d\n", NTYPE(node));
 #endif
+    break;
   }
 
   return r;
 }
 
-static int getMinMatchLength(Node* node, RegDistance *min)
+static int
+getMinMatchLength(Node* node, RegDistance *min)
 {
   RegDistance tmin;
   int r = 0;
@@ -3858,7 +3945,8 @@ static int getMinMatchLength(Node* node, RegDistance *min)
   return r;
 }
 
-static int getMaxMatchLength(Node* node, regex_t* reg, RegDistance *max)
+static int
+getMaxMatchLength(Node* node, regex_t* reg, RegDistance *max)
 {
   RegDistance tmax;
   int r = 0;
@@ -3959,7 +4047,8 @@ static int getMaxMatchLength(Node* node, regex_t* reg, RegDistance *max)
 }
 
 /* fixed size pattern node only */
-static int getCharLengthTree(Node* node, regex_t* reg, RegDistance* len)
+static int
+getCharLengthTree(Node* node, regex_t* reg, RegDistance* len)
 {
   RegDistance tlen;
   int r = 0;
@@ -4034,7 +4123,8 @@ static int getCharLengthTree(Node* node, regex_t* reg, RegDistance* len)
   return r;
 }
 
-static Node* getHeadExactNode(Node* node, regex_t* reg)
+static Node*
+getHeadExactNode(Node* node, regex_t* reg)
 {
   Node* n = (Node* )NULL;
 
@@ -4111,8 +4201,8 @@ static Node* getHeadExactNode(Node* node, regex_t* reg)
   return n;
 }
 
-static int checkTypeTree(Node* node, int type_mask,
-			 int effect_mask, int anchor_mask)
+static int
+checkTypeTree(Node* node, int type_mask, int effect_mask, int anchor_mask)
 {
   int type, r = 0;
 
@@ -4169,7 +4259,8 @@ static int checkTypeTree(Node* node, int type_mask,
  4. set qf->head_exact for [push, exact] -> [push_or_jump_exact1, exact].
  5. find invalid patterns in look-behind.
  */
-static int setupTree(Node* node, regex_t* reg, int state)
+static int
+setupTree(Node* node, regex_t* reg, int state)
 {
   int type;
   int r = 0;
@@ -4366,7 +4457,8 @@ typedef struct {
 } MapBuf;
 
 
-static void OptBufInit(OptBuf* obuf, regex_t* reg, Node* root)
+static void
+OptBufInit(OptBuf* obuf, regex_t* reg, Node* root)
 {
   obuf->dmin = obuf->dmax = 0;
   obuf->pos_id     = 0;
@@ -4377,7 +4469,8 @@ static void OptBufInit(OptBuf* obuf, regex_t* reg, Node* root)
   obuf->root       = root;
 }
 
-static void OptBufCopy(OptBuf* obuf, OptBuf* from)
+static void
+OptBufCopy(OptBuf* obuf, OptBuf* from)
 {
   obuf->dmin       = from->dmin;
   obuf->dmax       = from->dmax;
@@ -4389,7 +4482,8 @@ static void OptBufCopy(OptBuf* obuf, OptBuf* from)
   obuf->root       = from->root;
 }
 
-static void OptBufReset(OptBuf* obuf, RegDistance min, RegDistance max)
+static void
+OptBufReset(OptBuf* obuf, RegDistance min, RegDistance max)
 {
   if ((obuf->anchor & ANCHOR_BEGIN_BUF) == 0) {
     obuf->dmax = max;
@@ -4397,7 +4491,8 @@ static void OptBufReset(OptBuf* obuf, RegDistance min, RegDistance max)
   }
 }
 
-static void OptBufInc(OptBuf* obuf, RegDistance inc_min, RegDistance inc_max)
+static void
+OptBufInc(OptBuf* obuf, RegDistance inc_min, RegDistance inc_max)
 {
   obuf->dmax = DistanceAdd(obuf->dmax, inc_max);
   obuf->dmin = DistanceAdd(obuf->dmin, inc_min);
@@ -4406,7 +4501,8 @@ static void OptBufInc(OptBuf* obuf, RegDistance inc_min, RegDistance inc_max)
   obuf->anchor = 0;
 }
 
-static void OptBufMergeAlt(OptBuf* obuf, OptBuf* from)
+static void
+OptBufMergeAlt(OptBuf* obuf, OptBuf* from)
 {
   if (obuf->dmin > from->dmin)
     obuf->dmin = from->dmin;
@@ -4422,7 +4518,8 @@ static void OptBufMergeAlt(OptBuf* obuf, OptBuf* from)
 }
 
 #ifdef REG_DEBUG
-static void PrintDistanceRange(FILE* f, RegDistance a, RegDistance b)
+static void
+PrintDistanceRange(FILE* f, RegDistance a, RegDistance b)
 {
   if (a == INFINITE_DISTANCE)
     fputs("inf", f);
@@ -4437,7 +4534,8 @@ static void PrintDistanceRange(FILE* f, RegDistance a, RegDistance b)
     fprintf(f, "(%u)", b);
 }
 
-static void PrintAnchor(FILE* f, int anchor)
+static void
+PrintAnchor(FILE* f, int anchor)
 {
   int q = 0;
 
@@ -4485,7 +4583,8 @@ static void PrintAnchor(FILE* f, int anchor)
   fprintf(f, "]");
 }
 
-static void PrintExactBuf(FILE* f, ExactBuf* buf)
+static void
+PrintExactBuf(FILE* f, ExactBuf* buf)
 {
   fprintf(f, "exact: ");
 
@@ -4505,7 +4604,8 @@ static void PrintExactBuf(FILE* f, ExactBuf* buf)
 #endif
 
 
-static void ExactBufInit(ExactBuf* buf, OptBuf* obuf)
+static void
+ExactBufInit(ExactBuf* buf, OptBuf* obuf)
 {
   buf->dmin   = obuf->dmin;
   buf->dmax   = obuf->dmax;
@@ -4519,7 +4619,8 @@ static void ExactBufInit(ExactBuf* buf, OptBuf* obuf)
   buf->mode         = SO_CONTINUE;
 }
 
-static void ExactBufCopy(ExactBuf* buf, ExactBuf* from)
+static void
+ExactBufCopy(ExactBuf* buf, ExactBuf* from)
 {
   int i;
 
@@ -4539,8 +4640,8 @@ static void ExactBufCopy(ExactBuf* buf, ExactBuf* from)
   buf->mode        = from->mode;
 }
 
-static void ExactBufAddStr(ExactBuf* buf, UChar* s, UChar* end,
-			   RegCharEncoding code)
+static void
+ExactBufAddStr(ExactBuf* buf, UChar* s, UChar* end, RegCharEncoding code)
 {
   int i, x, len;
 
@@ -4563,12 +4664,14 @@ static void ExactBufAddStr(ExactBuf* buf, UChar* s, UChar* end,
     buf->end_anchor = 0;
 }
 
-static void ExactBufAdd(ExactBuf* buf, ExactBuf* from, RegCharEncoding code)
+static void
+ExactBufAdd(ExactBuf* buf, ExactBuf* from, RegCharEncoding code)
 {
   ExactBufAddStr(buf, from->buf, &(from->buf[from->len]), code);
 }
 
-static void ExactBufIntersect(ExactBuf* to, ExactBuf* from, RegCharEncoding code)
+static void
+ExactBufIntersect(ExactBuf* to, ExactBuf* from, RegCharEncoding code)
 {
   int i, len, min;
 
@@ -4604,7 +4707,8 @@ static void ExactBufIntersect(ExactBuf* to, ExactBuf* from, RegCharEncoding code
 #define EXACT_UPDATE_DMAX0_LEN_THRESHOLD   3
 #define EXACT_IGNORE_CASE_POINT            3
 
-static void ExactBufUpdateBetter(ExactBuf* to, ExactBuf* from)
+static void
+ExactBufUpdateBetter(ExactBuf* to, ExactBuf* from)
 {
   if (!EXACT_BUF_VALID(from))
     return ;
@@ -4666,7 +4770,8 @@ static void ExactBufUpdateBetter(ExactBuf* to, ExactBuf* from)
   ExactBufCopy(to, from);
 }
 
-static void ExactBufRevise(ExactBuf* best, ExactBuf* econt, OptBuf* obuf)
+static void
+ExactBufRevise(ExactBuf* best, ExactBuf* econt, OptBuf* obuf)
 {
   if (econt->mode == SO_END) {
     ExactBufUpdateBetter(best, econt);
@@ -4677,8 +4782,9 @@ static void ExactBufRevise(ExactBuf* best, ExactBuf* econt, OptBuf* obuf)
 static int SetExactInfo(regex_t* reg, Node* node, OptBuf* obuf, 
 			ExactBuf* econt, ExactBuf* best);
 
-static int setExactInfoNode(regex_t* reg, OptBuf* obuf,
-			    ExactBuf* econt, ExactBuf* best, Node* node)
+static int
+setExactInfoNode(regex_t* reg, OptBuf* obuf,
+		 ExactBuf* econt, ExactBuf* best, Node* node)
 {
   RegDistance len;
   int i, n, type;
@@ -5100,8 +5206,9 @@ static int setExactInfoNode(regex_t* reg, OptBuf* obuf,
   return r;
 }
 
-static int SetExactInfo(regex_t* reg, Node* node, OptBuf* obuf,
-			ExactBuf* econt, ExactBuf* best)
+static int
+SetExactInfo(regex_t* reg, Node* node, OptBuf* obuf,
+	     ExactBuf* econt, ExactBuf* best)
 {
   int r;
 
@@ -5115,7 +5222,8 @@ static int SetExactInfo(regex_t* reg, Node* node, OptBuf* obuf,
 }
 
 #ifdef REG_DEBUG
-static void PrintMapBuf(FILE* f, MapBuf* buf)
+static void
+PrintMapBuf(FILE* f, MapBuf* buf)
 {
   fprintf(f, "map: ");
 
@@ -5133,7 +5241,8 @@ static void PrintMapBuf(FILE* f, MapBuf* buf)
 }
 #endif
 
-static void MapBufInit(MapBuf* buf, OptBuf* obuf)
+static void
+MapBufInit(MapBuf* buf, OptBuf* obuf)
 {
   int i;
 
@@ -5149,7 +5258,8 @@ static void MapBufInit(MapBuf* buf, OptBuf* obuf)
     buf->map[i] = (UChar )0;
 }
 
-static void MapBufCopy(MapBuf* buf, MapBuf* from)
+static void
+MapBufCopy(MapBuf* buf, MapBuf* from)
 {
   buf->dmin   = from->dmin;
   buf->dmax   = from->dmax;
@@ -5162,7 +5272,8 @@ static void MapBufCopy(MapBuf* buf, MapBuf* from)
   xmemcpy(buf->map, from->map, sizeof(UChar) * REG_CHAR_TABLE_SIZE);
 }
 
-static void mapBufAdd(MapBuf* buf, UChar c)
+static void
+MapAdd(MapBuf* buf, UChar c)
 {
   switch(c) {
   case ' ':  buf->value += 8; break;
@@ -5175,14 +5286,16 @@ static void mapBufAdd(MapBuf* buf, UChar c)
   buf->n++;
 }
 
-static void MapBufAdd(MapBuf* buf, UChar c)
+static void
+MapBufAdd(MapBuf* buf, UChar c)
 {
   if (buf->map[c] == 0) {
-    mapBufAdd(buf, c);
+    MapAdd(buf, c);
   }
 }
 
-static void MapBufReverse(MapBuf* buf)
+static void
+MapBufReverse(MapBuf* buf)
 {
   int i;
 
@@ -5191,11 +5304,12 @@ static void MapBufReverse(MapBuf* buf)
     if (buf->map[i])
       buf->map[i] = 0;
     else
-      mapBufAdd(buf, i);
+      MapAdd(buf, i);
   }
 }
 
-static void MapBufClear(MapBuf* buf)
+static void
+MapBufClear(MapBuf* buf)
 {
   buf->n            = 0;
   buf->value        = 0;
@@ -5203,7 +5317,8 @@ static void MapBufClear(MapBuf* buf)
   buf->end_anchor   = 0;
 }
 
-static void MapBufUnion(MapBuf* to, MapBuf* from)
+static void
+MapBufUnion(MapBuf* to, MapBuf* from)
 {
   int i;
 
@@ -5221,7 +5336,7 @@ static void MapBufUnion(MapBuf* to, MapBuf* from)
   for (i = 0; i < REG_CHAR_TABLE_SIZE; i++) {
     if (from->map[i]) {
       if (to->map[i] == 0)
-	mapBufAdd(to, i);
+	MapAdd(to, i);
     }
   }
 
@@ -5232,7 +5347,8 @@ static void MapBufUnion(MapBuf* to, MapBuf* from)
 #define MAP_UPDATE_DMAX0_VALUE_THRESHOLD   16
 #define MAP_VALUE_BASE                      4
 
-static void MapBufUpdateBetter(MapBuf* to, MapBuf* from)
+static void
+MapBufUpdateBetter(MapBuf* to, MapBuf* from)
 {
   if (! MAP_BUF_VALID(from)) return ;
 
@@ -5279,7 +5395,8 @@ static void MapBufUpdateBetter(MapBuf* to, MapBuf* from)
 
 static int SetMapInfo(Node* node, OptBuf* obuf,	MapBuf* best);
 
-static int setMapInfoNode(OptBuf* obuf, MapBuf* best, Node* node)
+static int
+setMapInfoNode(OptBuf* obuf, MapBuf* best, Node* node)
 {
   MapBuf curr;
   RegDistance len;
@@ -5560,14 +5677,16 @@ static int setMapInfoNode(OptBuf* obuf, MapBuf* best, Node* node)
   return r;
 }
 
-static int SetMapInfo(Node* node, OptBuf* obuf, MapBuf* best)
+static int
+SetMapInfo(Node* node, OptBuf* obuf, MapBuf* best)
 {
   MapBufInit(best, obuf);
   return setMapInfoNode(obuf, best, node);
 }
 
 #ifdef REG_DEBUG
-static void PrintOptimizeInfo(FILE* f, regex_t* reg)
+static void
+PrintOptimizeInfo(FILE* f, regex_t* reg)
 {
   static char* on[] = { "NONE", "EXACT", "EXACT_BM", "EXACT_IC",
 			"EXACT_BM_IC(not used!)", "MAP" };
@@ -5586,7 +5705,8 @@ static void PrintOptimizeInfo(FILE* f, regex_t* reg)
 }
 #endif
 
-static void SetOptimizeMap(regex_t* reg, MapBuf* m)
+static void
+SetOptimizeMap(regex_t* reg, MapBuf* m)
 {
   int i;
 
@@ -5608,7 +5728,8 @@ static void SetOptimizeMap(regex_t* reg, MapBuf* m)
 static int SetBMSkip(UChar* s, UChar* end, UChar* transtable,
 		     UChar skip[], int** int_skip);
 
-static int SetOptimizeExact(regex_t* reg, ExactBuf* e)
+static int
+SetOptimizeExact(regex_t* reg, ExactBuf* e)
 {
   int r;
 
@@ -5653,7 +5774,8 @@ static int SetOptimizeExact(regex_t* reg, ExactBuf* e)
   return 0;
 }
 
-static void ClearOptimizeInfo(regex_t* reg)
+static void
+ClearOptimizeInfo(regex_t* reg)
 {
   reg->optimize      = REG_OPTIMIZE_NONE;
   reg->anchor        = 0;
@@ -5671,7 +5793,8 @@ static void ClearOptimizeInfo(regex_t* reg)
 #define MAP_VALUE_THRESHOLD                 4
 #define MAP_VALUE_THRESHOLD2                9
 
-static int SetOptimizeInfoFromTree(Node* node, regex_t* reg)
+static int
+SetOptimizeInfoFromTree(Node* node, regex_t* reg)
 {
   int r;
   OptBuf   obuf;
@@ -5729,7 +5852,8 @@ static int SetOptimizeInfoFromTree(Node* node, regex_t* reg)
 }
 
 
-extern void RegexRegionClear(RegRegion* region)
+extern void
+RegexRegionClear(RegRegion* region)
 {
   int i;
 
@@ -5738,7 +5862,8 @@ extern void RegexRegionClear(RegRegion* region)
   }
 }
 
-extern int RegexRegionResize(RegRegion* region, int n)
+extern int
+RegexRegionResize(RegRegion* region, int n)
 {
   int i;
 
@@ -5772,7 +5897,8 @@ extern int RegexRegionResize(RegRegion* region, int n)
   return 0;
 }
 
-extern void RegexRegionInit(RegRegion* region)
+extern void
+RegexRegionInit(RegRegion* region)
 {
   region->num_regs  = 0;
   region->allocated = 0;
@@ -5789,7 +5915,8 @@ extern RegRegion* RegexRegionNew()
   return r;
 }
 
-extern void RegexRegionFree(RegRegion* r, int free_self)
+extern void
+RegexRegionFree(RegRegion* r, int free_self)
 {
   if (r) {
     if (r->allocated > 0) {
@@ -5801,13 +5928,15 @@ extern void RegexRegionFree(RegRegion* r, int free_self)
   }
 }
 
-extern void re_free_registers(RegRegion* r)
+extern void
+re_free_registers(RegRegion* r)
 {
   /* 0: don't free self */
   RegexRegionFree(r, 0);
 }
 
-extern void RegexRegionCopy(RegRegion* r1, RegRegion* r2)
+extern void
+RegexRegionCopy(RegRegion* r1, RegRegion* r2)
 {
 #define RREGC_SIZE   (sizeof(int) * r2->num_regs)
   int i;
@@ -5831,7 +5960,6 @@ extern void RegexRegionCopy(RegRegion* r1, RegRegion* r2)
   }
   r1->num_regs = r2->num_regs;
 }
-
 
 
 /** stack data **/
@@ -6111,23 +6239,30 @@ typedef struct {
 
 #define DATA_ENSURE_CHECK(n)   (s + (n) <= end)
 
+#ifdef REG_DEBUG
 static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp);
 static void printCompiledByteCodeList(FILE* f, regex_t* reg);
-
+#endif
 
 #ifdef REG_DEBUG_STATISTICS
 
 #define USE_TIMEOFDAY
 
 #ifdef USE_TIMEOFDAY
+#ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
+#endif
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 static struct timeval ts, te;
 #define GETTIME(t)        gettimeofday(&(t), (struct timezone* )0)
 #define TIMEDIFF(te,ts)   (((te).tv_usec - (ts).tv_usec) + \
                            (((te).tv_sec - (ts).tv_sec)*1000000))
 #else
+#ifdef HAVE_SYS_TIMES_H
 #include <sys/times.h>
+#endif
 static struct tms ts, te;
 #define GETTIME(t)         times(&(t))
 #define TIMEDIFF(te,ts)   ((te).tms_utime - (ts).tms_utime)
@@ -6187,8 +6322,9 @@ void Init_REGEX()
 
 /* match data(str - end) from position (sstart). */
 /* if sstart == str then set sprev to NULL. */
-static int regexMatch(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
-		      UChar* sprev, RegRegion* region, MatchStackAlloc* msa)
+static int
+matchAt(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
+	UChar* sprev, RegRegion* region, MatchStackAlloc* msa)
 {
   static UChar FinishCode[] = { OP_FINISH };
 
@@ -6225,7 +6361,7 @@ static int regexMatch(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
   }
 
 #ifdef REG_DEBUG_MATCH
-  fprintf(stderr, "regexMatch: str: %d, end: %d, start: %d, sprev: %d\n",
+  fprintf(stderr, "matchAt: str: %d, end: %d, start: %d, sprev: %d\n",
 	  (int )str, (int )end, (int )sstart, (int )sprev);
   fprintf(stderr, "size: %d, start offset: %d\n",
 	  (int )(end - str), (int )(sstart - str));
@@ -7082,8 +7218,9 @@ static int regexMatch(regex_t* reg, UChar* str, UChar* end, UChar* sstart,
   return REGERR_UNEXPECTED_BYTECODE;
 }
 
-extern int re_adjust_startpos(regex_t* reg, const char* string, int size,
-			      int startpos, int range)
+extern int
+re_adjust_startpos(regex_t* reg, const char* string, int size,
+		   int startpos, int range)
 {
   if (startpos > 0 && mbmaxlen(reg->code) != 1 && startpos < size) {
     UChar *p;
@@ -7101,9 +7238,9 @@ extern int re_adjust_startpos(regex_t* reg, const char* string, int size,
   return startpos;
 }
 
-static UChar* SlowSearch(RegCharEncoding code,
-			 UChar* target, UChar* target_end,
-			 UChar* text, UChar* text_end, UChar* text_range)
+static UChar*
+SlowSearch(RegCharEncoding code, UChar* target, UChar* target_end,
+	   UChar* text, UChar* text_end, UChar* text_range)
 {
   UChar *t, *p, *s, *end;
 
@@ -7131,8 +7268,9 @@ static UChar* SlowSearch(RegCharEncoding code,
   return (UChar* )NULL;
 }
 
-static int StrTransMatchAfterHeadByte(RegCharEncoding code, UChar* trans,
-			      int len, UChar* t, UChar* tend, UChar* p)
+static int
+StrTransMatchAfterHeadByte(RegCharEncoding code, UChar* trans,
+			   int len, UChar* t, UChar* tend, UChar* p)
 {
   while (--len > 0) {
     if (*t != *p) break;
@@ -7165,9 +7303,9 @@ static int StrTransMatchAfterHeadByte(RegCharEncoding code, UChar* trans,
   return 0;
 }
 
-static UChar* SlowSearchIC(RegCharEncoding code, UChar* transtable,
-			   UChar* target, UChar* target_end,
-			   UChar* text, UChar* text_end, UChar* text_range)
+static UChar*
+SlowSearchIC(RegCharEncoding code, UChar* transtable, UChar* target,
+	     UChar* target_end, UChar* text, UChar* text_end, UChar* text_range)
 {
   int len;
   UChar *t, *p, *s, *end;
@@ -7192,9 +7330,9 @@ static UChar* SlowSearchIC(RegCharEncoding code, UChar* transtable,
   return (UChar* )NULL;
 }
 
-static UChar* SlowSearchBackward(RegCharEncoding code,
-	 UChar* target, UChar* target_end,
-	 UChar* text, UChar* adjust_text, UChar* text_end, UChar* text_start)
+static UChar*
+SlowSearchBackward(RegCharEncoding code, UChar* target, UChar* target_end,
+	   UChar* text, UChar* adjust_text, UChar* text_end, UChar* text_start)
 {
   UChar *t, *p, *s;
 
@@ -7222,9 +7360,10 @@ static UChar* SlowSearchBackward(RegCharEncoding code,
   return (UChar* )NULL;
 }
 
-static UChar* SlowSearchBackwardIC(RegCharEncoding code, UChar* transtable,
-	 UChar* target, UChar* target_end,
-	 UChar* text, UChar* adjust_text, UChar* text_end, UChar* text_start)
+static UChar*
+SlowSearchBackwardIC(RegCharEncoding code, UChar* transtable, UChar* target,
+		     UChar* target_end, UChar* text, UChar* adjust_text,
+		     UChar* text_end, UChar* text_start)
 {
   int len;
   UChar *t, *p, *s;
@@ -7250,8 +7389,8 @@ static UChar* SlowSearchBackwardIC(RegCharEncoding code, UChar* transtable,
 }
 
 /* set skip map for Boyer-Moor search */
-static int SetBMSkip(UChar* s, UChar* end, UChar* transtable,
-		     UChar skip[], int** int_skip)
+static int
+SetBMSkip(UChar* s, UChar* end, UChar* transtable, UChar skip[], int** int_skip)
 {
   int i, len;
 
@@ -7287,8 +7426,9 @@ static int SetBMSkip(UChar* s, UChar* end, UChar* transtable,
   return 0;
 }
 
-static UChar* BMSearch(regex_t* reg, UChar* target, UChar* target_end,
-			      UChar* text, UChar* text_end, UChar* text_range)
+static UChar*
+BMSearch(regex_t* reg, UChar* target, UChar* target_end,
+	 UChar* text, UChar* text_end, UChar* text_range)
 {
   UChar *s, *t, *p, *end;
   UChar *tail;
@@ -7372,8 +7512,8 @@ static UChar* BMSearch(regex_t* reg, UChar* target, UChar* target_end,
   return (UChar* )NULL;
 }
 
-static int SetBMBackwardSkip(UChar* s, UChar* end,
-			     UChar* transtable, int** skip)
+static int
+SetBMBackwardSkip(UChar* s, UChar* end, UChar* transtable, int** skip)
 {
   int i, len;
 
@@ -7397,8 +7537,9 @@ static int SetBMBackwardSkip(UChar* s, UChar* end,
   return 0;
 }
 
-static UChar* BMSearchBackward(regex_t* reg, UChar* target, UChar* target_end,
-       UChar* text, UChar* adjust_text, UChar* text_end, UChar* text_start)
+static UChar*
+BMSearchBackward(regex_t* reg, UChar* target, UChar* target_end, UChar* text,
+		 UChar* adjust_text, UChar* text_end, UChar* text_start)
 {
   UChar *s, *t, *p;
 
@@ -7424,8 +7565,8 @@ static UChar* BMSearchBackward(regex_t* reg, UChar* target, UChar* target_end,
   return (UChar* )NULL;
 }
 
-static UChar* MapSearch(RegCharEncoding code, UChar map[],
-			UChar* text, UChar* text_range)
+static UChar*
+MapSearch(RegCharEncoding code, UChar map[], UChar* text, UChar* text_range)
 {
   UChar *s = text;
 
@@ -7437,8 +7578,9 @@ static UChar* MapSearch(RegCharEncoding code, UChar map[],
   return (UChar* )NULL;
 }
 
-static UChar* MapSearchBackward(RegCharEncoding code, UChar map[],
-			UChar* text, UChar* adjust_text, UChar* text_start)
+static UChar*
+MapSearchBackward(RegCharEncoding code, UChar map[],
+		  UChar* text, UChar* adjust_text, UChar* text_start)
 {
   UChar *s = text_start;
 
@@ -7450,8 +7592,8 @@ static UChar* MapSearchBackward(RegCharEncoding code, UChar map[],
   return (UChar* )NULL;
 }
 
-extern int re_match(regex_t* reg, const char* str, int size, int pos,
-		    struct re_registers* regs)
+extern int
+RegexMatch(regex_t* reg, UChar* str, UChar* end, UChar* at, RegRegion* region)
 {
   int r;
   UChar *prev;
@@ -7459,21 +7601,26 @@ extern int re_match(regex_t* reg, const char* str, int size, int pos,
 
   MATCH_STACK_ALLOC_INIT(msa);
 
-  r = RegexRegionResize(regs, reg->max_mem + 1);
-  if (r) goto end;
-
-  prev = GetPrevCharHead(reg->code, (UChar* )str, (UChar* )(str + pos));
-
-  r = regexMatch(reg, (UChar* )str, (UChar* )(str + size),
-		 (UChar* )(str + pos), prev, regs, &msa);
-
- end:
+  r = RegexRegionResize(region, reg->max_mem + 1);
+  if (r == 0) {
+    prev = GetPrevCharHead(reg->code, str, at);
+    r = matchAt(reg, str, end, at, prev, region, &msa);
+  }
   MATCH_STACK_ALLOC_FREE(msa);
   return r;
 }
 
-static int ForwardSearchRange(regex_t* reg, UChar* str, UChar* end, UChar* s,
-	      UChar* range, UChar** low, UChar** high, UChar** low_prev)
+extern int
+re_match(regex_t* reg, const char* str, int size, int pos,
+	 struct re_registers* regs)
+{
+  return RegexMatch(reg, (UChar* )str, (UChar* )(str + size),
+		    (UChar* )(str + pos), regs);
+}
+
+static int
+ForwardSearchRange(regex_t* reg, UChar* str, UChar* end, UChar* s,
+		   UChar* range, UChar** low, UChar** high, UChar** low_prev)
 {
   UChar *p, *pprev = (UChar* )NULL;
 
@@ -7572,13 +7719,13 @@ static int ForwardSearchRange(regex_t* reg, UChar* str, UChar* end, UChar* s,
   return 0; /* fail */
 }
 
-static int SetBMBackwardSkip(UChar* s, UChar* end, UChar* transtable,
-			     int** skip);
+static int SetBMBackwardSkip(UChar* s, UChar* end, UChar* transtbl, int** skip);
 
 #define BM_BACKWARD_SEARCH_LENGTH_THRESHOLD   100
 
-static int BackwardSearchRange(regex_t* reg, UChar* str, UChar* end, UChar* s,
-	      UChar* range, UChar* adjrange, UChar** low, UChar** high)
+static int
+BackwardSearchRange(regex_t* reg, UChar* str, UChar* end, UChar* s,
+		    UChar* range, UChar* adjrange, UChar** low, UChar** high)
 {
   int r;
   UChar *p;
@@ -7670,7 +7817,8 @@ static int BackwardSearchRange(regex_t* reg, UChar* str, UChar* end, UChar* s,
 }
 
 
-static void regexFreeBody(regex_t* reg)
+static void
+regexFreeBody(regex_t* reg)
 {
   if (reg->p)       xfree(reg->p);
   if (reg->exact)   xfree(reg->exact);
@@ -7682,7 +7830,8 @@ static void regexFreeBody(regex_t* reg)
     RegexFree(reg->chain);
 }
 
-extern void RegexFree(regex_t* reg)
+extern void
+RegexFree(regex_t* reg)
 {
   if (reg) {
     regexFreeBody(reg);
@@ -7697,7 +7846,8 @@ extern void RegexFree(regex_t* reg)
   xfree(from);\
 } while (0)
 
-static void regexTransfer(regex_t* to, regex_t* from)
+static void
+regexTransfer(regex_t* to, regex_t* from)
 {
   THREAD_ATOMIC_START;
   REGEX_TRANSFER(to,from);
@@ -7710,7 +7860,8 @@ static void regexTransfer(regex_t* to, regex_t* from)
   }\
 } while (0)
 
-static void regexChainLinkAdd(regex_t* to, regex_t* add)
+static void
+regexChainLinkAdd(regex_t* to, regex_t* add)
 {
   THREAD_ATOMIC_START;
   REGEX_CHAIN_HEAD(to);
@@ -7718,12 +7869,12 @@ static void regexChainLinkAdd(regex_t* to, regex_t* add)
   THREAD_ATOMIC_END;
 }
 
-static void regexChainReduce(regex_t* reg)
+static void
+regexChainReduce(regex_t* reg)
 {
   regex_t *head, *prev;
 
   THREAD_ATOMIC_START;
-
   prev = reg;
   head = prev->chain;
   if (IS_NOT_NULL(head)) {
@@ -7734,12 +7885,12 @@ static void regexChainReduce(regex_t* reg)
     prev->chain = (regex_t* )NULL;
     REGEX_TRANSFER(reg,head);
   }
-
   THREAD_ATOMIC_END;
 }
 
-extern int RegexSearch(regex_t* reg, UChar* str, UChar* end,
-		       UChar* start, UChar* range, RegRegion* region)
+extern int
+RegexSearch(regex_t* reg, UChar* str, UChar* end,
+	    UChar* start, UChar* range, RegRegion* region)
 {
   int r;
   UChar *s, *prev;
@@ -7845,7 +7996,7 @@ extern int RegexSearch(regex_t* reg, UChar* str, UChar* end,
 #endif
 
 #define MATCH_AND_RETURN_CHECK \
-  r = regexMatch(reg, str, end, s, prev, region, &msa);\
+  r = matchAt(reg, str, end, s, prev, region, &msa);\
   if (r != REG_MISMATCH) {\
     if (r >= 0) goto match;\
     goto finish; /* error */ \
@@ -7859,11 +8010,20 @@ extern int RegexSearch(regex_t* reg, UChar* str, UChar* end,
       prev = (UChar* )NULL;
 
     if (reg->optimize != REG_OPTIMIZE_NONE) {
-      UChar *low, *high, *low_prev;
+      UChar *sch_range, *low, *high, *low_prev;
 
+      sch_range = range;
+      if (reg->dmax != 0) {
+	if (reg->dmax == INFINITE_DISTANCE)
+	  sch_range = end;
+	else {
+	  sch_range += reg->dmax;
+	  if (sch_range > end) sch_range = end;
+	}
+      }
       if (reg->threshold_len != 0 && (end - start) >= reg->threshold_len) {
 	do {
-	  if (! ForwardSearchRange(reg, str, end, s, range,
+	  if (! ForwardSearchRange(reg, str, end, s, sch_range,
 				   &low, &high, &low_prev)) goto mismatch;
 	  if (s < low) {
 	    s    = low;
@@ -7887,7 +8047,7 @@ extern int RegexSearch(regex_t* reg, UChar* str, UChar* end,
       }
       else { /* check only. */
 	if ((end - start) <= reg->dmin ||
-	    ! ForwardSearchRange(reg, str, end, s, range,
+	    ! ForwardSearchRange(reg, str, end, s, sch_range,
 				 &low, &high, (UChar** )NULL)) goto mismatch;
       }
     }
@@ -7950,9 +8110,9 @@ extern int RegexSearch(regex_t* reg, UChar* str, UChar* end,
   return s - str;
 }
 
-extern int re_search(regex_t* bufp, const char* string,
-		     int size, int startpos, int range,
-		     struct re_registers* regs)
+extern int
+re_search(regex_t* bufp, const char* string, int size, int startpos, int range,
+	  struct re_registers* regs)
 {
   return RegexSearch(bufp, (UChar* )string, (UChar* )(string + size),
 		     (UChar* )(string + startpos),
@@ -7960,7 +8120,8 @@ extern int re_search(regex_t* bufp, const char* string,
 }
 
 
-extern int RegexClone(regex_t* to, regex_t* from)
+extern int
+RegexClone(regex_t* to, regex_t* from)
 {
   int size;
 
@@ -8001,7 +8162,8 @@ extern int RegexClone(regex_t* to, regex_t* from)
 static void PrintTree(FILE* f, Node* node);
 #endif
 
-static int regexCompile(regex_t* reg, UChar* pattern, UChar* pattern_end)
+static int
+regexCompile(regex_t* reg, UChar* pattern, UChar* pattern_end)
 {
 #define COMPILE_INIT_SIZE  20
 
@@ -8064,8 +8226,9 @@ static int regexCompile(regex_t* reg, UChar* pattern, UChar* pattern_end)
   return r;
 }
 
-extern int RegexReCompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
-	      RegOptionType option, RegCharEncoding code, UChar* transtable)
+extern int
+RegexReCompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
+	       RegOptionType option, RegCharEncoding code, UChar* transtable)
 {
   int r;
   regex_t *new_reg, *head;
@@ -8085,7 +8248,8 @@ extern int RegexReCompile(regex_t* reg, UChar* pattern, UChar* pattern_end,
   return r;
 }
 
-extern char* re_compile_pattern(const char* pattern, int size, regex_t* reg)
+extern char*
+re_compile_pattern(const char* pattern, int size, regex_t* reg)
 {
   int r;
 
@@ -8096,7 +8260,8 @@ extern char* re_compile_pattern(const char* pattern, int size, regex_t* reg)
   return NULL;
 }
 
-extern char* re_recompile_pattern(const char* pattern, int size, regex_t* reg)
+extern char*
+re_recompile_pattern(const char* pattern, int size, regex_t* reg)
 {
   int r;
 
@@ -8108,15 +8273,17 @@ extern char* re_recompile_pattern(const char* pattern, int size, regex_t* reg)
   return NULL;
 }
 
-extern void re_free_pattern(regex_t* reg)
+extern void
+re_free_pattern(regex_t* reg)
 {
   RegexFree(reg);
 }
 
 static int regex_inited = 0;
 
-static int regexAllocInit(regex_t** reg, RegOptionType option,
-		  RegCharEncoding code, UChar* transtable)
+static int
+regexAllocInit(regex_t** reg, RegOptionType option,
+	       RegCharEncoding code, UChar* transtable)
 {
   if (! regex_inited)
     RegexInit();
@@ -8141,7 +8308,8 @@ static int regexAllocInit(regex_t** reg, RegOptionType option,
   return 0;
 }
 
-extern int re_alloc_pattern(regex_t** reg)
+extern int
+re_alloc_pattern(regex_t** reg)
 {
   int r;
 
@@ -8153,8 +8321,9 @@ extern int re_alloc_pattern(regex_t** reg)
   return r;
 }
 
-extern int RegexNew(regex_t** reg, UChar* pattern, UChar* pattern_end,
-	     RegOptionType option, RegCharEncoding code, UChar* transtable)
+extern int
+RegexNew(regex_t** reg, UChar* pattern, UChar* pattern_end,
+	 RegOptionType option, RegCharEncoding code, UChar* transtable)
 {
   int r;
 
@@ -8170,7 +8339,8 @@ extern int RegexNew(regex_t** reg, UChar* pattern, UChar* pattern_end,
   return 0;
 }
 
-static void SetDefaultTransTable(UChar* table)
+static void
+SetDefaultTransTable(UChar* table)
 {
   int i;
 
@@ -8188,17 +8358,20 @@ static void SetDefaultTransTable(UChar* table)
   }
 }
 
-extern void re_set_casetable(const char* table)
+extern void
+re_set_casetable(const char* table)
 {
   SetDefaultTransTable((UChar* )table);
 }
 
-extern void re_mbcinit(int mb_code)
+extern void
+re_mbcinit(int mb_code)
 {
   RegDefaultCharCode = REG_MBLEN_TABLE[mb_code];
 }
 
-extern int RegexInit()
+extern int
+RegexInit()
 {
 #ifdef DEFAULT_TRANSTABLE_EXIST
   if (! DefaultTransTable)  /* check re_set_casetable() called already. */
@@ -8210,7 +8383,8 @@ extern int RegexInit()
   return 0;
 }
 
-extern int RegexEnd()
+extern int
+RegexEnd()
 {
 #ifdef USE_RECYCLE_NODE
   FreeNode* n;
@@ -8303,7 +8477,8 @@ static OpInfoType OpInfo[] = {
   { -1, "", ARG_NON }
 };
 
-static char* Op2Name(int opcode)
+static char*
+Op2Name(int opcode)
 {
   int i;
 
@@ -8314,7 +8489,8 @@ static char* Op2Name(int opcode)
   return "";
 }
 
-static int Op2ArgType(int opcode)
+static int
+Op2ArgType(int opcode)
 {
   int i;
 
@@ -8325,24 +8501,28 @@ static int Op2ArgType(int opcode)
   return ARG_SPECIAL;
 }
 
-static void Indent(FILE* f, int indent)
+static void
+Indent(FILE* f, int indent)
 {
   int i;
   for (i = 0; i < indent; i++) putc(' ', f);
 }
 
-static void pOpCode(FILE* f, char* opcode)
+static void
+pOpCode(FILE* f, char* opcode)
 {
   fprintf(f, "%s", opcode);
 }
 
-static void pString(FILE* f, int len, UChar* s)
+static void
+pString(FILE* f, int len, UChar* s)
 {
   fputs(":", f);
   while (len-- > 0) { fputc(*s++, f); }
 }
 
-static void pLenString(FILE* f, LengthType len, int mb_len, UChar* s)
+static void
+pLenString(FILE* f, LengthType len, int mb_len, UChar* s)
 {
   int x = len * mb_len;
 
@@ -8350,12 +8530,14 @@ static void pLenString(FILE* f, LengthType len, int mb_len, UChar* s)
   while (x-- > 0) { fputc(*s++, f); }
 }
 
-static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
+static void
+printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
 {
   int i, n, arg_type;
   RelAddrType addr;
   LengthType len;
   MemNumType mem;
+  WCInt wc;
 
   fprintf(f, "[%s", Op2Name(*bp));
   arg_type = Op2ArgType(*bp);
@@ -8390,20 +8572,15 @@ static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
   else {
     switch (*bp++) {
     case OP_EXACT1:
-      pString(f, 1, bp++);
-      break;
+      pString(f, 1, bp++); break;
     case OP_EXACT2:
-      pString(f, 2, bp); bp += 2;
-      break;
+      pString(f, 2, bp); bp += 2; break;
     case OP_EXACT3:
-      pString(f, 3, bp); bp += 3;
-      break;
+      pString(f, 3, bp); bp += 3; break;
     case OP_EXACT4:
-      pString(f, 4, bp); bp += 4;
-      break;
+      pString(f, 4, bp); bp += 4; break;
     case OP_EXACT5:
-      pString(f, 5, bp); bp += 5;
-      break;
+      pString(f, 5, bp); bp += 5; break;
     case OP_EXACTN:
       GET_LENGTH_INC(len, bp);
       pLenString(f, len, 1, bp);
@@ -8411,14 +8588,11 @@ static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
       break;
     
     case OP_EXACTMB2N1:
-      pString(f, 2, bp); bp += 2;
-      break;
+      pString(f, 2, bp); bp += 2; break;
     case OP_EXACTMB2N2:
-      pString(f, 4, bp); bp += 4;
-      break;
+      pString(f, 4, bp); bp += 4; break;
     case OP_EXACTMB2N3:
-      pString(f, 6, bp); bp += 6;
-      break;
+      pString(f, 6, bp); bp += 6; break;
     case OP_EXACTMB2N:
       GET_LENGTH_INC(len, bp);
       pLenString(f, len, 2, bp);
@@ -8464,39 +8638,30 @@ static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
 
     case OP_CCLASS_MB:
     case OP_CCLASS_MB_NOT:
-      {
-	WCInt wc;
-
-	n = BitSetOnNum((BitSetRef )bp);
-	bp += SIZE_BITSET;
-	GET_LENGTH_INC(len, bp);
-	GET_WCINT(wc, bp);
-	bp += len;
-	fprintf(f, ":%d:%d:%d", n, (int )wc, len);
-      }
+      n = BitSetOnNum((BitSetRef )bp);
+      bp += SIZE_BITSET;
+      GET_LENGTH_INC(len, bp);
+      GET_WCINT(wc, bp);
+      bp += len;
+      fprintf(f, ":%d:%d:%d", n, (int )wc, len);
       break;
 
     case OP_CCLASS_MIX:
     case OP_CCLASS_MIX_NOT:
-      {
-	WCInt wc;
-
-	n = BitSetOnNum((BitSetRef )bp);
-	bp += SIZE_BITSET;
-	GET_LENGTH_INC(len, bp);
-	GET_WCINT(wc, bp);
-	bp += len;
-	fprintf(f, ":%d:%d:%d", n, (int )wc, len);
-      }
+      n = BitSetOnNum((BitSetRef )bp);
+      bp += SIZE_BITSET;
+      GET_LENGTH_INC(len, bp);
+      GET_WCINT(wc, bp);
+      bp += len;
+      fprintf(f, ":%d:%d:%d", n, (int )wc, len);
       break;
   
     case OP_REPEAT:
     case OP_REPEAT_NG:
       {
 	RepeatNumType nf, nt;
-	MemNumType id;
 
-	id = *((MemNumType* )bp);
+	mem = *((MemNumType* )bp);
 	bp += SIZE_MEMNUM;
 	addr = *((RelAddrType* )bp);
 	bp += SIZE_RELADDR;
@@ -8504,7 +8669,7 @@ static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
 	bp += SIZE_REPEATNUM;
 	nt = *((RepeatNumType* )bp);
 	bp += SIZE_REPEATNUM;
-	fprintf(f, ":%d:%d:%d-", id, addr, nf);
+	fprintf(f, ":%d:%d:%d-", mem, addr, nf);
 	if (IS_REPEAT_INFINITE(nt))
 	  fprintf(f, "*");
 	else
@@ -8539,7 +8704,8 @@ static void printCompiledByteCode(FILE* f, UChar* bp, UChar** nextp)
   if (nextp) *nextp = bp;
 }
 
-static void printCompiledByteCodeList(FILE* f, regex_t* reg)
+static void
+printCompiledByteCodeList(FILE* f, regex_t* reg)
 {
   int ncode;
   UChar* bp = reg->p;
@@ -8562,7 +8728,8 @@ static void printCompiledByteCodeList(FILE* f, regex_t* reg)
   fprintf(f, "\n");
 }
 
-static void printIndentTree(FILE* f, Node* node, int indent)
+static void
+printIndentTree(FILE* f, Node* node, int indent)
 {
   int i, type;
   int add = 3;
@@ -8701,7 +8868,8 @@ static void printIndentTree(FILE* f, Node* node, int indent)
   fflush(f);
 }
 
-static void PrintTree(FILE* f, Node* node)
+static void
+PrintTree(FILE* f, Node* node)
 {
   printIndentTree(f, node, 0);
 }
@@ -8709,7 +8877,8 @@ static void PrintTree(FILE* f, Node* node)
 #endif /* REG_DEBUG */
 
 #ifdef REG_DEBUG_STATISTICS
-static void PrintStatistics(FILE* f)
+static void
+PrintStatistics(FILE* f)
 {
   int i;
   for (i = 0; OpInfo[i].opcode >= 0; i++) {
