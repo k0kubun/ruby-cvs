@@ -1,3 +1,7 @@
+Fri May 21 14:53:50 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* eruby_main.c (print_http_headers): use RFC1123 date format.
+
 Thu May 20 14:53:50 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.0.2 released.

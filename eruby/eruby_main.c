@@ -306,11 +306,32 @@ static void print_generated_code(VALUE script, int cgi)
     }
 }
 
+char rfc822_days[][4] =
+{
+    "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+};
+
+char rfc822_months[][4] =
+{
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+};
+
+static char *rfc1123_time(time_t t)
+{
+    static char s[32];
+    struct tm *tm;
+
+    tm = gmtime(&t);
+    sprintf(s, "%s, %.2d %s %d %.2d:%.2d:%.2d GMT",
+	    rfc822_days[tm->tm_wday], tm->tm_mday, rfc822_months[tm->tm_mon],
+	    tm->tm_year + 1900,	tm->tm_hour, tm->tm_min, tm->tm_sec);
+    return s;
+}
+
 static void print_http_headers()
 {
     char *tmp;
-    time_t t;
-    struct tm *tm;
 
     if ((tmp = getenv("SERVER_PROTOCOL")) == NULL)
         tmp = "HTTP/1.0";
@@ -318,11 +339,7 @@ static void print_http_headers()
     if ((tmp = getenv("SERVER_SOFTWARE")) == NULL)
 	tmp = "unknown-server/0.0";
     printf("Server: %s\n", tmp);
-    t = time(&t);
-    tm = localtime(&t);
-    tmp = ctime(&t);
-    tmp[strlen(tmp)-1] = '\0';
-    printf("Date: %s\n", tmp);
+    printf("Date: %s\n", rfc1123_time(time(NULL)));
     printf("Connection: close\n");
 
     return;

@@ -1,3 +1,9 @@
+Fri May 21 11:55:40 1999  Shugo Maeda <shugo@netlab.co.jp>
+
+	* ruby_module.c (get_exception_info): pop from errat.
+
+	* ruby_module.c (load_eruby_script): unlink temporary file.
+
 Thu May 20 14:58:31 1999  Shugo Maeda <shugo@netlab.co.jp>
 
 	* version 0.1.1 released.

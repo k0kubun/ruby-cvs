@@ -32,13 +32,13 @@ TARGET = eruby
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 
-all: $(TARGET)
+all: $(TARGET) $(LIBERUBY)
 
 install: all
 	$(INSTALL_PROGRAM) $(TARGET) $(bindir)/$(TARGET)
 
 clean:
-	rm -f $(TARGET) $(OBJS) *~
+	rm -f $(TARGET) $(LIBERUBY) $(OBJS) *~
 
 distclean: clean
 	rm -f Makefile

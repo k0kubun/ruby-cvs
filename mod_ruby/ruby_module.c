@@ -43,6 +43,10 @@
 #include "util.h"
 #include "version.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 #ifdef USE_ERUBY
 #include "eruby.h"
 #endif
@@ -198,7 +202,6 @@ static void ruby_startup(server_rec *s, pool *p)
 #endif
 
     ruby_init();
-    ruby_script("mod_ruby");
     rb_set_safe_level(1);
     rb_define_global_function("p", f_p, -1);
     rb_define_global_function("exit", f_exit, -1);
@@ -450,6 +453,7 @@ static void get_exception_info(VALUE str)
 #define TRACE_HEAD 8
 #define TRACE_TAIL 5
 
+	rb_ary_pop(errat);
 	ep = RARRAY(errat);
 	for (i=1; i<ep->len; i++) {
 	    if (TYPE(ep->ptr[i]) == T_STRING) {
@@ -667,6 +671,7 @@ static VALUE load_eruby_script(request_rec *r)
 						    &ruby_module);
     VALUE orig_defout = rb_defout;
     VALUE timeout_thread;
+    VALUE script;
     int state;
     request_data *data;
     struct to_arg arg;
@@ -679,7 +684,8 @@ static VALUE load_eruby_script(request_rec *r)
     r->content_type = ap_psprintf(r->pool, "text/html; charset=%s", get_charset());
     r->content_encoding = "7bit";
     ap_send_http_header(r);
-    eruby_load(r->filename, 1, &state);
+    script = eruby_load(r->filename, 1, &state);
+    if (!NIL_P(script)) unlink(RSTRING(script)->ptr);
     rb_funcall(timeout_thread, rb_intern("exit"), 0);
     if (state && !rb_obj_is_kind_of(ruby_errinfo, rb_eSystemExit)) {
 	Data_Get_Struct(rb_defout, request_data, data);
