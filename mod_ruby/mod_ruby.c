@@ -630,7 +630,7 @@ static VALUE load_eruby_script(request_rec *r)
 
     rb_defout = ruby_create_request(r);
     eruby_noheader = 0;
-    eruby_charset = rb_str_new2(ERUBY_DEFAULT_CHARSET);
+    eruby_charset = eruby_default_charset;
     arg.thread = rb_thread_current();
     arg.timeout = sconf->timeout;
     timeout_thread = rb_thread_create(do_timeout, (void *) &arg);

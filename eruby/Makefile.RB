@@ -196,11 +196,14 @@ install: all
 	@-$(INSTALL_DATA) eruby.h $(includedir)/eruby.h
 
 clean:
-	rm -f $(TARGET) $(OBJS) *~ lib/eruby/*~
+	rm -f $(TARGET)
 	rm -f $(LIBERUBY_A)
 	rm -f $(LIBERUBY_SO)
 	rm -f $(LIBERUBY_ALIASES)
+	rm -f $(ERUBY_OBJS)
+	rm -f $(OBJS)
 	rm -f eruby.imp
+	rm -f *~
 
 distclean: clean
 	rm -f config.h Makefile

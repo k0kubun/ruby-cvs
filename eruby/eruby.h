@@ -28,6 +28,7 @@ extern char *eruby_filename;
 extern int eruby_mode;
 extern int eruby_noheader;
 extern VALUE eruby_charset;
+extern VALUE eruby_default_charset;
 #define ERUBY_CHARSET RSTRING(eruby_charset)->ptr
 
 int eruby_parse_options(int argc, char **argv);

@@ -1,3 +1,7 @@
+Wed Sep  6 19:01:31 2000  Shugo Maeda <shugo@ruby-lang.org>
+
+	* eruby.c: new variable eruby_default_charset.
+
 Thu Aug 31 11:47:16 2000  Shugo Maeda <shugo@ruby-lang.org>
 
 	* Makefile.RB: new option --enable-shared.

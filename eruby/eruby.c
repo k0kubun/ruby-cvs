@@ -25,6 +25,7 @@ char *eruby_filename = NULL;
 int eruby_mode = MODE_UNKNOWN;
 int eruby_noheader = 0;
 VALUE eruby_charset;
+VALUE eruby_default_charset;
 
 static char eruby_begin_delimiter[] = "<%";
 static char eruby_end_delimiter[] = "%>";
@@ -601,8 +602,10 @@ void eruby_init()
     rb_define_module_function(mERuby, "charset", eruby_get_charset, 0);
     rb_define_module_function(mERuby, "charset=", eruby_set_charset, 1);
 
-    eruby_charset = rb_str_new2(ERUBY_DEFAULT_CHARSET);
+    eruby_charset = eruby_default_charset = rb_str_new2(ERUBY_DEFAULT_CHARSET);
+    rb_str_freeze(eruby_charset);
     rb_global_variable(&eruby_charset);
+    rb_global_variable(&eruby_default_charset);
 }
 
 /*
